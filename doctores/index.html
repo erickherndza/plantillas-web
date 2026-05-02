@@ -254,59 +254,121 @@
   <!-- Citas -->
   <section id="citas" class="citas-section">
     <div class="container">
-      <div class="citas-inner">
-        <div class="citas-info fade-in-up">
-          <h2 class="section-title" style="text-align:left;">Agenda tu cita</h2>
-          <p style="color:var(--c-muted);margin-bottom:28px;line-height:1.7;">Agenda tu consulta en menos de 2 minutos. Confirmamos por WhatsApp o llamada telefónica.</p>
-          <div class="horario-list">
-            <div class="horario-item">
-              <span class="horario-dia">Lunes – Viernes</span>
-              <span class="horario-hora">7:00 am – 7:00 pm</span>
+      <div class="section-header fade-in-up">
+        <h2 class="section-title">Agenda tu cita</h2>
+        <p class="section-subtitle">Selecciona el día y hora que prefieras. Al confirmar, se abrirá Google Calendar con tu cita lista para guardar.</p>
+      </div>
+
+      <!-- Pasos -->
+      <div class="citas-steps fade-in-up">
+        <div class="step active" data-step="1">
+          <span class="step-num">1</span>
+          <span class="step-label">Elige fecha</span>
+        </div>
+        <div class="step-line"></div>
+        <div class="step" data-step="2">
+          <span class="step-num">2</span>
+          <span class="step-label">Elige hora</span>
+        </div>
+        <div class="step-line"></div>
+        <div class="step" data-step="3">
+          <span class="step-num">3</span>
+          <span class="step-label">Tus datos</span>
+        </div>
+        <div class="step-line"></div>
+        <div class="step" data-step="4">
+          <span class="step-num">4</span>
+          <span class="step-label">Confirmar</span>
+        </div>
+      </div>
+
+      <div class="citas-layout fade-in-up">
+
+        <!-- Columna izquierda: Calendario -->
+        <div class="cal-col">
+          <!-- Paso 1: Calendario -->
+          <div class="citas-panel" id="panel-calendario">
+            <div class="cal-header">
+              <button class="cal-nav" id="cal-prev" aria-label="Mes anterior">&#8249;</button>
+              <span class="cal-title" id="cal-title">Mayo 2026</span>
+              <button class="cal-nav" id="cal-next" aria-label="Mes siguiente">&#8250;</button>
             </div>
-            <div class="horario-item">
-              <span class="horario-dia">Sábado</span>
-              <span class="horario-hora">8:00 am – 2:00 pm</span>
+            <div class="cal-weekdays">
+              <span>Lu</span><span>Ma</span><span>Mi</span><span>Ju</span><span>Vi</span><span>Sá</span><span>Do</span>
             </div>
-            <div class="horario-item">
-              <span class="horario-dia">Domingo</span>
-              <span class="horario-hora">Urgencias solamente</span>
+            <div class="cal-grid" id="cal-grid"></div>
+            <div class="cal-leyenda">
+              <span class="leyenda-item"><span class="dot dot-disponible"></span>Disponible</span>
+              <span class="leyenda-item"><span class="dot dot-limitado"></span>Limitado (Sáb)</span>
+              <span class="leyenda-item"><span class="dot dot-no"></span>No disponible</span>
             </div>
+          </div>
+
+          <!-- Paso 2: Horarios -->
+          <div class="citas-panel hidden" id="panel-horarios">
+            <div class="horarios-header">
+              <button class="btn-back" id="btn-back-cal">&#8592; Cambiar fecha</button>
+              <h3 class="horarios-fecha" id="horarios-fecha-titulo">Lunes, 5 de mayo</h3>
+            </div>
+            <p class="horarios-subtitulo">Selecciona un horario disponible</p>
+            <div class="horarios-grid" id="horarios-grid"></div>
           </div>
         </div>
-        <form id="citas-form" class="contact-form fade-in-up">
-          <div class="form-group">
-            <label for="nombre-cita">Nombre completo</label>
-            <input type="text" id="nombre-cita" name="nombre" required placeholder="Ej. Juan Pérez">
-          </div>
-          <div class="form-row">
-            <div class="form-group">
-              <label for="telefono-cita">Teléfono</label>
-              <input type="tel" id="telefono-cita" name="telefono" required placeholder="(809) 000-0000">
-            </div>
-            <div class="form-group">
-              <label for="fecha-cita">Fecha preferida</label>
-              <input type="date" id="fecha-cita" name="fecha" required>
+
+        <!-- Columna derecha: Formulario -->
+        <div class="form-col">
+          <div class="seleccion-resumen" id="seleccion-resumen">
+            <div class="resumen-placeholder">
+              <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+              <p>Selecciona una fecha y hora en el calendario para continuar</p>
             </div>
           </div>
-          <div class="form-group">
-            <label for="especialidad-cita">Especialidad</label>
-            <select id="especialidad-cita" name="especialidad" required>
-              <option value="">Selecciona una especialidad</option>
-              <option>Medicina General</option>
-              <option>Cardiología</option>
-              <option>Pediatría</option>
-              <option>Neurología</option>
-              <option>Laboratorio Clínico</option>
-              <option>Medicina Preventiva</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label for="motivo-cita">Motivo de consulta</label>
-            <textarea id="motivo-cita" name="motivo" rows="4" placeholder="Describe brevemente el motivo de tu visita..."></textarea>
-          </div>
-          <button type="submit" class="btn-primary" style="width:100%;justify-content:center;">Solicitar cita</button>
-          <div class="form-feedback" id="form-feedback"></div>
-        </form>
+
+          <form id="citas-form" class="contact-form hidden">
+            <div class="seleccion-badge" id="seleccion-badge">
+              <span id="badge-fecha">—</span> · <span id="badge-hora">—</span>
+              <button type="button" class="badge-cambiar" id="badge-cambiar">Cambiar</button>
+            </div>
+
+            <div class="form-group">
+              <label for="nombre-cita">Nombre completo *</label>
+              <input type="text" id="nombre-cita" name="nombre" required placeholder="Ej. Juan Pérez">
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label for="telefono-cita">Teléfono *</label>
+                <input type="tel" id="telefono-cita" name="telefono" required placeholder="(809) 000-0000">
+              </div>
+              <div class="form-group">
+                <label for="email-cita">Correo electrónico</label>
+                <input type="email" id="email-cita" name="email" placeholder="tu@correo.com">
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="especialidad-cita">Especialidad *</label>
+              <select id="especialidad-cita" name="especialidad" required>
+                <option value="">Selecciona una especialidad</option>
+                <option>Medicina General</option>
+                <option>Cardiología</option>
+                <option>Pediatría</option>
+                <option>Neurología</option>
+                <option>Laboratorio Clínico</option>
+                <option>Medicina Preventiva</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="motivo-cita">Motivo de consulta</label>
+              <textarea id="motivo-cita" name="motivo" rows="3" placeholder="Describe brevemente el motivo de tu visita..."></textarea>
+            </div>
+            <button type="submit" class="btn-gcal">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.08 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-3.59-13.46-8.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
+              Confirmar y agregar a Google Calendar
+            </button>
+            <p class="gcal-note">Se abrirá Google Calendar con tu cita pre-llenada. Tú decides si la guardas.</p>
+            <div class="form-feedback" id="form-feedback"></div>
+          </form>
+        </div>
+
       </div>
     </div>
   </section>
