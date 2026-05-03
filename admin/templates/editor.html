@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Editar — {{ plantilla.nombre }}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='admin.css') }}">
+</head>
+<body>
+
+  <!-- Navbar -->
+  <nav class="admin-navbar">
+    <div class="navbar-brand">
+      <a href="{{ url_for('dashboard') }}" class="btn-back-nav">← Dashboard</a>
+      <span class="navbar-sep">|</span>
+      <span class="navbar-title">{{ plantilla.nombre }}</span>
+    </div>
+    <div class="navbar-actions">
+      <a href="{{ url_for('preview', plantilla_id=plantilla_id) }}" target="_blank" class="btn-ver-vivo">
+        🔗 Ver en vivo
+      </a>
+      <span class="navbar-user">{{ nombre }}</span>
+      <a href="{{ url_for('logout') }}" class="btn-logout">Salir</a>
+    </div>
+  </nav>
+
+  <!-- Flash messages -->
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% for category, message in messages %}
+      <div class="flash-message flash-{{ category }} flash-top">{{ message }}</div>
+    {% endfor %}
+  {% endwith %}
+
+  <div class="editor-layout">
+
+    <!-- Sidebar de secciones -->
+    <aside class="editor-sidebar">
+      <p class="sidebar-label">Secciones</p>
+      <nav class="section-nav">
+        {% for seccion in secciones %}
+          <button type="button"
+                  class="section-nav-item {% if loop.first %}active{% endif %}"
+                  data-section="{{ seccion }}">
+            {% if seccion == 'marca' %}🎨 Marca
+            {% elif seccion == 'hero' %}🖼️ Hero
+            {% elif seccion == 'nosotros' %}🏢 Nosotros
+            {% elif seccion == 'contacto' %}📍 Contacto
+            {% else %}📄 {{ seccion|capitalize }}{% endif %}
+          </button>
+        {% endfor %}
+      </nav>
+
+      <div class="sidebar-info">
+        <p>Los cambios se guardan en el HTML de tu plantilla y se publican automáticamente en Cloudflare Pages.</p>
+      </div>
+    </aside>
+
+    <!-- Área principal: formulario -->
+    <main class="editor-main">
+      <form method="POST" action="{{ url_for('editor', plantilla_id=plantilla_id) }}" id="editor-form">
+
+        {% for seccion, campos in plantilla.campos.items() %}
+          <div class="form-section {% if not loop.first %}hidden{% endif %}"
+               id="section-{{ seccion }}">
+
+            <div class="section-header">
+              <h2 class="section-title">
+                {% if seccion == 'marca' %}Marca e identidad
+                {% elif seccion == 'hero' %}Sección Hero (portada)
+                {% elif seccion == 'nosotros' %}Sección Nosotros
+                {% elif seccion == 'contacto' %}Información de contacto
+                {% else %}{{ seccion|capitalize }}{% endif %}
+              </h2>
+              <p class="section-desc">
+                {% if seccion == 'marca' %}Nombre, colores y datos de contacto del header
+                {% elif seccion == 'hero' %}Texto principal de la portada
+                {% elif seccion == 'nosotros' %}Descripción de la empresa
+                {% elif seccion == 'contacto' %}Dirección y teléfono en la sección de contacto
+                {% endif %}
+              </p>
+            </div>
+
+            {% for campo_id, config in campos.items() %}
+              {% set field_name = seccion ~ '__' ~ campo_id %}
+              {% set valor_actual = valores.get(seccion, {}).get(campo_id, '') %}
+
+              <div class="form-group">
+                <label for="{{ field_name }}">{{ config.label }}</label>
+
+                {% if config.tipo == 'color' %}
+                  <div class="color-field">
+                    <input type="color"
+                           id="{{ field_name }}"
+                           name="{{ field_name }}"
+                           value="{{ valor_actual }}"
+                           class="color-input"
+                           data-preview="{{ field_name }}_preview">
+                    <div class="color-preview" id="{{ field_name }}_preview"
+                         style="background:{{ valor_actual }}"></div>
+                    <span class="color-hex" id="{{ field_name }}_hex">{{ valor_actual }}</span>
+                  </div>
+                  <p class="field-hint">Este color se aplicará en todo el sitio.</p>
+
+                {% elif config.tipo == 'textarea' %}
+                  <textarea id="{{ field_name }}"
+                            name="{{ field_name }}"
+                            rows="4"
+                            placeholder="{{ config.get('placeholder', '') }}">{{ valor_actual }}</textarea>
+
+                {% else %}
+                  <input type="{{ config.tipo }}"
+                         id="{{ field_name }}"
+                         name="{{ field_name }}"
+                         value="{{ valor_actual }}"
+                         placeholder="{{ config.get('placeholder', '') }}">
+                {% endif %}
+              </div>
+            {% endfor %}
+
+          </div>
+        {% endfor %}
+
+      </form>
+    </main>
+
+  </div>
+
+  <!-- Footer sticky con botón guardar -->
+  <footer class="editor-footer">
+    <div class="editor-footer-inner">
+      <p class="footer-note">
+        Los cambios se publicarán en
+        <strong>~30 segundos</strong> vía Cloudflare Pages
+      </p>
+      <button type="submit" form="editor-form" class="btn-guardar" id="btn-guardar">
+        <span class="btn-text">💾 Guardar y publicar</span>
+        <span class="btn-loading hidden">
+          <span class="spinner"></span> Publicando...
+        </span>
+      </button>
+    </div>
+  </footer>
+
+  <script src="{{ url_for('static', filename='admin.js') }}"></script>
+</body>
+</html>

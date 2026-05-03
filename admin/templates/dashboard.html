@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard · Panel Admin</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='admin.css') }}">
+</head>
+<body>
+
+  <nav class="admin-navbar">
+    <div class="navbar-brand">
+      <span class="logo-mark sm">PW</span>
+      <span class="navbar-title">Plantillas Web RD</span>
+    </div>
+    <div class="navbar-actions">
+      <span class="navbar-user">{{ nombre }}</span>
+      <a href="{{ url_for('logout') }}" class="btn-logout">Cerrar sesión</a>
+    </div>
+  </nav>
+
+  <main class="admin-main">
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% for category, message in messages %}
+        <div class="flash-message flash-{{ category }}">{{ message }}</div>
+      {% endfor %}
+    {% endwith %}
+
+    <div class="page-header">
+      <h1 class="page-title">Hola, {{ nombre }} 👋</h1>
+      <p class="page-subtitle">Selecciona el sitio que quieres editar</p>
+    </div>
+
+    {% if plantillas %}
+      <div class="dashboard-grid">
+        {% for id, plantilla in plantillas.items() %}
+          <div class="plantilla-card">
+            <div class="card-icon">
+              {% if id == 'doctores' %}🏥
+              {% elif id == 'arquitectura' %}🏛️
+              {% else %}🌐{% endif %}
+            </div>
+            <div class="card-body">
+              <h2 class="card-title">{{ plantilla.nombre }}</h2>
+              <p class="card-id">{{ id }}</p>
+            </div>
+            <div class="card-actions">
+              <a href="{{ url_for('editor', plantilla_id=id) }}" class="btn-editar">
+                ✏️ Editar sitio
+              </a>
+              <a href="{{ url_for('preview', plantilla_id=id) }}" target="_blank" class="btn-preview">
+                🔗 Ver en vivo
+              </a>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="empty-state">
+        <p>No tienes plantillas asignadas. Contacta al administrador.</p>
+      </div>
+    {% endif %}
+
+  </main>
+
+</body>
+</html>

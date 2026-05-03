@@ -1,0 +1,133 @@
+{
+  "plantillas": {
+    "arquitectura": {
+      "ruta": "../index.html",
+      "nombre": "Arquitectura / Servicios Generales",
+      "preview_url": "https://plantillas-web.themethoner.workers.dev/",
+      "campos": {
+        "marca": {
+          "nombre_negocio": {
+            "label": "Nombre del negocio",
+            "tipo": "text",
+            "selector": ".header-brand",
+            "placeholder": "Ej: Studio Bella"
+          },
+          "color_primario": {
+            "label": "Color principal",
+            "tipo": "color",
+            "css_var": "--c-primary",
+            "valor_actual": "#116600"
+          },
+          "telefono": {
+            "label": "Teléfono",
+            "tipo": "tel",
+            "selector": ".header-contact span:first-child",
+            "placeholder": "(809) 000-0000"
+          },
+          "email": {
+            "label": "Email",
+            "tipo": "email",
+            "selector": ".header-contact span:last-child",
+            "placeholder": "info@tunegocio.com"
+          }
+        },
+        "hero": {
+          "eyebrow": {
+            "label": "Texto pequeño sobre el título",
+            "tipo": "text",
+            "selector": ".hero-eyebrow"
+          },
+          "titulo": {
+            "label": "Título principal",
+            "tipo": "text",
+            "selector": ".hero-title"
+          },
+          "subtitulo": {
+            "label": "Subtítulo",
+            "tipo": "textarea",
+            "selector": ".hero-subtitle"
+          }
+        },
+        "nosotros": {
+          "subtitulo": {
+            "label": "Descripción de la empresa",
+            "tipo": "textarea",
+            "selector": "#nosotros .section-subtitle"
+          }
+        },
+        "contacto": {
+          "direccion": {
+            "label": "Dirección",
+            "tipo": "text",
+            "selector": ".contact-item:first-child span:last-child"
+          }
+        }
+      }
+    },
+    "doctores": {
+      "ruta": "../doctores/index.html",
+      "nombre": "Consultorio / Clínica Médica",
+      "preview_url": "https://plantillas-web.themethoner.workers.dev/doctores/",
+      "campos": {
+        "marca": {
+          "nombre_negocio": {
+            "label": "Nombre de la clínica",
+            "tipo": "text",
+            "selector": ".header-brand",
+            "placeholder": "Ej: Clínica San Rafael"
+          },
+          "color_primario": {
+            "label": "Color principal",
+            "tipo": "color",
+            "css_var": "--c-primary",
+            "valor_actual": "#0077B6"
+          },
+          "telefono": {
+            "label": "Teléfono",
+            "tipo": "tel",
+            "selector": ".header-contact span:first-child"
+          },
+          "email": {
+            "label": "Email de citas",
+            "tipo": "email",
+            "selector": ".header-contact span:nth-child(2)"
+          },
+          "horario": {
+            "label": "Horario (header)",
+            "tipo": "text",
+            "selector": ".header-badge"
+          }
+        },
+        "hero": {
+          "eyebrow": {
+            "label": "Texto sobre el título",
+            "tipo": "text",
+            "selector": ".hero-eyebrow"
+          },
+          "titulo": {
+            "label": "Título principal",
+            "tipo": "text",
+            "selector": ".hero-title"
+          },
+          "subtitulo": {
+            "label": "Subtítulo",
+            "tipo": "textarea",
+            "selector": ".hero-subtitle"
+          }
+        },
+        "contacto": {
+          "direccion": {
+            "label": "Dirección completa",
+            "tipo": "text",
+            "selector": ".contact-item:first-child span:last-child"
+          },
+          "telefono_pie": {
+            "label": "Teléfono (sección contacto)",
+            "tipo": "tel",
+            "selector": ".contact-item:nth-child(2) span:last-child"
+          }
+        }
+      }
+    }
+  }
+}
