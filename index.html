@@ -1,264 +1,253 @@
 <!DOCTYPE html>
+
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Arquitectura y diseño interior de código abierto para proyectos modernos y sencillos.">
-  <meta property="og:title" content="Arquitectura">
-  <meta property="og:description" content="Arquitectura y diseño interior de código abierto para proyectos modernos y sencillos.">
-  <title>Arquitectura</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700;800&family=Montserrat:wght@400;500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css">
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<meta content="Arquitectura y diseño interior de código abierto para proyectos modernos y sencillos." name="description"/>
+<meta content="Arquitectura" property="og:title"/>
+<meta content="Arquitectura y diseño interior de código abierto para proyectos modernos y sencillos." property="og:description"/>
+<title>Arquitectura</title>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700;800&amp;family=Montserrat:wght@400;500&amp;display=swap" rel="stylesheet"/>
+<link href="style.css" rel="stylesheet"/>
 </head>
 <body>
-
-  <!-- Header -->
-  <header class="site-header" id="site-header" style="background:#fff;border-bottom:1px solid #e2e8f0;padding:16px 0;">
-    <div class="container" style="display:flex;align-items:center;justify-content:space-between;max-width:1200px;margin:0 auto;padding:0 24px;">
-      <a href="/" class="header-brand" style="font-size:1.5rem;font-weight:800;color:#116600;text-decoration:none;">Arquitectura</a>
-      <div class="header-contact" style="display:flex;gap:20px;font-size:13px;color:#64748b;">
-        <span>📞 (809) 000-0000</span>
-        <span>✉ info@arquitectura.com</span>
-      </div>
-    </div>
-  </header>
-
-  <!-- Navbar -->
-  <nav class="navbar" id="navbar" style="background:#116600;position:sticky;top:0;z-index:200;width:100%;">
-    <div class="container">
-      <ul class="nav-list">
-          <li><a href="#header" class="nav-link">header</a></li>
-          <li><a href="#hero" class="nav-link">hero</a></li>
-          <li><a href="#nosotros" class="nav-link">nosotros</a></li>
-          <li><a href="#servicios" class="nav-link">servicios</a></li>
-          <li><a href="#proyectos" class="nav-link">proyectos</a></li>
-          <li><a href="#equipo" class="nav-link">equipo</a></li>
-          <li><a href="#blog" class="nav-link">blog</a></li>
-      </ul>
-      <button class="nav-toggle" id="nav-toggle" aria-label="Menú" style="display:none;background:none;border:none;color:white;font-size:22px;cursor:pointer;">&#9776;</button>
-    </div>
-  </nav>
-
-  <!-- Hero -->
-  <section class="hero-section" id="inicio">
-    <div class="hero-bg" style="background-image:url('https://picsum.photos/seed/e25802cc/1600/900')"></div>
-    <div class="hero-overlay"></div>
-    <div class="container">
-      <div class="hero-content fade-in-up">
-        <p class="hero-eyebrow">CODESIGN ARCHITECTURE & INTERIOR DJANGO </p>
-        <h1 class="hero-title">La Arquitectura Moderna de la Simplicidad</h1>
-        <p class="hero-subtitle">Desarrollamos soluciones de código abierto para proyectos de arquitectura y diseño interior</p>
-        <div class="hero-actions">
-          <a href="#contacto" class="btn-primary">Contáctanos</a>
-          <a href="#servicios" class="btn-secondary">Ver servicios</a>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- Nosotros -->
-  <section id="nosotros" class="about-section">
-    <div class="container">
-      <div class="section-header fade-in-up">
-        <h2 class="section-title">Quiénes somos</h2>
-        <p class="section-subtitle">Somos Codesign, una empresa de arquitectura y diseño interior que busca fusionar la innovación con la estética. Nuestro equipo de expertos trabaja en proyectos de código abierto para crear soluciones personalizadas y sostenibles.</p>
-      </div>
-      <div class="mvv-grid">
-        <div class="mvv-card fade-in-up">
-          <div class="mvv-icon"><svg xmlns="http://www.w3.org/2000/svg" width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/></svg></div>
-          <h3 class="mvv-card-title">Misión</h3>
-          <p>Nuestra misión es diseñar y desarrollar proyectos de arquitectura y diseño interior que sean a la vez funcionales, estéticos y sostenibles.</p>
-        </div>
-        <div class="mvv-card fade-in-up">
-          <div class="mvv-icon"><svg xmlns="http://www.w3.org/2000/svg" width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/></svg></div>
-          <h3 class="mvv-card-title">Visión</h3>
-          <p>Nuestra visión es ser líderes en la industria de la arquitectura y diseño interior, conocidos por nuestra innovación y compromiso con la calidad.</p>
-        </div>
-        <div class="mvv-card fade-in-up">
-          <div class="mvv-icon"><svg xmlns="http://www.w3.org/2000/svg" width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/></svg></div>
-          <h3 class="mvv-card-title">Valores</h3>
-          <p>Innovación, Sostenibilidad, Estética, Calidad</p>
-        </div>
-      </div>
-    </div>
-  </section>
-
-
-  <!-- Servicios -->
-  <section id="servicios" class="services-section">
-    <div class="container">
-      <div class="section-header fade-in-up">
-        <h2 class="section-title">Nuestros servicios</h2>
-        <p class="section-subtitle">Ofrecemos servicios de arquitectura y diseño interior para proyectos de código abierto, incluyendo planificación, diseño y construcción.</p>
-      </div>
-      <div class="services-grid">
-        <div class="service-card fade-in-up">
-          <div class="service-icon"><img src="https://placehold.co/400x300/116600/A90707" alt="Planificación y Diseño"></div>
-          <h3 class="service-title">Planificación y Diseño</h3>
-          <p class="service-desc">Desarrollamos planes y diseños personalizados para proyectos de arquitectura y diseño interior.</p>
-        </div>
-        <div class="service-card fade-in-up">
-          <div class="service-icon"><img src="https://placehold.co/400x300/116600/A90707" alt="Diseño de Interiores"></div>
-          <h3 class="service-title">Diseño de Interiores</h3>
-          <p class="service-desc">Creemos espacios de diseño interior que sean a la vez funcionales y estéticos.</p>
-        </div>
-        <div class="service-card fade-in-up">
-          <div class="service-icon"><img src="https://placehold.co/400x300/116600/A90707" alt="Construcción y Mantenimiento"></div>
-          <h3 class="service-title">Construcción y Mantenimiento</h3>
-          <p class="service-desc">Realizamos la construcción y mantenimiento de proyectos de arquitectura y diseño interior de código abierto.</p>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- Proyectos -->
-  <section id="proyectos" class="portfolio-section">
-    <div class="container">
-      <div class="section-header fade-in-up">
-        <h2 class="section-title">Nuestros proyectos</h2>
-        <p class="section-subtitle">A continuación, presentamos algunos de nuestros proyectos más destacados.</p>
-      </div>
-      <div class="portfolio-grid">
-        <div class="portfolio-card fade-in-up">
-          <img src="https://placehold.co/800x500/116600/A90707" alt="Proyecto 1">
-          <div class="portfolio-overlay">
-            <h3 class="portfolio-title">Proyecto 1</h3>
-            <p class="portfolio-category">Residencial</p>
-          </div>
-        </div>
-        <div class="portfolio-card fade-in-up">
-          <img src="https://placehold.co/800x500/116600/A90707" alt="Proyecto 2">
-          <div class="portfolio-overlay">
-            <h3 class="portfolio-title">Proyecto 2</h3>
-            <p class="portfolio-category">Comercial</p>
-          </div>
-        </div>
-        <div class="portfolio-card fade-in-up">
-          <img src="https://placehold.co/800x500/116600/A90707" alt="Proyecto 3">
-          <div class="portfolio-overlay">
-            <h3 class="portfolio-title">Proyecto 3</h3>
-            <p class="portfolio-category">Institucional</p>
-          </div>
-        </div>
-        <div class="portfolio-card fade-in-up">
-          <img src="https://placehold.co/800x500/116600/A90707" alt="Proyecto 4">
-          <div class="portfolio-overlay">
-            <h3 class="portfolio-title">Proyecto 4</h3>
-            <p class="portfolio-category">Residencial</p>
-          </div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- Equipo -->
-  <section id="equipo" class="team-section">
-    <div class="container">
-      <div class="section-header fade-in-up">
-        <h2 class="section-title">Nuestro equipo</h2>
-        <p class="section-subtitle">Profesionales comprometidos con tu éxito</p>
-      </div>
-      <div class="team-grid">
-        <div class="team-card fade-in-up">
-          <img src="https://placehold.co/400x300/116600/A90707" alt="Juan Pérez">
-          <h3 class="team-name">Juan Pérez</h3>
-          <p class="team-role">Director General</p>
-        </div>
-        <div class="team-card fade-in-up">
-          <img src="https://placehold.co/400x300/116600/A90707" alt="María Gómez">
-          <h3 class="team-name">María Gómez</h3>
-          <p class="team-role">Gerente Tecnico</p>
-        </div>
-        <div class="team-card fade-in-up">
-          <img src="https://placehold.co/400x300/116600/A90707" alt="Luis Rodríguez">
-          <h3 class="team-name">Luis Rodríguez</h3>
-          <p class="team-role">Coordinador</p>
-        </div>
-      </div>
-    </div>
-  </section>
-
-
-  <!-- Contacto -->
-  <section id="contacto" class="contact-section">
-    <div class="container">
-      <div class="section-header fade-in-up">
-        <h2 class="section-title">Contáctanos</h2>
-        <p class="section-subtitle">¿Quieres saber más sobre nuestros servicios y proyectos? Contacta con nosotros para obtener más información y un presupuesto personalizado.</p>
-      </div>
-      <div class="contact-grid">
-        <div class="contact-info fade-in-up">
-          <div class="contact-item">
-            <span class="contact-icon">📍</span>
-            <span>Calle principal 123, Ciudad</span>
-          </div>
-          <div class="contact-item">
-            <span class="contact-icon">📞</span>
-            <span>(809) 000-0000</span>
-          </div>
-          <div class="contact-item">
-            <span class="contact-icon">✉</span>
-            <span>info@codesign.com</span>
-          </div>
-        </div>
-        <form id="contact-form" class="contact-form fade-in-up">
-          <div class="form-group">
-            <label for="nombre-c">Nombre completo</label>
-            <input type="text" id="nombre-c" name="nombre" required>
-          </div>
-          <div class="form-group">
-            <label for="email-c">Correo electrónico</label>
-            <input type="email" id="email-c" name="email" required>
-          </div>
-          <div class="form-group">
-            <label for="telefono-c">Teléfono</label>
-            <input type="tel" id="telefono-c" name="telefono">
-          </div>
-          <div class="form-group">
-            <label for="mensaje-c">Mensaje</label>
-            <textarea id="mensaje-c" name="mensaje" rows="5" required></textarea>
-          </div>
-          <button type="submit" class="btn-primary">Enviar mensaje</button>
-          <div class="form-feedback" id="form-feedback"></div>
-        </form>
-      </div>
-    </div>
-  </section>
-
-  <!-- Footer -->
-  <footer class="site-footer">
-    <div class="container">
-      <div class="footer-inner">
-        <div class="footer-brand-col">
-          <p class="footer-brand">Arquitectura</p>
-          <p class="footer-desc">Comprometidos con la excelencia y satisfacción de nuestros clientes</p>
-        </div>
-        <div class="footer-nav">
-          <h4>Navegación</h4>
-          <ul>
-            <li><a href="#header">header</a></li>
-            <li><a href="#hero">hero</a></li>
-            <li><a href="#nosotros">nosotros</a></li>
-            <li><a href="#servicios">servicios</a></li>
-            <li><a href="#proyectos">proyectos</a></li>
-            <li><a href="#equipo">equipo</a></li>
-          </ul>
-        </div>
-        <div class="footer-contact-col">
-          <h4>Contacto</h4>
-          <p>Calle principal 123, Ciudad</p>
-          <p>(809) 000-0000</p>
-          <p>info@codesign.com</p>
-        </div>
-      </div>
-      <div class="footer-bottom">
-        <p>&copy; <span id="current-year"></span> Arquitectura. Todos los derechos reservados.</p>
-      </div>
-    </div>
-  </footer>
-
-  <script src="script.js" defer></script>
+<!-- Header -->
+<header class="site-header" id="site-header" style="background:#fff;border-bottom:1px solid #e2e8f0;padding:16px 0;">
+<div class="container" style="display:flex;align-items:center;justify-content:space-between;max-width:1200px;margin:0 auto;padding:0 24px;">
+<a class="header-brand" href="/" style="font-size:1.5rem;font-weight:800;color:#0bb180;text-decoration:none;">Arquitectura</a>
+<div class="header-contact" style="display:flex;gap:20px;font-size:13px;color:#64748b;">
+<span>📞 (809) 590-0053</span>
+<span>✉ info@arquitectura.com</span>
+</div>
+</div>
+</header>
+<!-- Navbar -->
+<nav class="navbar" id="navbar" style="background:#0bb180;position:sticky;top:0;z-index:200;width:100%;">
+<div class="container">
+<ul class="nav-list">
+<li><a class="nav-link" href="#header">header</a></li>
+<li><a class="nav-link" href="#hero">hero</a></li>
+<li><a class="nav-link" href="#nosotros">nosotros</a></li>
+<li><a class="nav-link" href="#servicios">servicios</a></li>
+<li><a class="nav-link" href="#proyectos">proyectos</a></li>
+<li><a class="nav-link" href="#equipo">equipo</a></li>
+<li><a class="nav-link" href="#blog">blog</a></li>
+</ul>
+<button aria-label="Menú" class="nav-toggle" id="nav-toggle" style="display:none;background:none;border:none;color:white;font-size:22px;cursor:pointer;">☰</button>
+</div>
+</nav>
+<!-- Hero -->
+<section class="hero-section" id="inicio">
+<div class="hero-bg" style="background-image:url('https://picsum.photos/seed/e25802cc/1600/900')"></div>
+<div class="hero-overlay"></div>
+<div class="container">
+<div class="hero-content fade-in-up">
+<p class="hero-eyebrow">CODESIGN ARCHITECTURE &amp; INTERIOR DJANGO</p>
+<h1 class="hero-title">La Arquitectura Moderna de la Simplicidad</h1>
+<p class="hero-subtitle">Desarrollamos soluciones de código abierto para proyectos de arquitectura y diseño interior</p>
+<div class="hero-actions">
+<a class="btn-primary" href="#contacto">Contáctanos</a>
+<a class="btn-secondary" href="#servicios">Ver servicios</a>
+</div>
+</div>
+</div>
+</section>
+<!-- Nosotros -->
+<section class="about-section" id="nosotros">
+<div class="container">
+<div class="section-header fade-in-up">
+<h2 class="section-title">Quiénes somos</h2>
+<p class="section-subtitle">Somos Codesign, una empresa de arquitectura y diseño interior que busca fusionar la innovación con la estética. Nuestro equipo de expertos trabaja en proyectos de código abierto para crear soluciones personalizadas y sostenibles.</p>
+</div>
+<div class="mvv-grid">
+<div class="mvv-card fade-in-up">
+<div class="mvv-icon"><svg fill="none" height="80" stroke="#ffffff" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" viewbox="0 0 24 24" width="80" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="10"></circle></svg></div>
+<h3 class="mvv-card-title">Misión</h3>
+<p>Nuestra misión es diseñar y desarrollar proyectos de arquitectura y diseño interior que sean a la vez funcionales, estéticos y sostenibles.</p>
+</div>
+<div class="mvv-card fade-in-up">
+<div class="mvv-icon"><svg fill="none" height="80" stroke="#ffffff" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" viewbox="0 0 24 24" width="80" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="10"></circle></svg></div>
+<h3 class="mvv-card-title">Visión</h3>
+<p>Nuestra visión es ser líderes en la industria de la arquitectura y diseño interior, conocidos por nuestra innovación y compromiso con la calidad.</p>
+</div>
+<div class="mvv-card fade-in-up">
+<div class="mvv-icon"><svg fill="none" height="80" stroke="#ffffff" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" viewbox="0 0 24 24" width="80" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="10"></circle></svg></div>
+<h3 class="mvv-card-title">Valores</h3>
+<p>Innovación, Sostenibilidad, Estética, Calidad</p>
+</div>
+</div>
+</div>
+</section>
+<!-- Servicios -->
+<section class="services-section" id="servicios">
+<div class="container">
+<div class="section-header fade-in-up">
+<h2 class="section-title">Nuestros servicios</h2>
+<p class="section-subtitle">Ofrecemos servicios de arquitectura y diseño interior para proyectos de código abierto, incluyendo planificación, diseño y construcción.</p>
+</div>
+<div class="services-grid">
+<div class="service-card fade-in-up">
+<div class="service-icon"><img alt="Planificación y Diseño" src="https://placehold.co/400x300/116600/A90707"/></div>
+<h3 class="service-title">Planificación y Diseño</h3>
+<p class="service-desc">Desarrollamos planes y diseños personalizados para proyectos de arquitectura y diseño interior.</p>
+</div>
+<div class="service-card fade-in-up">
+<div class="service-icon"><img alt="Diseño de Interiores" src="https://placehold.co/400x300/116600/A90707"/></div>
+<h3 class="service-title">Diseño de Interiores</h3>
+<p class="service-desc">Creemos espacios de diseño interior que sean a la vez funcionales y estéticos.</p>
+</div>
+<div class="service-card fade-in-up">
+<div class="service-icon"><img alt="Construcción y Mantenimiento" src="https://placehold.co/400x300/116600/A90707"/></div>
+<h3 class="service-title">Construcción y Mantenimiento</h3>
+<p class="service-desc">Realizamos la construcción y mantenimiento de proyectos de arquitectura y diseño interior de código abierto.</p>
+</div>
+</div>
+</div>
+</section>
+<!-- Proyectos -->
+<section class="portfolio-section" id="proyectos">
+<div class="container">
+<div class="section-header fade-in-up">
+<h2 class="section-title">Nuestros proyectos</h2>
+<p class="section-subtitle">A continuación, presentamos algunos de nuestros proyectos más destacados.</p>
+</div>
+<div class="portfolio-grid">
+<div class="portfolio-card fade-in-up">
+<img alt="Proyecto 1" src="https://placehold.co/800x500/116600/A90707"/>
+<div class="portfolio-overlay">
+<h3 class="portfolio-title">Proyecto 1</h3>
+<p class="portfolio-category">Residencial</p>
+</div>
+</div>
+<div class="portfolio-card fade-in-up">
+<img alt="Proyecto 2" src="https://placehold.co/800x500/116600/A90707"/>
+<div class="portfolio-overlay">
+<h3 class="portfolio-title">Proyecto 2</h3>
+<p class="portfolio-category">Comercial</p>
+</div>
+</div>
+<div class="portfolio-card fade-in-up">
+<img alt="Proyecto 3" src="https://placehold.co/800x500/116600/A90707"/>
+<div class="portfolio-overlay">
+<h3 class="portfolio-title">Proyecto 3</h3>
+<p class="portfolio-category">Institucional</p>
+</div>
+</div>
+<div class="portfolio-card fade-in-up">
+<img alt="Proyecto 4" src="https://placehold.co/800x500/116600/A90707"/>
+<div class="portfolio-overlay">
+<h3 class="portfolio-title">Proyecto 4</h3>
+<p class="portfolio-category">Residencial</p>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Equipo -->
+<section class="team-section" id="equipo">
+<div class="container">
+<div class="section-header fade-in-up">
+<h2 class="section-title">Nuestro equipo</h2>
+<p class="section-subtitle">Profesionales comprometidos con tu éxito</p>
+</div>
+<div class="team-grid">
+<div class="team-card fade-in-up">
+<img alt="Juan Pérez" src="https://placehold.co/400x300/116600/A90707"/>
+<h3 class="team-name">Juan Pérez</h3>
+<p class="team-role">Director General</p>
+</div>
+<div class="team-card fade-in-up">
+<img alt="María Gómez" src="https://placehold.co/400x300/116600/A90707"/>
+<h3 class="team-name">María Gómez</h3>
+<p class="team-role">Gerente Tecnico</p>
+</div>
+<div class="team-card fade-in-up">
+<img alt="Luis Rodríguez" src="https://placehold.co/400x300/116600/A90707"/>
+<h3 class="team-name">Luis Rodríguez</h3>
+<p class="team-role">Coordinador</p>
+</div>
+</div>
+</div>
+</section>
+<!-- Contacto -->
+<section class="contact-section" id="contacto">
+<div class="container">
+<div class="section-header fade-in-up">
+<h2 class="section-title">Contáctanos</h2>
+<p class="section-subtitle">¿Quieres saber más sobre nuestros servicios y proyectos? Contacta con nosotros para obtener más información y un presupuesto personalizado.</p>
+</div>
+<div class="contact-grid">
+<div class="contact-info fade-in-up">
+<div class="contact-item">
+<span class="contact-icon">📍</span>
+<span>Calle principal 123, Ciudad</span>
+</div>
+<div class="contact-item">
+<span class="contact-icon">📞</span>
+<span>(809) 000-0000</span>
+</div>
+<div class="contact-item">
+<span class="contact-icon">✉</span>
+<span>info@codesign.com</span>
+</div>
+</div>
+<form class="contact-form fade-in-up" id="contact-form">
+<div class="form-group">
+<label for="nombre-c">Nombre completo</label>
+<input id="nombre-c" name="nombre" required="" type="text"/>
+</div>
+<div class="form-group">
+<label for="email-c">Correo electrónico</label>
+<input id="email-c" name="email" required="" type="email"/>
+</div>
+<div class="form-group">
+<label for="telefono-c">Teléfono</label>
+<input id="telefono-c" name="telefono" type="tel"/>
+</div>
+<div class="form-group">
+<label for="mensaje-c">Mensaje</label>
+<textarea id="mensaje-c" name="mensaje" required="" rows="5"></textarea>
+</div>
+<button class="btn-primary" type="submit">Enviar mensaje</button>
+<div class="form-feedback" id="form-feedback"></div>
+</form>
+</div>
+</div>
+</section>
+<!-- Footer -->
+<footer class="site-footer">
+<div class="container">
+<div class="footer-inner">
+<div class="footer-brand-col">
+<p class="footer-brand">Arquitectura</p>
+<p class="footer-desc">Comprometidos con la excelencia y satisfacción de nuestros clientes</p>
+</div>
+<div class="footer-nav">
+<h4>Navegación</h4>
+<ul>
+<li><a href="#header">header</a></li>
+<li><a href="#hero">hero</a></li>
+<li><a href="#nosotros">nosotros</a></li>
+<li><a href="#servicios">servicios</a></li>
+<li><a href="#proyectos">proyectos</a></li>
+<li><a href="#equipo">equipo</a></li>
+</ul>
+</div>
+<div class="footer-contact-col">
+<h4>Contacto</h4>
+<p>Calle principal 123, Ciudad</p>
+<p>(809) 000-0000</p>
+<p>info@codesign.com</p>
+</div>
+</div>
+<div class="footer-bottom">
+<p>© <span id="current-year"></span> Arquitectura. Todos los derechos reservados.</p>
+</div>
+</div>
+</footer>
+<script defer="" src="script.js"></script>
 </body>
 </html>

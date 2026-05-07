@@ -41,11 +41,17 @@
           <button type="button"
                   class="section-nav-item {% if loop.first %}active{% endif %}"
                   data-section="{{ seccion }}">
-            {% if seccion == 'marca' %}🎨 Marca
-            {% elif seccion == 'hero' %}🖼️ Hero
-            {% elif seccion == 'nosotros' %}🏢 Nosotros
-            {% elif seccion == 'contacto' %}📍 Contacto
-            {% else %}📄 {{ seccion|capitalize }}{% endif %}
+            {% if   seccion == 'marca' %}         Marca
+            {% elif seccion == 'hero' %}           Hero
+            {% elif seccion == 'nosotros' %}       Nosotros
+            {% elif seccion == 'servicios' %}      Servicios
+            {% elif seccion == 'especialidades' %} Especialidades
+            {% elif seccion == 'equipo' %}         Equipo
+            {% elif seccion == 'medicos' %}        Médicos
+            {% elif seccion == 'testimonios' %}    Testimonios
+            {% elif seccion == 'contacto' %}       Contacto
+            {% elif seccion == 'footer' %}         Footer
+            {% else %}{{ seccion|capitalize }}{% endif %}
           </button>
         {% endfor %}
       </nav>
@@ -65,17 +71,29 @@
 
             <div class="section-header">
               <h2 class="section-title">
-                {% if seccion == 'marca' %}Marca e identidad
-                {% elif seccion == 'hero' %}Sección Hero (portada)
-                {% elif seccion == 'nosotros' %}Sección Nosotros
-                {% elif seccion == 'contacto' %}Información de contacto
+                {% if   seccion == 'marca' %}         Marca e identidad
+                {% elif seccion == 'hero' %}           Hero · Portada
+                {% elif seccion == 'nosotros' %}       Quiénes somos
+                {% elif seccion == 'servicios' %}      Servicios
+                {% elif seccion == 'especialidades' %} Especialidades
+                {% elif seccion == 'equipo' %}         Equipo
+                {% elif seccion == 'medicos' %}        Equipo médico
+                {% elif seccion == 'testimonios' %}    Testimonios
+                {% elif seccion == 'contacto' %}       Contacto
+                {% elif seccion == 'footer' %}         Pie de página
                 {% else %}{{ seccion|capitalize }}{% endif %}
               </h2>
               <p class="section-desc">
-                {% if seccion == 'marca' %}Nombre, colores y datos de contacto del header
-                {% elif seccion == 'hero' %}Texto principal de la portada
-                {% elif seccion == 'nosotros' %}Descripción de la empresa
-                {% elif seccion == 'contacto' %}Dirección y teléfono en la sección de contacto
+                {% if   seccion == 'marca' %}         Nombre del negocio, color principal y datos del header
+                {% elif seccion == 'hero' %}           Textos de la sección de portada
+                {% elif seccion == 'nosotros' %}       Descripción, misión, visión y valores
+                {% elif seccion == 'servicios' %}      Título y descripción de cada servicio ofrecido
+                {% elif seccion == 'especialidades' %} Especialidades médicas disponibles
+                {% elif seccion == 'equipo' %}         Nombres y cargos del equipo
+                {% elif seccion == 'medicos' %}        Nombres, especialidades y credenciales del equipo médico
+                {% elif seccion == 'testimonios' %}    Opiniones de clientes o pacientes
+                {% elif seccion == 'contacto' %}       Dirección, teléfono, email y horario
+                {% elif seccion == 'footer' %}         Nombre, descripción y datos de contacto del footer
                 {% endif %}
               </p>
             </div>

@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ 'Nuevo cliente' if modo == 'nuevo' else 'Editar cliente' }} · Panel Admin</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='admin.css') }}">
+</head>
+<body>
+
+  <nav class="admin-navbar">
+    <div class="navbar-brand">
+      <span class="logo-mark sm">PW</span>
+      <span class="navbar-title">Plantillas Web RD</span>
+      <span class="navbar-sep">|</span>
+      <span class="navbar-title">{{ 'Nuevo cliente' if modo == 'nuevo' else 'Editar cliente' }}</span>
+    </div>
+    <div class="navbar-actions">
+      <a href="{{ url_for('admin_clientes') }}" class="btn-back-nav">&larr; Volver a clientes</a>
+      <span class="navbar-user">{{ nombre }}</span>
+      <a href="{{ url_for('logout') }}" class="btn-logout">Cerrar sesión</a>
+    </div>
+  </nav>
+
+  <main class="admin-main" style="max-width:600px">
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% for category, message in messages %}
+        <div class="flash-message flash-{{ category }}">{{ message }}</div>
+      {% endfor %}
+    {% endwith %}
+
+    <div class="page-header">
+      <h1 class="page-title">{{ 'Crear nuevo cliente' if modo == 'nuevo' else 'Editar cliente' }}</h1>
+      {% if modo == 'editar' %}
+        <p class="page-subtitle">Usuario: <code>{{ cliente.usuario }}</code></p>
+      {% endif %}
+    </div>
+
+    <div class="form-card">
+      <form method="POST">
+
+        {% if modo == 'nuevo' %}
+        <div class="form-group">
+          <label for="usuario">Usuario</label>
+          <input type="text" id="usuario" name="usuario" required
+                 placeholder="Ej: clinica_norte" autocomplete="off"
+                 pattern="[a-zA-Z0-9_\-]+"
+                 title="Solo letras, números, guiones y guiones bajos">
+          <p class="field-hint">Solo letras, números, _ y -. No se puede cambiar después.</p>
+        </div>
+        {% endif %}
+
+        <div class="form-group">
+          <label for="nombre">Nombre completo / empresa</label>
+          <input type="text" id="nombre" name="nombre"
+                 placeholder="Ej: Clínica Norte S.R.L."
+                 value="{{ cliente.nombre if cliente else '' }}">
+        </div>
+
+        <div class="form-group">
+          <label for="password">
+            Contraseña
+            {% if modo == 'editar' %}
+              <span class="field-optional">(dejar vacío para no cambiar)</span>
+            {% endif %}
+          </label>
+          <input type="text" id="password" name="password"
+                 placeholder="{{ '••••••••' if modo == 'editar' else 'Mínimo 6 caracteres' }}"
+                 autocomplete="new-password"
+                 {{ 'required' if modo == 'nuevo' else '' }}>
+        </div>
+
+        <div class="form-group">
+          <label for="plan">Plan</label>
+          <select id="plan" name="plan" class="form-select">
+            <option value="landing"  {{ 'selected' if (cliente and cliente.plan == 'landing') or not cliente else '' }}>
+              Landing — Solo editor de su sitio
+            </option>
+            <option value="web5"     {{ 'selected' if cliente and cliente.plan == 'web5' else '' }}>
+              Web 5 páginas
+            </option>
+            <option value="admin"    {{ 'selected' if cliente and cliente.plan == 'admin' else '' }}>
+              Admin — Acceso completo
+            </option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Plantillas asignadas</label>
+          <div class="checkbox-group">
+            {% for clave in plantillas_disponibles %}
+            <label class="checkbox-item">
+              <input type="checkbox" name="plantillas" value="{{ clave }}"
+                     {{ 'checked' if clave in plantillas_asignadas else '' }}>
+              <span class="checkbox-label">{{ clave }}</span>
+            </label>
+            {% endfor %}
+          </div>
+          <p class="field-hint">El cliente solo verá y podrá editar las plantillas marcadas.</p>
+        </div>
+
+        <div class="form-actions">
+          <a href="{{ url_for('admin_clientes') }}" class="btn-cancelar">Cancelar</a>
+          <button type="submit" class="btn-guardar" style="min-width:160px">
+            {{ 'Crear cliente' if modo == 'nuevo' else 'Guardar cambios' }}
+          </button>
+        </div>
+
+      </form>
+    </div>
+
+  </main>
+
+</body>
+</html>

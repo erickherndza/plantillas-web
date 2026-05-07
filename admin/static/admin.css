@@ -400,6 +400,199 @@ img { max-width: 100%; display: block; }
   border-left: none; border-right: none; border-top: none;
 }
 
+/* ── ADMIN BANNER ────────────────────────────────────────────────────────── */
+.admin-banner {
+  display: flex; align-items: center; justify-content: space-between;
+  background: rgba(2,73,89,0.07);
+  border: 1px solid rgba(3,140,140,0.25);
+  border-radius: var(--radius);
+  padding: 12px 16px;
+  margin-bottom: 28px;
+}
+.admin-banner-left { display: flex; align-items: center; gap: 10px; }
+.admin-badge {
+  background: var(--admin-primary);
+  color: #fff;
+  font-size: 10px; font-weight: 700;
+  padding: 3px 8px; border-radius: 4px;
+  text-transform: uppercase; letter-spacing: 0.5px;
+}
+.admin-banner-text { font-size: 13px; color: var(--admin-muted); }
+.btn-admin-panel {
+  font-size: 13px; font-weight: 600;
+  color: var(--admin-accent);
+  padding: 7px 14px;
+  border: 1.5px solid var(--admin-accent);
+  border-radius: var(--radius);
+  transition: background .15s, color .15s;
+}
+.btn-admin-panel:hover { background: var(--admin-accent); color: #fff; }
+
+/* ── TABLA DE CLIENTES ───────────────────────────────────────────────────── */
+.table-wrap {
+  background: var(--admin-surface);
+  border: 1px solid var(--admin-border);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.clients-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.clients-table thead tr {
+  background: var(--admin-bg);
+  border-bottom: 1px solid var(--admin-border);
+}
+
+.clients-table th {
+  padding: 11px 16px;
+  text-align: left;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--admin-muted);
+}
+
+.clients-table td {
+  padding: 13px 16px;
+  border-bottom: 1px solid var(--admin-border);
+  vertical-align: middle;
+}
+
+.clients-table tbody tr:last-child td { border-bottom: none; }
+.clients-table tbody tr:hover td { background: rgba(3,140,140,0.03); }
+
+.code-tag {
+  font-family: monospace; font-size: 12px;
+  background: var(--admin-bg);
+  padding: 3px 7px; border-radius: 4px;
+  color: var(--admin-text);
+}
+
+.plan-badge {
+  font-size: 11px; font-weight: 600;
+  padding: 3px 9px; border-radius: 20px;
+  text-transform: uppercase; letter-spacing: 0.3px;
+}
+.plan-admin   { background: #ede9fe; color: #6d28d9; }
+.plan-landing { background: #dcfce7; color: #16a34a; }
+.plan-web5    { background: #dbeafe; color: #1d4ed8; }
+
+.tag-plantilla {
+  display: inline-block;
+  background: rgba(3,140,140,0.1);
+  color: var(--admin-accent);
+  font-size: 11px; font-weight: 600;
+  padding: 2px 8px; border-radius: 4px;
+  margin-right: 4px; margin-bottom: 2px;
+}
+
+.text-muted { color: var(--admin-muted); font-size: 12px; }
+
+.row-actions { display: flex; gap: 8px; align-items: center; }
+
+.btn-row-edit {
+  font-size: 12px; font-weight: 600;
+  padding: 5px 12px;
+  border-radius: var(--radius);
+  background: var(--admin-bg);
+  border: 1px solid var(--admin-border);
+  color: var(--admin-text);
+  transition: border-color .15s, color .15s;
+}
+.btn-row-edit:hover { border-color: var(--admin-accent); color: var(--admin-accent); }
+
+.btn-row-delete {
+  font-size: 12px; font-weight: 600;
+  padding: 5px 12px;
+  border-radius: var(--radius);
+  background: none;
+  border: 1px solid #fecaca;
+  color: var(--admin-error);
+  cursor: pointer;
+  transition: background .15s;
+}
+.btn-row-delete:hover { background: #fee2e2; }
+
+/* ── FORMULARIO DE CLIENTE ───────────────────────────────────────────────── */
+.form-card {
+  background: var(--admin-surface);
+  border: 1px solid var(--admin-border);
+  border-radius: 12px;
+  padding: 32px;
+}
+
+.form-select {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1.5px solid var(--admin-border);
+  border-radius: var(--radius);
+  font-size: 14px;
+  font-family: inherit;
+  color: var(--admin-text);
+  background: var(--admin-surface);
+  outline: none;
+  cursor: pointer;
+  transition: border-color .2s, box-shadow .2s;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23666' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+  padding-right: 36px;
+}
+.form-select:focus {
+  border-color: var(--admin-accent);
+  box-shadow: 0 0 0 3px rgba(3,140,140,.12);
+}
+
+.checkbox-group {
+  display: flex; flex-direction: column; gap: 10px;
+  padding: 14px;
+  border: 1.5px solid var(--admin-border);
+  border-radius: var(--radius);
+  background: var(--admin-bg);
+}
+
+.checkbox-item {
+  display: flex; align-items: center; gap: 10px;
+  cursor: pointer;
+}
+
+.checkbox-item input[type="checkbox"] {
+  width: 16px; height: 16px;
+  accent-color: var(--admin-accent);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.checkbox-label { font-size: 13px; color: var(--admin-text); font-family: monospace; }
+
+.field-optional {
+  font-weight: 400; font-size: 11px;
+  color: var(--admin-muted); text-transform: none; letter-spacing: 0;
+}
+
+.form-actions {
+  display: flex; align-items: center; justify-content: flex-end;
+  gap: 12px; margin-top: 8px;
+  padding-top: 24px;
+  border-top: 1px solid var(--admin-border);
+}
+
+.btn-cancelar {
+  font-size: 13px; font-weight: 600;
+  padding: 10px 20px;
+  border-radius: var(--radius);
+  color: var(--admin-muted);
+  border: 1px solid var(--admin-border);
+  transition: border-color .15s, color .15s;
+}
+.btn-cancelar:hover { border-color: var(--admin-text); color: var(--admin-text); }
+
 /* ── UTILITIES ───────────────────────────────────────────────────────────── */
 .hidden { display: none !important; }
 

@@ -27,6 +27,18 @@
       {% endfor %}
     {% endwith %}
 
+    {% if es_admin %}
+    <div class="admin-banner">
+      <div class="admin-banner-left">
+        <span class="admin-badge">Admin</span>
+        <span class="admin-banner-text">Panel de administración activo</span>
+      </div>
+      <a href="{{ url_for('admin_clientes') }}" class="btn-admin-panel">
+        Gestionar clientes &rarr;
+      </a>
+    </div>
+    {% endif %}
+
     <div class="page-header">
       <h1 class="page-title">Hola, {{ nombre }} 👋</h1>
       <p class="page-subtitle">Selecciona el sitio que quieres editar</p>

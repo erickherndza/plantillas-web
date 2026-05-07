@@ -6,126 +6,137 @@
       "preview_url": "https://plantillas-web.themethoner.workers.dev/",
       "campos": {
         "marca": {
-          "nombre_negocio": {
-            "label": "Nombre del negocio",
-            "tipo": "text",
-            "selector": ".header-brand",
-            "placeholder": "Ej: Studio Bella"
-          },
-          "color_primario": {
-            "label": "Color principal",
-            "tipo": "color",
-            "css_var": "--c-primary",
-            "valor_actual": "#116600"
-          },
-          "telefono": {
-            "label": "Teléfono",
-            "tipo": "tel",
-            "selector": ".header-contact span:first-child",
-            "placeholder": "(809) 000-0000"
-          },
-          "email": {
-            "label": "Email",
-            "tipo": "email",
-            "selector": ".header-contact span:last-child",
-            "placeholder": "info@tunegocio.com"
-          }
+          "nombre_negocio":  { "label": "Nombre del negocio",      "tipo": "text",     "selector": ".header-brand",                              "placeholder": "Ej: Studio Bella" },
+          "color_primario":  { "label": "Color principal",         "tipo": "color",    "css_var": "--c-primary", "valor_actual": "#116600" },
+          "telefono":        { "label": "Teléfono (header)",       "tipo": "tel",      "selector": ".header-contact span:first-child",           "placeholder": "(809) 000-0000" },
+          "email":           { "label": "Email (header)",          "tipo": "email",    "selector": ".header-contact span:last-child",            "placeholder": "info@tunegocio.com" }
         },
         "hero": {
-          "eyebrow": {
-            "label": "Texto pequeño sobre el título",
-            "tipo": "text",
-            "selector": ".hero-eyebrow"
-          },
-          "titulo": {
-            "label": "Título principal",
-            "tipo": "text",
-            "selector": ".hero-title"
-          },
-          "subtitulo": {
-            "label": "Subtítulo",
-            "tipo": "textarea",
-            "selector": ".hero-subtitle"
-          }
+          "eyebrow":         { "label": "Texto sobre el título",   "tipo": "text",     "selector": ".hero-eyebrow" },
+          "titulo":          { "label": "Título principal",        "tipo": "text",     "selector": ".hero-title" },
+          "subtitulo":       { "label": "Subtítulo",              "tipo": "textarea", "selector": ".hero-subtitle" }
         },
         "nosotros": {
-          "subtitulo": {
-            "label": "Descripción de la empresa",
-            "tipo": "textarea",
-            "selector": "#nosotros .section-subtitle"
-          }
+          "descripcion":     { "label": "Descripción de la empresa", "tipo": "textarea", "selector": "#nosotros .section-subtitle" },
+          "mision":          { "label": "Misión",                  "tipo": "textarea", "selector": "#nosotros .mvv-card:nth-child(1) p" },
+          "vision":          { "label": "Visión",                  "tipo": "textarea", "selector": "#nosotros .mvv-card:nth-child(2) p" },
+          "valores":         { "label": "Valores",                 "tipo": "textarea", "selector": "#nosotros .mvv-card:nth-child(3) p" }
+        },
+        "servicios": {
+          "titulo_seccion":  { "label": "Título de la sección",        "tipo": "text",     "selector": "#servicios .section-title" },
+          "subtitulo_seccion":{ "label": "Subtítulo de la sección",    "tipo": "textarea", "selector": "#servicios .section-subtitle" },
+          "serv1_titulo":    { "label": "Servicio 1 — Título",        "tipo": "text",     "selector": "#servicios .service-card:nth-child(1) .service-title" },
+          "serv1_desc":      { "label": "Servicio 1 — Descripción",   "tipo": "textarea", "selector": "#servicios .service-card:nth-child(1) .service-desc" },
+          "serv2_titulo":    { "label": "Servicio 2 — Título",        "tipo": "text",     "selector": "#servicios .service-card:nth-child(2) .service-title" },
+          "serv2_desc":      { "label": "Servicio 2 — Descripción",   "tipo": "textarea", "selector": "#servicios .service-card:nth-child(2) .service-desc" },
+          "serv3_titulo":    { "label": "Servicio 3 — Título",        "tipo": "text",     "selector": "#servicios .service-card:nth-child(3) .service-title" },
+          "serv3_desc":      { "label": "Servicio 3 — Descripción",   "tipo": "textarea", "selector": "#servicios .service-card:nth-child(3) .service-desc" }
+        },
+        "equipo": {
+          "titulo_seccion":  { "label": "Título de la sección",    "tipo": "text", "selector": "#equipo .section-title" },
+          "m1_nombre":       { "label": "Miembro 1 — Nombre",      "tipo": "text", "selector": "#equipo .team-card:nth-child(1) .team-name" },
+          "m1_rol":          { "label": "Miembro 1 — Cargo",       "tipo": "text", "selector": "#equipo .team-card:nth-child(1) .team-role" },
+          "m2_nombre":       { "label": "Miembro 2 — Nombre",      "tipo": "text", "selector": "#equipo .team-card:nth-child(2) .team-name" },
+          "m2_rol":          { "label": "Miembro 2 — Cargo",       "tipo": "text", "selector": "#equipo .team-card:nth-child(2) .team-role" },
+          "m3_nombre":       { "label": "Miembro 3 — Nombre",      "tipo": "text", "selector": "#equipo .team-card:nth-child(3) .team-name" },
+          "m3_rol":          { "label": "Miembro 3 — Cargo",       "tipo": "text", "selector": "#equipo .team-card:nth-child(3) .team-role" }
         },
         "contacto": {
-          "direccion": {
-            "label": "Dirección",
-            "tipo": "text",
-            "selector": ".contact-item:first-child span:last-child"
-          }
+          "titulo_seccion":  { "label": "Título de la sección",    "tipo": "text",  "selector": "#contacto .section-title" },
+          "direccion":       { "label": "Dirección",               "tipo": "text",  "selector": ".contact-item:first-child span:last-child" },
+          "telefono_c":      { "label": "Teléfono",                "tipo": "tel",   "selector": ".contact-item:nth-child(2) span:last-child" },
+          "email_c":         { "label": "Email",                   "tipo": "email", "selector": ".contact-item:nth-child(3) span:last-child" }
+        },
+        "footer": {
+          "nombre_footer":   { "label": "Nombre del negocio",      "tipo": "text",     "selector": ".footer-brand" },
+          "desc_footer":     { "label": "Descripción",             "tipo": "textarea", "selector": ".footer-desc" },
+          "dir_footer":      { "label": "Dirección",               "tipo": "text",     "selector": ".footer-contact-col p:nth-child(2)" },
+          "tel_footer":      { "label": "Teléfono",                "tipo": "tel",      "selector": ".footer-contact-col p:nth-child(3)" },
+          "email_footer":    { "label": "Email",                   "tipo": "email",    "selector": ".footer-contact-col p:nth-child(4)" }
         }
       }
     },
+
     "doctores": {
       "ruta": "../doctores/index.html",
       "nombre": "Consultorio / Clínica Médica",
       "preview_url": "https://plantillas-web.themethoner.workers.dev/doctores/",
       "campos": {
         "marca": {
-          "nombre_negocio": {
-            "label": "Nombre de la clínica",
-            "tipo": "text",
-            "selector": ".header-brand",
-            "placeholder": "Ej: Clínica San Rafael"
-          },
-          "color_primario": {
-            "label": "Color principal",
-            "tipo": "color",
-            "css_var": "--c-primary",
-            "valor_actual": "#0077B6"
-          },
-          "telefono": {
-            "label": "Teléfono",
-            "tipo": "tel",
-            "selector": ".header-contact span:first-child"
-          },
-          "email": {
-            "label": "Email de citas",
-            "tipo": "email",
-            "selector": ".header-contact span:nth-child(2)"
-          },
-          "horario": {
-            "label": "Horario (header)",
-            "tipo": "text",
-            "selector": ".header-badge"
-          }
+          "nombre_negocio":  { "label": "Nombre de la clínica",        "tipo": "text",  "selector": ".header-brand",                     "placeholder": "Ej: Clínica San Rafael" },
+          "color_primario":  { "label": "Color principal",             "tipo": "color", "css_var": "--c-primary", "valor_actual": "#0077B6" },
+          "telefono":        { "label": "Teléfono (header)",           "tipo": "tel",   "selector": ".header-contact span:first-child" },
+          "email":           { "label": "Email de citas (header)",     "tipo": "email", "selector": ".header-contact span:nth-child(2)" },
+          "horario":         { "label": "Horario (header)",            "tipo": "text",  "selector": ".header-badge" }
         },
         "hero": {
-          "eyebrow": {
-            "label": "Texto sobre el título",
-            "tipo": "text",
-            "selector": ".hero-eyebrow"
-          },
-          "titulo": {
-            "label": "Título principal",
-            "tipo": "text",
-            "selector": ".hero-title"
-          },
-          "subtitulo": {
-            "label": "Subtítulo",
-            "tipo": "textarea",
-            "selector": ".hero-subtitle"
-          }
+          "eyebrow":         { "label": "Texto sobre el título",       "tipo": "text",     "selector": ".hero-eyebrow" },
+          "titulo":          { "label": "Título principal",            "tipo": "text",     "selector": ".hero-title" },
+          "subtitulo":       { "label": "Subtítulo",                  "tipo": "textarea", "selector": ".hero-subtitle" }
+        },
+        "nosotros": {
+          "descripcion":     { "label": "Descripción de la clínica",   "tipo": "textarea", "selector": "#nosotros .section-subtitle" },
+          "mision":          { "label": "Misión",                      "tipo": "textarea", "selector": "#nosotros .mvv-card:nth-child(1) p" },
+          "vision":          { "label": "Visión",                      "tipo": "textarea", "selector": "#nosotros .mvv-card:nth-child(2) p" },
+          "valores":         { "label": "Valores",                     "tipo": "textarea", "selector": "#nosotros .mvv-card:nth-child(3) p" }
+        },
+        "especialidades": {
+          "titulo_seccion":  { "label": "Título de la sección",         "tipo": "text",     "selector": "#especialidades .section-title" },
+          "subtitulo_seccion":{ "label": "Subtítulo de la sección",     "tipo": "textarea", "selector": "#especialidades .section-subtitle" },
+          "esp1_titulo":     { "label": "Especialidad 1 — Nombre",      "tipo": "text",     "selector": "#especialidades .service-card:nth-child(1) .service-title" },
+          "esp1_desc":       { "label": "Especialidad 1 — Descripción", "tipo": "textarea", "selector": "#especialidades .service-card:nth-child(1) .service-desc" },
+          "esp2_titulo":     { "label": "Especialidad 2 — Nombre",      "tipo": "text",     "selector": "#especialidades .service-card:nth-child(2) .service-title" },
+          "esp2_desc":       { "label": "Especialidad 2 — Descripción", "tipo": "textarea", "selector": "#especialidades .service-card:nth-child(2) .service-desc" },
+          "esp3_titulo":     { "label": "Especialidad 3 — Nombre",      "tipo": "text",     "selector": "#especialidades .service-card:nth-child(3) .service-title" },
+          "esp3_desc":       { "label": "Especialidad 3 — Descripción", "tipo": "textarea", "selector": "#especialidades .service-card:nth-child(3) .service-desc" },
+          "esp4_titulo":     { "label": "Especialidad 4 — Nombre",      "tipo": "text",     "selector": "#especialidades .service-card:nth-child(4) .service-title" },
+          "esp4_desc":       { "label": "Especialidad 4 — Descripción", "tipo": "textarea", "selector": "#especialidades .service-card:nth-child(4) .service-desc" },
+          "esp5_titulo":     { "label": "Especialidad 5 — Nombre",      "tipo": "text",     "selector": "#especialidades .service-card:nth-child(5) .service-title" },
+          "esp5_desc":       { "label": "Especialidad 5 — Descripción", "tipo": "textarea", "selector": "#especialidades .service-card:nth-child(5) .service-desc" },
+          "esp6_titulo":     { "label": "Especialidad 6 — Nombre",      "tipo": "text",     "selector": "#especialidades .service-card:nth-child(6) .service-title" },
+          "esp6_desc":       { "label": "Especialidad 6 — Descripción", "tipo": "textarea", "selector": "#especialidades .service-card:nth-child(6) .service-desc" }
+        },
+        "medicos": {
+          "titulo_seccion":  { "label": "Título de la sección",         "tipo": "text", "selector": "#medicos .section-title" },
+          "med1_nombre":     { "label": "Médico 1 — Nombre",            "tipo": "text", "selector": "#medicos .team-card:nth-child(1) .team-name" },
+          "med1_especialidad":{ "label": "Médico 1 — Especialidad",     "tipo": "text", "selector": "#medicos .team-card:nth-child(1) .team-role" },
+          "med1_credenciales":{ "label": "Médico 1 — Credenciales",     "tipo": "text", "selector": "#medicos .team-card:nth-child(1) .team-credentials" },
+          "med2_nombre":     { "label": "Médico 2 — Nombre",            "tipo": "text", "selector": "#medicos .team-card:nth-child(2) .team-name" },
+          "med2_especialidad":{ "label": "Médico 2 — Especialidad",     "tipo": "text", "selector": "#medicos .team-card:nth-child(2) .team-role" },
+          "med2_credenciales":{ "label": "Médico 2 — Credenciales",     "tipo": "text", "selector": "#medicos .team-card:nth-child(2) .team-credentials" },
+          "med3_nombre":     { "label": "Médico 3 — Nombre",            "tipo": "text", "selector": "#medicos .team-card:nth-child(3) .team-name" },
+          "med3_especialidad":{ "label": "Médico 3 — Especialidad",     "tipo": "text", "selector": "#medicos .team-card:nth-child(3) .team-role" },
+          "med3_credenciales":{ "label": "Médico 3 — Credenciales",     "tipo": "text", "selector": "#medicos .team-card:nth-child(3) .team-credentials" },
+          "med4_nombre":     { "label": "Médico 4 — Nombre",            "tipo": "text", "selector": "#medicos .team-card:nth-child(4) .team-name" },
+          "med4_especialidad":{ "label": "Médico 4 — Especialidad",     "tipo": "text", "selector": "#medicos .team-card:nth-child(4) .team-role" },
+          "med4_credenciales":{ "label": "Médico 4 — Credenciales",     "tipo": "text", "selector": "#medicos .team-card:nth-child(4) .team-credentials" }
+        },
+        "testimonios": {
+          "titulo_seccion":  { "label": "Título de la sección",         "tipo": "text",     "selector": "#testimonios .section-title" },
+          "test1_texto":     { "label": "Testimonio 1 — Texto",         "tipo": "textarea", "selector": "#testimonios .testimonio-card:nth-child(1) .testimonio-texto" },
+          "test1_nombre":    { "label": "Testimonio 1 — Nombre",        "tipo": "text",     "selector": "#testimonios .testimonio-card:nth-child(1) .testimonio-autor strong" },
+          "test1_desc":      { "label": "Testimonio 1 — Descripción",   "tipo": "text",     "selector": "#testimonios .testimonio-card:nth-child(1) .testimonio-autor span" },
+          "test2_texto":     { "label": "Testimonio 2 — Texto",         "tipo": "textarea", "selector": "#testimonios .testimonio-card:nth-child(2) .testimonio-texto" },
+          "test2_nombre":    { "label": "Testimonio 2 — Nombre",        "tipo": "text",     "selector": "#testimonios .testimonio-card:nth-child(2) .testimonio-autor strong" },
+          "test2_desc":      { "label": "Testimonio 2 — Descripción",   "tipo": "text",     "selector": "#testimonios .testimonio-card:nth-child(2) .testimonio-autor span" },
+          "test3_texto":     { "label": "Testimonio 3 — Texto",         "tipo": "textarea", "selector": "#testimonios .testimonio-card:nth-child(3) .testimonio-texto" },
+          "test3_nombre":    { "label": "Testimonio 3 — Nombre",        "tipo": "text",     "selector": "#testimonios .testimonio-card:nth-child(3) .testimonio-autor strong" },
+          "test3_desc":      { "label": "Testimonio 3 — Descripción",   "tipo": "text",     "selector": "#testimonios .testimonio-card:nth-child(3) .testimonio-autor span" }
         },
         "contacto": {
-          "direccion": {
-            "label": "Dirección completa",
-            "tipo": "text",
-            "selector": ".contact-item:first-child span:last-child"
-          },
-          "telefono_pie": {
-            "label": "Teléfono (sección contacto)",
-            "tipo": "tel",
-            "selector": ".contact-item:nth-child(2) span:last-child"
-          }
+          "titulo_seccion":  { "label": "Título de la sección",         "tipo": "text",  "selector": "#contacto .section-title" },
+          "direccion":       { "label": "Dirección completa",           "tipo": "text",  "selector": ".contact-item:first-child span:last-child" },
+          "telefono_c":      { "label": "Teléfono",                     "tipo": "tel",   "selector": ".contact-item:nth-child(2) span:last-child" },
+          "email_c":         { "label": "Email de citas",               "tipo": "email", "selector": ".contact-item:nth-child(3) span:last-child" },
+          "horario_c":       { "label": "Horario",                      "tipo": "text",  "selector": ".contact-item:nth-child(4) span:last-child" }
+        },
+        "footer": {
+          "nombre_footer":   { "label": "Nombre de la clínica",         "tipo": "text",     "selector": ".footer-brand" },
+          "desc_footer":     { "label": "Descripción",                  "tipo": "textarea", "selector": ".footer-desc" },
+          "dir_footer":      { "label": "Dirección (footer)",           "tipo": "text",     "selector": ".footer-contact-col p:nth-child(2)" },
+          "ciudad_footer":   { "label": "Ciudad (footer)",              "tipo": "text",     "selector": ".footer-contact-col p:nth-child(3)" },
+          "tel_footer":      { "label": "Teléfono (footer)",            "tipo": "tel",      "selector": ".footer-contact-col p:nth-child(4)" },
+          "email_footer":    { "label": "Email (footer)",               "tipo": "email",    "selector": ".footer-contact-col p:nth-child(5)" }
         }
       }
     }
