@@ -8,23 +8,21 @@
 </head>
 <body>
 
-  <!-- Navbar -->
   <nav class="admin-navbar">
     <div class="navbar-brand">
-      <a href="{{ url_for('dashboard') }}" class="btn-back-nav">← Dashboard</a>
+      <a href="{{ url_for('dashboard') }}" class="btn-back-nav">&larr; Dashboard</a>
       <span class="navbar-sep">|</span>
       <span class="navbar-title">{{ plantilla.nombre }}</span>
     </div>
     <div class="navbar-actions">
       <a href="{{ url_for('preview', plantilla_id=plantilla_id) }}" target="_blank" class="btn-ver-vivo">
-        🔗 Ver en vivo
+        Ver en vivo &rarr;
       </a>
       <span class="navbar-user">{{ nombre }}</span>
       <a href="{{ url_for('logout') }}" class="btn-logout">Salir</a>
     </div>
   </nav>
 
-  <!-- Flash messages -->
   {% with messages = get_flashed_messages(with_categories=true) %}
     {% for category, message in messages %}
       <div class="flash-message flash-{{ category }} flash-top">{{ message }}</div>
@@ -33,10 +31,12 @@
 
   <div class="editor-layout">
 
-    <!-- Sidebar de secciones -->
+    <!-- Sidebar -->
     <aside class="editor-sidebar">
       <p class="sidebar-label">Secciones</p>
       <nav class="section-nav">
+
+        {# Secciones de campos regulares #}
         {% for seccion in secciones %}
           <button type="button"
                   class="section-nav-item {% if loop.first %}active{% endif %}"
@@ -44,117 +44,210 @@
             {% if   seccion == 'marca' %}         Marca
             {% elif seccion == 'hero' %}           Hero
             {% elif seccion == 'nosotros' %}       Nosotros
-            {% elif seccion == 'servicios' %}      Servicios
-            {% elif seccion == 'especialidades' %} Especialidades
-            {% elif seccion == 'equipo' %}         Equipo
-            {% elif seccion == 'medicos' %}        Médicos
-            {% elif seccion == 'testimonios' %}    Testimonios
             {% elif seccion == 'contacto' %}       Contacto
             {% elif seccion == 'footer' %}         Footer
             {% else %}{{ seccion|capitalize }}{% endif %}
           </button>
         {% endfor %}
-      </nav>
 
+        {# Secciones de repeaters #}
+        {% for rep_id, rep_conf in plantilla.get('repeaters', {}).items() %}
+          <button type="button"
+                  class="section-nav-item section-nav-repeater"
+                  data-section="rep-{{ rep_id }}">
+            {{ rep_conf.label }}
+          </button>
+        {% endfor %}
+
+      </nav>
       <div class="sidebar-info">
-        <p>Los cambios se guardan en el HTML de tu plantilla y se publican automáticamente en Cloudflare Pages.</p>
+        Los cambios se aplican al HTML de la plantilla y se publican en Cloudflare Pages.
       </div>
     </aside>
 
-    <!-- Área principal: formulario -->
+    <!-- Área del formulario -->
     <main class="editor-main">
-      <form method="POST" action="{{ url_for('editor', plantilla_id=plantilla_id) }}" id="editor-form">
+      <form method="POST"
+            action="{{ url_for('editor', plantilla_id=plantilla_id) }}"
+            id="editor-form"
+            enctype="multipart/form-data">
 
+        {# ── Secciones de campos regulares ── #}
         {% for seccion, campos in plantilla.campos.items() %}
           <div class="form-section {% if not loop.first %}hidden{% endif %}"
                id="section-{{ seccion }}">
 
             <div class="section-header">
               <h2 class="section-title">
-                {% if   seccion == 'marca' %}         Marca e identidad
-                {% elif seccion == 'hero' %}           Hero · Portada
-                {% elif seccion == 'nosotros' %}       Quiénes somos
-                {% elif seccion == 'servicios' %}      Servicios
-                {% elif seccion == 'especialidades' %} Especialidades
-                {% elif seccion == 'equipo' %}         Equipo
-                {% elif seccion == 'medicos' %}        Equipo médico
-                {% elif seccion == 'testimonios' %}    Testimonios
-                {% elif seccion == 'contacto' %}       Contacto
-                {% elif seccion == 'footer' %}         Pie de página
+                {% if   seccion == 'marca' %}    Marca e identidad
+                {% elif seccion == 'hero' %}     Hero · Portada
+                {% elif seccion == 'nosotros' %} Quiénes somos
+                {% elif seccion == 'contacto' %} Contacto
+                {% elif seccion == 'footer' %}   Pie de página
                 {% else %}{{ seccion|capitalize }}{% endif %}
               </h2>
               <p class="section-desc">
-                {% if   seccion == 'marca' %}         Nombre del negocio, color principal y datos del header
-                {% elif seccion == 'hero' %}           Textos de la sección de portada
-                {% elif seccion == 'nosotros' %}       Descripción, misión, visión y valores
-                {% elif seccion == 'servicios' %}      Título y descripción de cada servicio ofrecido
-                {% elif seccion == 'especialidades' %} Especialidades médicas disponibles
-                {% elif seccion == 'equipo' %}         Nombres y cargos del equipo
-                {% elif seccion == 'medicos' %}        Nombres, especialidades y credenciales del equipo médico
-                {% elif seccion == 'testimonios' %}    Opiniones de clientes o pacientes
-                {% elif seccion == 'contacto' %}       Dirección, teléfono, email y horario
-                {% elif seccion == 'footer' %}         Nombre, descripción y datos de contacto del footer
+                {% if   seccion == 'marca' %}    Logo, nombre, color principal y datos del header
+                {% elif seccion == 'hero' %}     Imagen de portada y textos del hero
+                {% elif seccion == 'nosotros' %} Descripción, misión, visión y valores
+                {% elif seccion == 'contacto' %} Dirección, teléfono, email y horario
+                {% elif seccion == 'footer' %}   Nombre, descripción y datos del pie de página
                 {% endif %}
               </p>
             </div>
 
             {% for campo_id, config in campos.items() %}
-              {% set field_name = seccion ~ '__' ~ campo_id %}
+              {% set field_name   = seccion ~ '__' ~ campo_id %}
               {% set valor_actual = valores.get(seccion, {}).get(campo_id, '') %}
 
               <div class="form-group">
                 <label for="{{ field_name }}">{{ config.label }}</label>
 
+                {# ── Color picker ── #}
                 {% if config.tipo == 'color' %}
                   <div class="color-field">
-                    <input type="color"
-                           id="{{ field_name }}"
-                           name="{{ field_name }}"
-                           value="{{ valor_actual }}"
-                           class="color-input"
+                    <input type="color" id="{{ field_name }}" name="{{ field_name }}"
+                           value="{{ valor_actual }}" class="color-input"
                            data-preview="{{ field_name }}_preview">
                     <div class="color-preview" id="{{ field_name }}_preview"
                          style="background:{{ valor_actual }}"></div>
                     <span class="color-hex" id="{{ field_name }}_hex">{{ valor_actual }}</span>
                   </div>
-                  <p class="field-hint">Este color se aplicará en todo el sitio.</p>
+                  <p class="field-hint">Se aplica en todo el sitio.</p>
 
+                {# ── Logo / imagen con upload ── #}
+                {% elif config.tipo == 'imagen_src' %}
+                  <div class="img-upload-zone" data-plantilla="{{ plantilla_id }}" data-target="{{ field_name }}">
+                    <div class="img-upload-preview">
+                      {% if valor_actual %}
+                        <img src="{{ valor_actual }}" class="img-thumb" alt="Logo actual">
+                      {% else %}
+                        <div class="img-placeholder">Sin logo</div>
+                      {% endif %}
+                    </div>
+                    <div class="img-upload-actions">
+                      <label class="btn-upload-label">
+                        Seleccionar imagen
+                        <input type="file" accept="image/png,image/jpeg,image/webp"
+                               class="img-file-input" style="display:none">
+                      </label>
+                      {% if valor_actual %}
+                        <button type="button" class="btn-remove-img"
+                                data-target="{{ field_name }}">Quitar logo</button>
+                      {% endif %}
+                    </div>
+                    <input type="hidden" name="{{ field_name }}" value="{{ valor_actual }}" class="img-url-hidden">
+                    {% if config.sugerencia %}
+                      <p class="img-sugerencia">{{ config.sugerencia }}</p>
+                    {% endif %}
+                  </div>
+
+                {# ── Imagen de fondo (URL + upload) ── #}
+                {% elif config.tipo == 'imagen_bg' %}
+                  <div class="img-bg-field">
+                    <input type="text" id="{{ field_name }}" name="{{ field_name }}"
+                           value="{{ valor_actual }}"
+                           placeholder="https://... o sube una imagen"
+                           class="img-bg-url-input">
+                    <div class="img-bg-actions">
+                      <label class="btn-upload-label btn-upload-sm"
+                             data-plantilla="{{ plantilla_id }}"
+                             data-target="{{ field_name }}">
+                        Subir imagen
+                        <input type="file" accept="image/*" class="img-file-bg-input" style="display:none">
+                      </label>
+                    </div>
+                    {% if config.sugerencia %}
+                      <p class="img-sugerencia">{{ config.sugerencia }}</p>
+                    {% endif %}
+                    {% if valor_actual %}
+                      <div class="img-bg-preview" style="background-image:url('{{ valor_actual }}')"></div>
+                    {% endif %}
+                  </div>
+
+                {# ── Textarea ── #}
                 {% elif config.tipo == 'textarea' %}
-                  <textarea id="{{ field_name }}"
-                            name="{{ field_name }}"
-                            rows="4"
-                            placeholder="{{ config.get('placeholder', '') }}">{{ valor_actual }}</textarea>
+                  <textarea id="{{ field_name }}" name="{{ field_name }}"
+                            rows="4" placeholder="{{ config.get('placeholder', '') }}">{{ valor_actual }}</textarea>
 
+                {# ── Inputs normales (text, tel, email, href) ── #}
                 {% else %}
-                  <input type="{{ config.tipo }}"
-                         id="{{ field_name }}"
-                         name="{{ field_name }}"
+                  <input type="{{ 'text' if config.tipo == 'href' else config.tipo }}"
+                         id="{{ field_name }}" name="{{ field_name }}"
                          value="{{ valor_actual }}"
                          placeholder="{{ config.get('placeholder', '') }}">
                 {% endif %}
+
               </div>
             {% endfor %}
 
           </div>
         {% endfor %}
 
+        {# ── Secciones de repeaters ── #}
+        {% for rep_id, rep_conf in plantilla.get('repeaters', {}).items() %}
+          <div class="form-section hidden" id="section-rep-{{ rep_id }}">
+
+            <div class="section-header">
+              <h2 class="section-title">{{ rep_conf.label }}</h2>
+              <p class="section-desc">
+                {% if rep_conf.agregar_eliminar %}
+                  Puedes agregar, editar y eliminar elementos.
+                {% else %}
+                  Edita el texto y los enlaces del menú.
+                {% endif %}
+              </p>
+            </div>
+
+            <div class="repeater-container" data-repeater="{{ rep_id }}"
+                 data-puede-agregar="{{ 'true' if rep_conf.agregar_eliminar else 'false' }}">
+
+              <div class="repeater-list">
+                {% for item in repeaters_valores.get(rep_id, []) %}
+                  {% set item_idx = loop.index0 %}
+                  <div class="repeater-item">
+                    <div class="repeater-item-header">
+                      <span class="repeater-item-num">{{ loop.index }}</span>
+                      {% if rep_conf.agregar_eliminar %}
+                        <button type="button" class="btn-remove-item" title="Eliminar">✕</button>
+                      {% endif %}
+                    </div>
+                    {% for campo_id, campo_conf in rep_conf.campos.items() %}
+                      <div class="form-group">
+                        <label>{{ campo_conf.label }}</label>
+                        {% if campo_conf.tipo == 'textarea' %}
+                          <textarea name="rep__{{ rep_id }}__{{ item_idx }}__{{ campo_id }}"
+                                    rows="3">{{ item.get(campo_id, '') }}</textarea>
+                        {% else %}
+                          <input type="{{ 'text' if campo_conf.tipo in ['href', 'texto'] else campo_conf.tipo }}"
+                                 name="rep__{{ rep_id }}__{{ item_idx }}__{{ campo_id }}"
+                                 value="{{ item.get(campo_id, '') }}"
+                                 placeholder="{{ campo_conf.get('placeholder', '') }}">
+                        {% endif %}
+                      </div>
+                    {% endfor %}
+                  </div>
+                {% endfor %}
+              </div>
+
+              {% if rep_conf.agregar_eliminar %}
+                <button type="button" class="btn-add-item">+ Agregar elemento</button>
+              {% endif %}
+
+            </div>
+          </div>
+        {% endfor %}
+
       </form>
     </main>
-
   </div>
 
-  <!-- Footer sticky con botón guardar -->
   <footer class="editor-footer">
     <div class="editor-footer-inner">
-      <p class="footer-note">
-        Los cambios se publicarán en
-        <strong>~30 segundos</strong> vía Cloudflare Pages
-      </p>
+      <p class="footer-note">Los cambios se publican en <strong>~30 s</strong> vía Cloudflare Pages</p>
       <button type="submit" form="editor-form" class="btn-guardar" id="btn-guardar">
-        <span class="btn-text">💾 Guardar y publicar</span>
-        <span class="btn-loading hidden">
-          <span class="spinner"></span> Publicando...
-        </span>
+        <span class="btn-text">Guardar y publicar</span>
+        <span class="btn-loading hidden"><span class="spinner"></span> Publicando...</span>
       </button>
     </div>
   </footer>

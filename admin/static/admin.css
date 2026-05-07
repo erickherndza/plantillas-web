@@ -400,6 +400,165 @@ img { max-width: 100%; display: block; }
   border-left: none; border-right: none; border-top: none;
 }
 
+/* ── IMAGE UPLOAD (logo) ─────────────────────────────────────────────────── */
+.img-upload-zone {
+  border: 2px dashed var(--admin-border);
+  border-radius: var(--radius);
+  padding: 16px;
+  background: var(--admin-bg);
+}
+
+.img-upload-preview {
+  margin-bottom: 12px;
+  min-height: 56px;
+  display: flex;
+  align-items: center;
+}
+
+.img-thumb {
+  max-height: 64px;
+  max-width: 240px;
+  width: auto;
+  border-radius: var(--radius);
+  border: 1px solid var(--admin-border);
+  object-fit: contain;
+  background: #fff;
+}
+
+.img-placeholder {
+  font-size: 12px;
+  color: var(--admin-muted);
+  padding: 10px 14px;
+  background: var(--admin-surface);
+  border: 1px solid var(--admin-border);
+  border-radius: var(--radius);
+}
+
+.img-upload-actions { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+
+.btn-upload-label {
+  display: inline-block;
+  padding: 8px 16px;
+  background: var(--admin-accent);
+  color: #fff;
+  border-radius: var(--radius);
+  font-size: 12px; font-weight: 600;
+  cursor: pointer;
+  transition: filter .2s;
+}
+.btn-upload-label:hover { filter: brightness(1.1); }
+.btn-upload-sm { padding: 6px 12px; font-size: 11px; }
+
+.btn-remove-img {
+  font-size: 12px; font-weight: 600;
+  padding: 7px 12px;
+  border-radius: var(--radius);
+  background: none;
+  border: 1px solid #fecaca;
+  color: var(--admin-error);
+  cursor: pointer;
+}
+.btn-remove-img:hover { background: #fee2e2; }
+
+.img-sugerencia {
+  font-size: 11px; color: var(--admin-muted);
+  margin-top: 8px;
+  padding: 6px 10px;
+  background: var(--admin-surface);
+  border-left: 3px solid var(--admin-accent);
+  border-radius: 0 var(--radius) var(--radius) 0;
+}
+
+/* ── IMAGE BG (hero) ─────────────────────────────────────────────────────── */
+.img-bg-field { display: flex; flex-direction: column; gap: 10px; }
+
+.img-bg-actions { display: flex; align-items: center; gap: 10px; }
+
+.img-bg-url-input {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1.5px solid var(--admin-border);
+  border-radius: var(--radius);
+  font-size: 14px; font-family: monospace;
+  color: var(--admin-text);
+  background: var(--admin-surface);
+  outline: none;
+  transition: border-color .2s, box-shadow .2s;
+}
+.img-bg-url-input:focus {
+  border-color: var(--admin-accent);
+  box-shadow: 0 0 0 3px rgba(3,140,140,.12);
+}
+
+.img-bg-preview {
+  height: 100px;
+  border-radius: var(--radius);
+  border: 1px solid var(--admin-border);
+  background-size: cover;
+  background-position: center;
+  background-color: var(--admin-bg);
+}
+
+/* ── REPEATERS ───────────────────────────────────────────────────────────── */
+.section-nav-repeater { border-left: 3px solid var(--admin-accent); }
+
+.repeater-container { display: flex; flex-direction: column; gap: 0; }
+
+.repeater-list { display: flex; flex-direction: column; gap: 16px; margin-bottom: 16px; }
+
+.repeater-item {
+  background: var(--admin-surface);
+  border: 1px solid var(--admin-border);
+  border-radius: var(--radius);
+  padding: 16px 20px 8px;
+  position: relative;
+  transition: border-color .2s;
+}
+.repeater-item:hover { border-color: var(--admin-accent); }
+
+.repeater-item-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+
+.repeater-item-num {
+  display: inline-flex;
+  align-items: center; justify-content: center;
+  width: 24px; height: 24px;
+  background: var(--admin-accent);
+  color: #fff;
+  border-radius: 50%;
+  font-size: 11px; font-weight: 700;
+  flex-shrink: 0;
+}
+
+.btn-remove-item {
+  background: none;
+  border: none;
+  color: var(--admin-muted);
+  cursor: pointer;
+  font-size: 14px; font-weight: 700;
+  padding: 4px 8px;
+  border-radius: var(--radius);
+  transition: color .15s, background .15s;
+}
+.btn-remove-item:hover { color: var(--admin-error); background: #fee2e2; }
+
+.btn-add-item {
+  align-self: flex-start;
+  padding: 10px 20px;
+  background: none;
+  border: 1.5px dashed var(--admin-accent);
+  color: var(--admin-accent);
+  border-radius: var(--radius);
+  font-size: 13px; font-weight: 600;
+  cursor: pointer;
+  transition: background .15s;
+}
+.btn-add-item:hover { background: rgba(3,140,140,.07); }
+
 /* ── ADMIN BANNER ────────────────────────────────────────────────────────── */
 .admin-banner {
   display: flex; align-items: center; justify-content: space-between;
