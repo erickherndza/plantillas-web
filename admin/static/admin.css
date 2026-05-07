@@ -126,6 +126,7 @@ img { max-width: 100%; display: block; }
   transition: filter .2s;
 }
 .btn-ver-vivo:hover { filter: brightness(1.1); }
+.btn-preview-local { background: #4b5563; margin-right: 6px; }
 
 .btn-back-nav {
   color: rgba(255,255,255,0.7);

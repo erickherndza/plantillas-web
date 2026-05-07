@@ -2,7 +2,7 @@ from flask import (
     Flask, render_template, request, redirect,
     url_for, session, flash, jsonify, send_from_directory
 )
-import json, os, uuid
+import json, os, uuid, logging
 
 from db import (
     init_db, obtener_cliente, obtener_cliente_por_id,
@@ -57,6 +57,8 @@ def plantilla_autorizada(plantilla_id):
 
 
 init_db()
+logging.basicConfig(level=logging.DEBUG)
+log = logging.getLogger('admin')
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
@@ -146,6 +148,11 @@ def editor(plantilla_id):
         return redirect(url_for('dashboard'))
 
     if request.method == 'POST':
+        # ── Debug: log all form keys received ─────────────────────────────────
+        rep_keys = [k for k in request.form if k.startswith('rep__')]
+        log.debug('[editor POST] plantilla=%s  rep_keys=%d  sample=%s',
+                  plantilla_id, len(rep_keys), rep_keys[:6])
+
         # ── Campos regulares ──────────────────────────────────────────────────
         nuevos_valores = {}
         for seccion, items in plantilla['campos'].items():
@@ -162,9 +169,12 @@ def editor(plantilla_id):
         repeaters_data = _parsear_repeaters_del_form(
             request.form, plantilla.get('repeaters', {})
         )
+        log.debug('[editor POST] repeaters_data keys=%s', list(repeaters_data.keys()))
+
         exito_repeaters = True
         for rep_id, items in repeaters_data.items():
             rep_conf = plantilla['repeaters'][rep_id]
+            log.debug('[editor POST] reconstruir_seccion rep_id=%s  items=%d', rep_id, len(items))
             ok = reconstruir_seccion(
                 plantilla['ruta'],
                 rep_conf['contenedor'],
@@ -172,6 +182,7 @@ def editor(plantilla_id):
                 rep_conf['campos'],
                 items
             )
+            log.debug('[editor POST] reconstruir_seccion rep_id=%s  ok=%s', rep_id, ok)
             if not ok:
                 exito_repeaters = False
 
@@ -180,9 +191,9 @@ def editor(plantilla_id):
             if ok:
                 flash('¡Cambios publicados! Tu sitio se actualizará en ~30 s.', 'success')
             else:
-                flash(f'Guardado localmente. Error al publicar: {msg}', 'warning')
+                flash(f'Guardado localmente (git: {msg})', 'warning')
         else:
-            flash('Error al guardar algunos cambios. Revisa los logs.', 'error')
+            flash('Error al guardar algunos cambios. Revisa los logs del servidor.', 'error')
 
         return redirect(url_for('editor', plantilla_id=plantilla_id))
 
@@ -236,7 +247,7 @@ def upload_imagen(plantilla_id):
     return jsonify({'ok': True, 'url': url})
 
 
-# ── Preview ───────────────────────────────────────────────────────────────────
+# ── Preview (Cloudflare) ──────────────────────────────────────────────────────
 
 @app.route('/preview/<plantilla_id>')
 @login_requerido
@@ -247,6 +258,39 @@ def preview(plantilla_id):
     schema    = cargar_schema()
     plantilla = schema['plantillas'].get(plantilla_id, {})
     return redirect(plantilla.get('preview_url', '/'))
+
+
+# ── Preview local (sirve el HTML desde disco, sin necesitar git push) ─────────
+
+@app.route('/local/<plantilla_id>/')
+@app.route('/local/<plantilla_id>')
+@login_requerido
+def preview_local(plantilla_id):
+    if not plantilla_autorizada(plantilla_id):
+        return redirect(url_for('dashboard'))
+    schema    = cargar_schema()
+    plantilla = schema['plantillas'].get(plantilla_id)
+    if not plantilla:
+        return 'Plantilla no encontrada', 404
+    # ruta es relativa a admin/, e.g. '../index.html' → plantillas-web/index.html
+    ruta_abs   = os.path.normpath(os.path.join(BASE, 'admin', plantilla['ruta']))
+    directorio = os.path.dirname(ruta_abs)
+    return send_from_directory(directorio, os.path.basename(ruta_abs))
+
+
+@app.route('/local/<plantilla_id>/<path:filename>')
+@login_requerido
+def site_asset(plantilla_id, filename):
+    """Sirve CSS/JS/imágenes relativos a la carpeta de la plantilla."""
+    if not plantilla_autorizada(plantilla_id):
+        return 'No autorizado', 403
+    schema    = cargar_schema()
+    plantilla = schema['plantillas'].get(plantilla_id)
+    if not plantilla:
+        return 'Plantilla no encontrada', 404
+    ruta_abs   = os.path.normpath(os.path.join(BASE, 'admin', plantilla['ruta']))
+    directorio = os.path.dirname(ruta_abs)
+    return send_from_directory(directorio, filename)
 
 
 # ── Admin: gestión de clientes ────────────────────────────────────────────────

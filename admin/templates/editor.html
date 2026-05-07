@@ -15,6 +15,9 @@
       <span class="navbar-title">{{ plantilla.nombre }}</span>
     </div>
     <div class="navbar-actions">
+      <a href="{{ url_for('preview_local', plantilla_id=plantilla_id) }}" target="_blank" class="btn-ver-vivo btn-preview-local">
+        Preview local &rarr;
+      </a>
       <a href="{{ url_for('preview', plantilla_id=plantilla_id) }}" target="_blank" class="btn-ver-vivo">
         Ver en vivo &rarr;
       </a>
