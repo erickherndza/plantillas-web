@@ -24,14 +24,7 @@
 <!-- ── Header ─────────────────────────────────────────────────────────────── -->
 <header class="site-header" id="site-header">
   <div class="container">
-    <a class="header-brand" href="{{ url_for('ver_sitio', slug=sitio.slug) }}">
-      {% if config.get('logo_url') %}
-        <img src="{{ config.get('logo_url') }}" alt="Logo {{ sitio.nombre }}"
-             style="max-height:44px;width:auto;"/>
-      {% else %}
-        {{ sitio.nombre }}
-      {% endif %}
-    </a>
+    <a class="header-brand" href="{{ url_for('ver_sitio', slug=sitio.slug) }}">{% if config.get('logo_url') %}<img src="{{ config.get('logo_url') }}" alt="{{ config.get('nombre_negocio', sitio.nombre) }}" style="max-height:44px;width:auto;display:block;">{% else %}<span class="brand-text">{{ config.get('nombre_negocio', sitio.nombre) }}</span>{% endif %}</a>
     <div class="header-contact">
       {% if config.get('contacto_telefono') %}
         <span>📞 {{ config.get('contacto_telefono') }}</span>
