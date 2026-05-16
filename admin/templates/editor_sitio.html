@@ -765,6 +765,41 @@
       btn.disabled = true;
     });
 
+    // ── Tabs del mapa ──────────────────────────────────────────────────
+    const mapaTabs   = document.querySelectorAll('.mapa-tab');
+    const mapaPanels = document.querySelectorAll('.mapa-panel');
+    const mapaInput  = document.getElementById('cfg-mapa-modo');
+
+    mapaTabs.forEach(tab => {
+      tab.addEventListener('click', () => {
+        const modo = tab.dataset.modo;
+        mapaTabs.forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+        mapaInput.value = modo;
+        mapaPanels.forEach(p => p.style.display = 'none');
+        const panel = document.getElementById('mapa-panel-' + modo);
+        if (panel) panel.style.display = '';
+      });
+    });
+
+    // ── Preview mapa OpenStreetMap ─────────────────────────────────────
+    const btnPreviewMapa = document.getElementById('btn-preview-mapa');
+    if (btnPreviewMapa) {
+      btnPreviewMapa.addEventListener('click', () => {
+        const lat = document.querySelector('[name="cfg__contacto_mapa_lat"]').value.trim();
+        const lng = document.querySelector('[name="cfg__contacto_mapa_lng"]').value.trim();
+        if (!lat || !lng) {
+          alert('Ingresa la latitud y longitud primero.');
+          return;
+        }
+        const preview = document.getElementById('mapa-coords-preview');
+        const delta = 0.008;
+        const url = `https://www.openstreetmap.org/export/embed.html?bbox=${parseFloat(lng)-delta},${parseFloat(lat)-delta},${parseFloat(lng)+delta},${parseFloat(lat)+delta}&layer=mapnik&marker=${lat},${lng}`;
+        preview.innerHTML = `<iframe src="${url}" width="100%" height="220"
+          style="border:0;border-radius:8px;margin-top:4px;" loading="lazy"></iframe>`;
+      });
+    }
+
   })();
   </script>
 
