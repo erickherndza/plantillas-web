@@ -438,3 +438,13 @@ cp ~/plantillas-web/admin/plantillas.db ~/plantillas-web/admin/plantillas_$(date
   - requirements.txt: agregado werkzeug y gunicorn explícitos
   - DEPLOY.md: instrucciones completas PythonAnywhere + VPS Ubuntu
 - Estado: TODAS LAS FASES COMPLETADAS — sistema listo para prueba browser y deploy
+
+### 2026-05-16 (sesión 2 — mejoras post-prueba)
+- Fix logo: header-brand ahora usa if/else sin nodos de texto sueltos + usa nombre_negocio del config
+- Mapa de ubicación en contacto: 3 modos (ninguno / coords OpenStreetMap / embed Google Maps)
+- Editor: tabs de mapa, preview con iframe, instrucciones para obtener coordenadas
+- Fix conflicto nombre función: crear_sitio → db_crear_sitio (alias en import)
+- Tipografía: 12 Google Fonts seleccionables (titulos + cuerpo), preview en vivo en editor, link dinámico en templates
+- Colores completos: +3 variables (acento, navbar, fondo secciones) → total 6 colores controlables
+- Navbar: color independiente del primary (default = primary si no se configura)
+- Pendiente: estilos de cards (paso 4), renombrar menú (paso 5), botones/hero (paso 6)

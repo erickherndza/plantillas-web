@@ -315,6 +315,16 @@ img { max-width: 100%; display: block; }
 .mapa-tab:hover  { border-color: var(--admin-primary); color: var(--admin-primary); }
 .mapa-tab.active { background: var(--admin-primary); color: #fff; border-color: var(--admin-primary); }
 
+/* Font sample preview */
+.font-sample {
+  padding: 10px 14px;
+  background: #f8fafc;
+  border-radius: 8px;
+  border: 1px solid var(--admin-border);
+  line-height: 1.5;
+  transition: font-family .3s;
+}
+
 /* Color picker */
 .color-field {
   display: flex;

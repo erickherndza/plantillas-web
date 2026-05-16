@@ -104,6 +104,134 @@
               <span class="color-hex js-color-hex">{{ config.get('color_texto', '#2d3748') }}</span>
             </div>
           </div>
+
+          <div class="form-group">
+            <label>Color de acento <span class="field-optional">(botones CTA, detalles, hover)</span></label>
+            <div class="color-field">
+              <input type="color" name="cfg__color_acento" class="color-input js-color"
+                     value="{{ config.get('color_acento', config.get('color_primario','#0bb180')) }}">
+              <div class="color-preview js-color-preview"
+                   style="background:{{ config.get('color_acento', config.get('color_primario','#0bb180')) }}"></div>
+              <span class="color-hex js-color-hex">{{ config.get('color_acento', config.get('color_primario','#0bb180')) }}</span>
+            </div>
+            <p class="field-hint">Color secundario para botones principales, íconos y estados activos.</p>
+          </div>
+
+          <div class="form-group">
+            <label>Color de la barra de navegación <span class="field-optional">(navbar)</span></label>
+            <div class="color-field">
+              <input type="color" name="cfg__color_navbar_bg" class="color-input js-color"
+                     value="{{ config.get('color_navbar_bg', config.get('color_primario','#0bb180')) }}">
+              <div class="color-preview js-color-preview"
+                   style="background:{{ config.get('color_navbar_bg', config.get('color_primario','#0bb180')) }}"></div>
+              <span class="color-hex js-color-hex">{{ config.get('color_navbar_bg', config.get('color_primario','#0bb180')) }}</span>
+            </div>
+            <p class="field-hint">Color de fondo del menú de navegación. El texto del menú es blanco — usa colores oscuros o saturados.</p>
+          </div>
+
+          <div class="form-group">
+            <label>Fondo de secciones alternas <span class="field-optional">(bloques con fondo claro)</span></label>
+            <div class="color-field">
+              <input type="color" name="cfg__color_seccion_bg" class="color-input js-color"
+                     value="{{ config.get('color_seccion_bg', '#f8fafc') }}">
+              <div class="color-preview js-color-preview"
+                   style="background:{{ config.get('color_seccion_bg', '#f8fafc') }}"></div>
+              <span class="color-hex js-color-hex">{{ config.get('color_seccion_bg', '#f8fafc') }}</span>
+            </div>
+            <p class="field-hint">Fondo de secciones como Nosotros, Proyectos, formularios. Recomendado: tonos muy claros.</p>
+          </div>
+
+          <!-- ── Tipografía ────────────────────────────────────────── -->
+          <div style="border-top:1px solid var(--admin-border);margin-top:28px;padding-top:24px;">
+            <h3 style="font-size:13px;font-weight:700;color:var(--admin-text);margin-bottom:4px;">Tipografía</h3>
+            <p class="field-hint" style="margin-bottom:16px;">Las fuentes se cargan desde Google Fonts. El cambio se ve en el sitio al guardar.</p>
+
+            {% set _fuentes = [
+              ('Open Sans',        'Open Sans — limpia y profesional'),
+              ('Montserrat',       'Montserrat — moderna y geométrica'),
+              ('Poppins',          'Poppins — amigable y redonda'),
+              ('Raleway',          'Raleway — elegante y ligera'),
+              ('Playfair Display', 'Playfair Display — serif clásica'),
+              ('Oswald',           'Oswald — condensada e impactante'),
+              ('Roboto',           'Roboto — neutral y tecnológica'),
+              ('Lato',             'Lato — suave y legible'),
+              ('Nunito',           'Nunito — redondeada y amigable'),
+              ('Inter',            'Inter — diseño de interfaz'),
+              ('Merriweather',     'Merriweather — serif editorial'),
+              ('PT Sans',          'PT Sans — humanista y legible'),
+            ] %}
+
+            <div class="form-group">
+              <label>Fuente de títulos y encabezados</label>
+              <select name="cfg__fuente_titulos" class="js-font-preview" data-target="heading">
+                {% for val, label in _fuentes %}
+                  <option value="{{ val }}" {{ 'selected' if config.get('fuente_titulos', 'Open Sans') == val }}>{{ label }}</option>
+                {% endfor %}
+              </select>
+              <p class="font-sample" id="font-sample-heading"
+                 style="font-family:'{{ config.get('fuente_titulos','Open Sans') }}',sans-serif;font-size:22px;font-weight:700;margin-top:8px;color:var(--admin-text);">
+                Título de ejemplo — Aa Bb Cc
+              </p>
+            </div>
+
+            <div class="form-group">
+              <label>Fuente del cuerpo y párrafos</label>
+              <select name="cfg__fuente_cuerpo" class="js-font-preview" data-target="body">
+                {% for val, label in _fuentes %}
+                  <option value="{{ val }}" {{ 'selected' if config.get('fuente_cuerpo', 'Montserrat') == val }}>{{ label }}</option>
+                {% endfor %}
+              </select>
+              <p class="font-sample" id="font-sample-body"
+                 style="font-family:'{{ config.get('fuente_cuerpo','Montserrat') }}',sans-serif;font-size:15px;margin-top:8px;color:#6b7280;">
+                Texto de ejemplo — Lorem ipsum dolor sit amet, consectetur adipiscing elit. Así luce el cuerpo de tu sitio.
+              </p>
+            </div>
+          </div>
+
+          <!-- Estilo de tarjetas -->
+          <div class="form-group">
+            <label>Esquinas de tarjetas</label>
+            <select name="cfg__estilo_esquinas">
+              {% for val, lbl in [('cuadrado','Cuadrado (sin redondeo)'),('suave','Suave (4px)'),('redondeado','Redondeado (12px)'),('muy-redondeado','Muy redondeado (24px)')] %}
+                <option value="{{ val }}" {{ 'selected' if config.get('estilo_esquinas','suave') == val }}>{{ lbl }}</option>
+              {% endfor %}
+            </select>
+            <p class="field-hint">Afecta tarjetas de servicios, proyectos y equipo.</p>
+          </div>
+
+          <div class="form-group">
+            <label>Sombra de tarjetas</label>
+            <select name="cfg__estilo_sombra">
+              {% for val, lbl in [('sin-sombra','Sin sombra'),('sutil','Sutil'),('media','Media'),('marcada','Marcada')] %}
+                <option value="{{ val }}" {{ 'selected' if config.get('estilo_sombra','sutil') == val }}>{{ lbl }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>Ícono de servicios</label>
+            <select name="cfg__estilo_icono">
+              {% for val, lbl in [('emoji','Emoji suelto'),('circulo','Emoji en círculo'),('cuadrado','Emoji en cuadrado'),('sin-icono','Sin ícono')] %}
+                <option value="{{ val }}" {{ 'selected' if config.get('estilo_icono','circulo') == val }}>{{ lbl }}</option>
+              {% endfor %}
+            </select>
+            <p class="field-hint">Solo aplica a las tarjetas de servicios en la página de inicio.</p>
+          </div>
+
+          <!-- Etiquetas del menú -->
+          <div class="form-group" style="margin-top:24px;border-top:1px solid var(--admin-border);padding-top:20px;">
+            <label style="font-size:13px;font-weight:700;color:var(--admin-text-muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:12px;display:block;">Etiquetas del menú</label>
+            <p class="field-hint" style="margin-bottom:12px;">Personaliza el texto de cada enlace en la barra de navegación.</p>
+            {% for key, default in [('menu_inicio','Inicio'),('menu_nosotros','Nosotros'),('menu_servicios','Servicios'),('menu_proyectos','Proyectos'),('menu_equipo','Equipo'),('menu_contacto','Contacto')] %}
+            <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;">
+              <span style="width:90px;font-size:12px;color:var(--admin-text-muted);">{{ default }}</span>
+              <input type="text" name="cfg__{{ key }}"
+                     value="{{ config.get(key, default) }}"
+                     placeholder="{{ default }}"
+                     style="flex:1;">
+            </div>
+            {% endfor %}
+          </div>
         </div>
 
         <!-- ══ MARCA ═════════════════════════════════════════════════════ -->
@@ -223,6 +351,38 @@
             <input type="text" name="cfg__hero_cta2_href"
                    value="{{ config.get('hero_cta2_href', '#servicios') }}"
                    placeholder="#servicios">
+          </div>
+
+          <div style="border-top:1px solid var(--admin-border);padding-top:20px;margin-top:8px;">
+            <label style="font-size:13px;font-weight:700;color:var(--admin-text-muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:16px;display:block;">Estilo del hero</label>
+
+            <div class="form-group">
+              <label>Altura del hero</label>
+              <select name="cfg__hero_alto">
+                {% for val, lbl in [('compacto','Compacto (400px)'),('medio','Medio (580px)'),('pantalla','Pantalla completa (100vh)')] %}
+                  <option value="{{ val }}" {{ 'selected' if config.get('hero_alto','medio') == val }}>{{ lbl }}</option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label>Alineación del texto</label>
+              <select name="cfg__hero_alineacion">
+                {% for val, lbl in [('izquierda','Izquierda'),('centro','Centro')] %}
+                  <option value="{{ val }}" {{ 'selected' if config.get('hero_alineacion','centro') == val }}>{{ lbl }}</option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label>Forma de los botones</label>
+              <select name="cfg__btn_forma">
+                {% for val, lbl in [('redondeado','Redondeado (pill)'),('suave','Suave (8px)'),('cuadrado','Cuadrado')] %}
+                  <option value="{{ val }}" {{ 'selected' if config.get('btn_forma','redondeado') == val }}>{{ lbl }}</option>
+                {% endfor %}
+              </select>
+              <p class="field-hint">Aplica a todos los botones del sitio.</p>
+            </div>
           </div>
         </div>
 
@@ -763,6 +923,26 @@
       btn.querySelector('.btn-text').classList.add('hidden');
       btn.querySelector('.btn-loading').classList.remove('hidden');
       btn.disabled = true;
+    });
+
+    // ── Preview fuentes en tiempo real ────────────────────────────────
+    document.querySelectorAll('.js-font-preview').forEach(sel => {
+      sel.addEventListener('change', () => {
+        const font  = sel.value;
+        const target = sel.dataset.target;
+        const sample = document.getElementById('font-sample-' + target);
+        // Cargar fuente de Google Fonts dinámicamente
+        const linkId = 'gf-preview-' + target;
+        let link = document.getElementById(linkId);
+        if (!link) {
+          link = document.createElement('link');
+          link.id  = linkId;
+          link.rel = 'stylesheet';
+          document.head.appendChild(link);
+        }
+        link.href = `https://fonts.googleapis.com/css2?family=${encodeURIComponent(font)}:wght@400;600;700;800&display=swap`;
+        sample.style.fontFamily = `'${font}', sans-serif`;
+      });
     });
 
     // ── Tabs del mapa ──────────────────────────────────────────────────

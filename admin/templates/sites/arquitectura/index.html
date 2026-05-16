@@ -7,21 +7,53 @@
   <meta property="og:title" content="{{ sitio.nombre }}"/>
   <title>{{ sitio.nombre }}</title>
 
-  <!-- Fuentes Google -->
+  <!-- Fuentes Google (dinámicas según config del usuario) -->
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
-  <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700;800&family=Montserrat:wght@400;500&display=swap" rel="stylesheet"/>
+  {% set _ft = config.get('fuente_titulos', 'Open Sans') %}
+  {% set _fb = config.get('fuente_cuerpo',  'Montserrat') %}
+  <link href="https://fonts.googleapis.com/css2?family={{ _ft|replace(' ','+') }}:wght@400;600;700;800&family={{ _fb|replace(' ','+') }}:wght@400;500;600&display=swap" rel="stylesheet"/>
 
   <!-- CSS base de la plantilla -->
   <link href="{{ url_for('static', filename='sites/arquitectura/style.css') }}" rel="stylesheet"/>
 
   <!-- Variables CSS personalizadas del usuario -->
+  {% set _esquinas_map = {'cuadrado':'0px','suave':'4px','redondeado':'12px','muy-redondeado':'24px'} %}
+  {% set _sombra_map = {'sin-sombra':'none','sutil':'0 1px 4px rgba(0,0,0,.08)','media':'0 4px 16px rgba(0,0,0,.14)','marcada':'0 8px 32px rgba(0,0,0,.22)'} %}
+  {% set _hero_alto_map = {'compacto':'400px','medio':'580px','pantalla':'100vh'} %}
+  {% set _btn_radius_map = {'redondeado':'999px','suave':'8px','cuadrado':'2px'} %}
+  {% set _esquinas = _esquinas_map.get(config.get('estilo_esquinas','suave'),'4px') %}
+  {% set _sombra   = _sombra_map.get(config.get('estilo_sombra','sutil'),'0 1px 4px rgba(0,0,0,.08)') %}
+  {% set _hero_h   = _hero_alto_map.get(config.get('hero_alto','medio'),'580px') %}
+  {% set _btn_r    = _btn_radius_map.get(config.get('btn_forma','redondeado'),'999px') %}
+  {% set _hero_align = 'left' if config.get('hero_alineacion','centro') == 'izquierda' else 'center' %}
   <style>
     :root {
-      --c-primary: {{ config.get('color_primario', '#0bb180') }};
-      --c-dark:    {{ config.get('color_footer_bg', '#0d1b2a') }};
-      --c-text:    {{ config.get('color_texto', '#2d3748') }};
+      --c-primary:   {{ config.get('color_primario', '#0bb180') }};
+      --c-accent:    {{ config.get('color_acento',   config.get('color_primario', '#0bb180')) }};
+      --c-dark:      {{ config.get('color_footer_bg', '#0d1b2a') }};
+      --c-text:      {{ config.get('color_texto', '#2d3748') }};
+      --c-bg:        {{ config.get('color_seccion_bg', '#f8fafc') }};
+      --f-heading:   '{{ _ft }}', sans-serif;
+      --f-body:      '{{ _fb }}', sans-serif;
+      --radius:      {{ _esquinas }};
+      --radius-lg:   calc({{ _esquinas }} * 1.5);
+      --shadow:      {{ _sombra }};
+      --shadow-lg:   {{ _sombra }};
     }
+    .navbar { background: {{ config.get('color_navbar_bg', config.get('color_primario', '#0bb180')) }}; }
+    .hero-section { min-height: {{ _hero_h }}; }
+    .hero-content { text-align: {{ _hero_align }}; }
+    {% if _hero_align == 'left' %}.hero-actions { justify-content: flex-start; }{% endif %}
+    .btn-primary, .btn-secondary, button[type=submit] { border-radius: {{ _btn_r }}; }
+    {% set _icono = config.get('estilo_icono','circulo') %}
+    {% if _icono == 'circulo' %}
+      .highlight-icon, .mvv-icon svg { background: var(--c-primary); border-radius: 50%; padding: 10px; }
+    {% elif _icono == 'cuadrado' %}
+      .highlight-icon, .mvv-icon svg { background: var(--c-primary); border-radius: var(--radius); padding: 10px; }
+    {% elif _icono == 'sin-icono' %}
+      .highlight-icon, .mvv-icon { display: none; }
+    {% endif %}
   </style>
 </head>
 <body>
@@ -45,14 +77,14 @@
 <nav class="navbar" id="navbar">
   <div class="container">
     <ul class="nav-list">
-      <li><a class="nav-link" href="#inicio">Inicio</a></li>
-      <li><a class="nav-link" href="#nosotros">Nosotros</a></li>
-      <li><a class="nav-link" href="#servicios">Servicios</a></li>
-      <li><a class="nav-link" href="#proyectos">Proyectos</a></li>
+      <li><a class="nav-link" href="#inicio">{{ config.get('menu_inicio','Inicio') }}</a></li>
+      <li><a class="nav-link" href="#nosotros">{{ config.get('menu_nosotros','Nosotros') }}</a></li>
+      <li><a class="nav-link" href="#servicios">{{ config.get('menu_servicios','Servicios') }}</a></li>
+      <li><a class="nav-link" href="#proyectos">{{ config.get('menu_proyectos','Proyectos') }}</a></li>
       {% if secciones.equipo %}
-        <li><a class="nav-link" href="#equipo">Equipo</a></li>
+        <li><a class="nav-link" href="#equipo">{{ config.get('menu_equipo','Equipo') }}</a></li>
       {% endif %}
-      <li><a class="nav-link" href="#contacto">Contacto</a></li>
+      <li><a class="nav-link" href="#contacto">{{ config.get('menu_contacto','Contacto') }}</a></li>
     </ul>
     <button class="nav-toggle" id="nav-toggle" aria-label="Menú">☰</button>
   </div>
@@ -263,11 +295,11 @@
       <div class="footer-nav">
         <h4>Navegación</h4>
         <ul>
-          <li><a href="#inicio">Inicio</a></li>
-          <li><a href="#nosotros">Nosotros</a></li>
-          <li><a href="#servicios">Servicios</a></li>
-          <li><a href="#proyectos">Proyectos</a></li>
-          <li><a href="#contacto">Contacto</a></li>
+          <li><a href="#inicio">{{ config.get('menu_inicio','Inicio') }}</a></li>
+          <li><a href="#nosotros">{{ config.get('menu_nosotros','Nosotros') }}</a></li>
+          <li><a href="#servicios">{{ config.get('menu_servicios','Servicios') }}</a></li>
+          <li><a href="#proyectos">{{ config.get('menu_proyectos','Proyectos') }}</a></li>
+          <li><a href="#contacto">{{ config.get('menu_contacto','Contacto') }}</a></li>
         </ul>
       </div>
       <div class="footer-contact-col">
