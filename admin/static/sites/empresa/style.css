@@ -368,3 +368,129 @@ section{padding:clamp(60px,10vw,96px) 0}
 }
 .form-group input:focus, .form-group textarea:focus { border-color: var(--c-primary); }
 
+
+/* ══════════════════════════════════════════════════════════════════════════
+   TEMAS POR PLANTILLA  —  data-plantilla="[clave]"
+   Estas reglas definen la personalidad visual de cada plantilla.
+   El usuario puede sobreescribir colores desde el editor, pero la
+   estructura y las sutilezas de diseño permanecen.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/* ── DOCTORES / CLÍNICA ─────────────────────────────────────────────────── */
+[data-plantilla="doctores"] .hero-overlay {
+  background: linear-gradient(135deg, rgba(13,41,82,0.92) 0%, rgba(30,106,191,0.65) 100%);
+}
+[data-plantilla="doctores"] .hero-eyebrow {
+  background: rgba(255,255,255,0.15);
+  padding: 6px 16px;
+  border-radius: 999px;
+  display: inline-block;
+  font-size: 12px;
+  letter-spacing: 2px;
+}
+[data-plantilla="doctores"] .service-card {
+  display: grid;
+  grid-template-columns: 56px 1fr;
+  gap: 0 16px;
+  align-items: start;
+  text-align: left;
+  padding: 24px;
+}
+[data-plantilla="doctores"] .highlight-icon {
+  grid-row: span 2;
+  font-size: 28px;
+  width: 52px; height: 52px;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(30,106,191,0.10);
+  border-radius: 12px;
+  flex-shrink: 0;
+}
+[data-plantilla="doctores"] .service-title { font-size: 15px; margin-bottom: 6px; }
+[data-plantilla="doctores"] .about-section { background: #f0f7ff; }
+[data-plantilla="doctores"] .mvv-card { border-top: 3px solid var(--c-primary); }
+[data-plantilla="doctores"] .site-header { border-bottom: 2px solid var(--c-primary); }
+[data-plantilla="doctores"] .section-title { color: var(--c-dark); }
+
+/* ── RESTAURANTE ────────────────────────────────────────────────────────── */
+[data-plantilla="restaurante"] .hero-overlay {
+  background: linear-gradient(to top, rgba(28,10,0,0.90) 0%, rgba(124,45,18,0.55) 60%, rgba(0,0,0,0.20) 100%);
+}
+[data-plantilla="restaurante"] .hero-content { text-align: center; max-width: 720px; margin: 0 auto; }
+[data-plantilla="restaurante"] .hero-actions { justify-content: center; }
+[data-plantilla="restaurante"] .hero-eyebrow {
+  font-size: 14px;
+  font-style: italic;
+  text-transform: none;
+  letter-spacing: 1px;
+  opacity: 0.9;
+}
+[data-plantilla="restaurante"] .services-grid {
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 0;
+}
+[data-plantilla="restaurante"] .service-card {
+  border-radius: 0;
+  border: none;
+  border-right: 1px solid var(--c-border);
+  border-bottom: 1px solid var(--c-border);
+  text-align: center;
+  padding: 40px 24px;
+  background: #fff;
+}
+[data-plantilla="restaurante"] .service-card:hover {
+  background: var(--c-bg);
+  transform: none;
+  box-shadow: inset 0 0 0 3px var(--c-primary);
+}
+[data-plantilla="restaurante"] .highlight-icon { font-size: 36px; margin: 0 auto 12px; }
+[data-plantilla="restaurante"] .about-section { background: var(--c-bg); }
+[data-plantilla="restaurante"] .mvv-card {
+  border: none;
+  background: var(--c-bg);
+  text-align: left;
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+}
+[data-plantilla="restaurante"] .mvv-icon { flex-shrink: 0; }
+[data-plantilla="restaurante"] .section-title { font-style: italic; }
+[data-plantilla="restaurante"] .portfolio-grid {
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: auto;
+}
+[data-plantilla="restaurante"] .portfolio-card:first-child {
+  grid-column: span 2;
+}
+
+/* ── EMPRESA (genérico) ─────────────────────────────────────────────────── */
+[data-plantilla="empresa"] .hero-overlay {
+  background: linear-gradient(to right, rgba(0,0,0,0.80) 0%, rgba(0,0,0,0.40) 70%, rgba(0,0,0,0.10) 100%);
+}
+[data-plantilla="empresa"] .mvv-card { text-align: center; }
+[data-plantilla="empresa"] .service-card { text-align: left; }
+
+/* ── SALON / BELLEZA ────────────────────────────────────────────────────── */
+[data-plantilla="salon"] .hero-overlay {
+  background: linear-gradient(to bottom, rgba(100,20,60,0.70) 0%, rgba(180,50,100,0.55) 100%);
+}
+[data-plantilla="salon"] .section-title { font-style: italic; letter-spacing: -0.5px; }
+[data-plantilla="salon"] .service-card {
+  text-align: center;
+  background: linear-gradient(135deg, #fff 60%, rgba(var(--c-primary-rgb,180,50,100),0.04) 100%);
+}
+[data-plantilla="salon"] .mvv-card { border-radius: 0; border: none; border-left: 4px solid var(--c-primary); }
+
+/* ── ABOGADOS / LEGAL ───────────────────────────────────────────────────── */
+[data-plantilla="abogados"] .hero-overlay {
+  background: linear-gradient(to bottom right, rgba(15,25,50,0.95) 0%, rgba(40,60,100,0.70) 100%);
+}
+[data-plantilla="abogados"] .service-card {
+  border-radius: 0;
+  border-left: 3px solid var(--c-primary);
+  border-top: none; border-right: none; border-bottom: 1px solid var(--c-border);
+}
+[data-plantilla="abogados"] .service-card:hover { transform: none; box-shadow: none; border-left-width: 5px; }
+[data-plantilla="abogados"] .mvv-card { text-align: left; border-top: 2px solid var(--c-primary); border-radius: 0; }
+[data-plantilla="abogados"] .section-title { text-transform: uppercase; font-size: clamp(1.4rem,3vw,2rem); letter-spacing: 1px; }
+[data-plantilla="abogados"] .site-header { background: var(--c-dark); border-bottom: 1px solid rgba(255,255,255,0.08); }
+[data-plantilla="abogados"] .header-brand, [data-plantilla="abogados"] .header-contact { color: rgba(255,255,255,0.85); }

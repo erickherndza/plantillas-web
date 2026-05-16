@@ -1,4 +1,29 @@
-admin/clientes.json
+# Python
 admin/__pycache__/
 *.pyc
+*.pyo
+.Python
+
+# Entorno virtual
+admin/venv/
+admin/.venv/
+venv/
+.venv/
+
+# Secrets — NUNCA subir al repo
+admin/.env
+
+# Base de datos — se regenera con init_db() en producción
+admin/plantillas.db
+admin/plantillas.db-shm
+admin/plantillas.db-wal
+
+# Uploads de usuarios
+admin/static/uploads/
+
+# macOS
 .DS_Store
+**/.DS_Store
+
+# Legado
+admin/clientes.json

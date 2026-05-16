@@ -116,19 +116,25 @@ def init_db():
         pass  # ya existe
 
     # Seed plantillas base si no existen
-    conn.executescript("""
-        INSERT OR IGNORE INTO plantillas (clave, nombre, tipo, descripcion, preview_img) VALUES
-        ('arquitectura', 'Arquitectura / Servicios Generales', 'landing',
-         'Ideal para estudios de arquitectura, diseño e ingeniería', '');
-
-        INSERT OR IGNORE INTO plantillas (clave, nombre, tipo, descripcion, preview_img) VALUES
-        ('doctores', 'Consultorio / Clínica Médica', 'landing',
-         'Perfecta para consultorios médicos, clínicas y centros de salud', '');
-
-        INSERT OR IGNORE INTO plantillas (clave, nombre, tipo, descripcion, preview_img) VALUES
-        ('empresa', 'Web Empresarial — 5 páginas', 'web5',
-         'Sitio completo con Inicio, Nosotros, Servicios, Proyectos y Contacto', '');
-    """)
+    _schema_completo = '{"secciones": ["apariencia", "marca", "hero", "nosotros", "servicios", "proyectos", "equipo", "contacto"]}'
+    _plantillas_seed = [
+        ('arquitectura', 'Arquitectura / Diseño',         'web5', 'Para estudios de arquitectura, diseño e ingeniería.'),
+        ('doctores',     'Consultorio / Clínica Médica',  'web5', 'Para consultorios médicos, clínicas y centros de salud.'),
+        ('empresa',      'Web Empresarial',               'web5', 'Sitio completo con 5 páginas para cualquier negocio.'),
+        ('restaurante',  'Restaurante / Gastronomía',     'web5', 'Para restaurantes, cafés, bares y negocios de comida.'),
+        ('salon',        'Salón de Belleza / Spa',        'web5', 'Para salones, spas, centros de estética y bienestar.'),
+        ('abogados',     'Bufete de Abogados / Legal',    'web5', 'Para bufetes legales, notarías y consultorios jurídicos.'),
+    ]
+    for clave, nombre, tipo, desc in _plantillas_seed:
+        conn.execute("""
+            INSERT OR IGNORE INTO plantillas (clave, nombre, tipo, descripcion, preview_img, campos_schema)
+            VALUES (?, ?, ?, ?, '', ?)
+        """, (clave, nombre, tipo, desc, _schema_completo))
+        # Actualizar tipo y schema si la fila ya existía (migración)
+        conn.execute("""
+            UPDATE plantillas SET tipo=?, descripcion=?, campos_schema=?
+            WHERE clave=? AND (tipo != ? OR campos_schema = '{}' OR campos_schema IS NULL)
+        """, (tipo, desc, _schema_completo, clave, tipo))
 
     conn.commit()
     conn.close()

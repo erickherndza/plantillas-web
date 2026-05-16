@@ -42,9 +42,8 @@
         {% for sitio in sitios %}
           <div class="plantilla-card">
             <div class="card-icon">
-              {% if sitio.plantilla_clave == 'doctores' %}🏥
-              {% elif sitio.plantilla_clave == 'arquitectura' %}🏛️
-              {% else %}🌐{% endif %}
+              {% set _iconos = {'doctores':'🏥','arquitectura':'🏛️','restaurante':'🍽️','salon':'💆','abogados':'⚖️','empresa':'🏢'} %}
+              {{ _iconos.get(sitio.plantilla_clave, '🌐') }}
             </div>
             <div class="card-body">
               <h2 class="card-title">{{ sitio.nombre }}</h2>

@@ -775,8 +775,122 @@ def crear_sitio():
                 sitio_id = db_crear_sitio(
                     session['uid'], int(plantilla_id), slug, nombre_sitio
                 )
-                # Config inicial por defecto
-                set_config_sitio_bulk(sitio_id, {
+                # Obtener la clave de la plantilla elegida para aplicar defaults específicos
+                _pobj = obtener_plantilla_por_id(int(plantilla_id))
+                _clave = _pobj['clave'] if _pobj else 'empresa'
+
+                # Identidades visuales por plantilla
+                _temas = {
+                    'doctores': {
+                        'color_primario':  '#1e6abf',
+                        'color_acento':    '#e53e3e',
+                        'color_footer_bg': '#0f2952',
+                        'color_navbar_bg': '#1e6abf',
+                        'color_texto':     '#1e293b',
+                        'fuente_titulos':  'Lato',
+                        'fuente_cuerpo':   'Lato',
+                        'estilo_esquinas': 'redondeado',
+                        'estilo_icono':    'circulo',
+                        'hero_eyebrow':    'ATENCIÓN MÉDICA DE CALIDAD',
+                        'hero_titulo':     f'Bienvenidos a {nombre_sitio}',
+                        'hero_subtitulo':  'Cuidamos tu salud con profesionalismo y dedicación. Agenda tu cita hoy.',
+                        'hero_cta_texto':  'Agendar cita',
+                        'menu_servicios':  'Especialidades',
+                        'menu_proyectos':  'Casos de éxito',
+                        'nosotros_mision': 'Brindar atención médica de excelencia con tecnología moderna y un trato humano.',
+                        'nosotros_vision': 'Ser el consultorio médico de referencia de nuestra comunidad.',
+                        'nosotros_valores':'Ética, Precisión, Compasión, Compromiso',
+                    },
+                    'restaurante': {
+                        'color_primario':    '#c2410c',
+                        'color_acento':      '#d97706',
+                        'color_footer_bg':   '#1c0a00',
+                        'color_navbar_bg':   '#7c2d12',
+                        'color_seccion_bg':  '#fff7ed',
+                        'color_texto':       '#1c1917',
+                        'fuente_titulos':    'Playfair Display',
+                        'fuente_cuerpo':     'Lato',
+                        'estilo_esquinas':   'suave',
+                        'estilo_icono':      'emoji',
+                        'hero_alineacion':   'centro',
+                        'hero_eyebrow':      'Gastronomía auténtica',
+                        'hero_titulo':       nombre_sitio,
+                        'hero_subtitulo':    'Sabores que despiertan los sentidos. Ven y disfruta una experiencia única.',
+                        'hero_cta_texto':    'Ver menú',
+                        'hero_cta2_texto':   'Reservar mesa',
+                        'menu_servicios':    'Menú',
+                        'menu_proyectos':    'Galería',
+                        'menu_equipo':       'Chef',
+                        'nosotros_mision':   'Ofrecer una experiencia gastronómica auténtica con ingredientes frescos y recetas tradicionales.',
+                        'nosotros_vision':   'Ser el restaurante favorito de nuestra ciudad.',
+                        'nosotros_valores':  'Frescura, Tradición, Hospitalidad, Pasión',
+                        'servicios_descripcion': 'Una selección cuidadosa de platos preparados con ingredientes de primera.',
+                        'proyectos_descripcion': 'Momentos especiales que hemos celebrado juntos.',
+                    },
+                    'arquitectura': {
+                        'color_primario':  '#1a1a2e',
+                        'color_acento':    '#c9a84c',
+                        'color_footer_bg': '#0d0d1a',
+                        'color_navbar_bg': '#1a1a2e',
+                        'color_texto':     '#2d3748',
+                        'fuente_titulos':  'Raleway',
+                        'fuente_cuerpo':   'Open Sans',
+                        'estilo_esquinas': 'cuadrado',
+                        'estilo_sombra':   'marcada',
+                        'hero_eyebrow':    'ARQUITECTURA & DISEÑO',
+                        'hero_titulo':     nombre_sitio,
+                        'hero_subtitulo':  'Transformamos espacios en experiencias. Diseño con propósito.',
+                        'hero_cta_texto':  'Ver proyectos',
+                        'menu_servicios':  'Servicios',
+                        'menu_proyectos':  'Portafolio',
+                        'nosotros_mision': 'Diseñar espacios funcionales y estéticamente superiores que mejoren la calidad de vida.',
+                        'nosotros_vision': 'Ser referente del diseño arquitectónico en la región.',
+                        'nosotros_valores':'Precisión, Creatividad, Sostenibilidad, Innovación',
+                    },
+                    'salon': {
+                        'color_primario':  '#b4327a',
+                        'color_acento':    '#f9a8d4',
+                        'color_footer_bg': '#1a0a12',
+                        'color_navbar_bg': '#b4327a',
+                        'color_seccion_bg':'#fff0f6',
+                        'fuente_titulos':  'Playfair Display',
+                        'fuente_cuerpo':   'Lato',
+                        'estilo_esquinas': 'muy-redondeado',
+                        'estilo_icono':    'circulo',
+                        'hero_eyebrow':    'Belleza & Bienestar',
+                        'hero_titulo':     nombre_sitio,
+                        'hero_subtitulo':  'Tu espacio de relajación y transformación. Luce y siéntete increíble.',
+                        'hero_cta_texto':  'Reservar cita',
+                        'menu_servicios':  'Tratamientos',
+                        'menu_proyectos':  'Galería',
+                        'menu_equipo':     'Nuestro equipo',
+                        'nosotros_mision': 'Realzar la belleza natural de cada cliente con técnicas modernas y atención personalizada.',
+                        'nosotros_valores':'Elegancia, Cuidado, Confianza, Creatividad',
+                    },
+                    'abogados': {
+                        'color_primario':  '#1e3a5f',
+                        'color_acento':    '#c9a84c',
+                        'color_footer_bg': '#0d1b2a',
+                        'color_navbar_bg': '#1e3a5f',
+                        'color_texto':     '#1a202c',
+                        'fuente_titulos':  'Merriweather',
+                        'fuente_cuerpo':   'Open Sans',
+                        'estilo_esquinas': 'cuadrado',
+                        'estilo_sombra':   'sutil',
+                        'hero_eyebrow':    'ASESORÍA LEGAL DE CONFIANZA',
+                        'hero_titulo':     nombre_sitio,
+                        'hero_subtitulo':  'Defendemos tus derechos con experiencia, ética y dedicación.',
+                        'hero_cta_texto':  'Consulta gratuita',
+                        'menu_servicios':  'Áreas de práctica',
+                        'menu_proyectos':  'Casos',
+                        'nosotros_mision': 'Proveer servicios legales de alta calidad con ética e integridad.',
+                        'nosotros_valores':'Integridad, Confidencialidad, Justicia, Excelencia',
+                    },
+                }
+                _defaults_tema = _temas.get(_clave, {})
+
+                # Config base (aplica a todas las plantillas)
+                _config_base = {
                     'nombre_negocio':       nombre_sitio,
                     'color_primario':       '#0bb180',
                     'color_footer_bg':      '#0d1b2a',
@@ -802,7 +916,10 @@ def crear_sitio():
                     'contacto_email':       f'info@{slug}.com',
                     'contacto_direccion':   'Calle Principal 123, Ciudad',
                     'footer_descripcion':   'Comprometidos con la excelencia y satisfacción de nuestros clientes.',
-                })
+                }
+                # El tema de la plantilla sobreescribe los defaults base
+                _config_base.update(_defaults_tema)
+                set_config_sitio_bulk(sitio_id, _config_base)
                 # Secciones de contenido por defecto
                 set_secciones_contenido(sitio_id, 'servicios', [
                     {'titulo': 'Servicio 1', 'desc': 'Descripción del primer servicio que ofreces.', 'imagen': ''},
@@ -951,10 +1068,13 @@ def ver_sitio(slug):
     if not sitio:
         abort(404)
     ctx = _contexto_sitio(sitio)
-    if sitio['plantilla_tipo'] == 'web5':
-        template = 'sites/empresa/inicio.html'
+    clave = sitio['plantilla_clave']
+    # Plantillas con template propio de una sola página (no web5)
+    _single_page = {'arquitectura'}
+    if clave in _single_page:
+        template = f'sites/{clave}/index.html'
     else:
-        template = f"sites/{sitio['plantilla_clave']}/index.html"
+        template = 'sites/empresa/inicio.html'
     return render_template(template, sitio=sitio, pagina_activa='inicio', **ctx)
 
 
