@@ -125,13 +125,39 @@
     </div><!-- /.contact-layout -->
 
     <!-- Mapa embed (opcional) -->
-    {% if config.get('contacto_maps_embed') %}
-    <div style="margin-top:64px;">
-      <iframe src="{{ config.get('contacto_maps_embed') }}"
-              width="100%" height="350" style="border:0;border-radius:12px;"
-              allowfullscreen="" loading="lazy"
-              referrerpolicy="no-referrer-when-downgrade"></iframe>
-    </div>
+    {% set modo_mapa = config.get('contacto_mapa_modo', 'coords') %}
+
+    {% if modo_mapa != 'ninguno' %}
+      {% if modo_mapa == 'embed' and config.get('contacto_maps_embed') %}
+      {# ── Modo: URL embed de Google Maps ── #}
+      <div style="margin-top:64px;">
+        <iframe src="{{ config.get('contacto_maps_embed') }}"
+                width="100%" height="350" style="border:0;border-radius:12px;"
+                allowfullscreen="" loading="lazy"
+                referrerpolicy="no-referrer-when-downgrade"></iframe>
+      </div>
+
+      {% elif config.get('contacto_mapa_lat') and config.get('contacto_mapa_lng') %}
+      {# ── Modo: Coordenadas → OpenStreetMap (sin API key) ── #}
+      {% set lat   = config.get('contacto_mapa_lat') %}
+      {% set lng   = config.get('contacto_mapa_lng') %}
+      {% set delta = 0.008 %}
+      {% set bbox  = (lng|float - delta)|round(6)|string + ',' + (lat|float - delta)|round(6)|string + ',' + (lng|float + delta)|round(6)|string + ',' + (lat|float + delta)|round(6)|string %}
+      <div style="margin-top:64px;">
+        <iframe
+          src="https://www.openstreetmap.org/export/embed.html?bbox={{ bbox }}&layer=mapnik&marker={{ lat }},{{ lng }}"
+          width="100%" height="350"
+          style="border:0;border-radius:12px;"
+          loading="lazy"
+          title="Mapa de ubicación"></iframe>
+        <p style="text-align:right;margin-top:6px;font-size:11px;color:#94a3b8;">
+          <a href="https://www.openstreetmap.org/?mlat={{ lat }}&mlon={{ lng }}#map=16/{{ lat }}/{{ lng }}"
+             target="_blank" rel="noopener" style="color:#94a3b8;">
+            Ver mapa más grande →
+          </a>
+        </p>
+      </div>
+      {% endif %}
     {% endif %}
 
   </div>
