@@ -1,0 +1,67 @@
+{% extends "sites/empresa/base.html" %}
+
+{% block titulo %}{{ sitio.nombre }} — Servicios{% endblock %}
+
+{% block content %}
+
+<!-- ── Page Banner ─────────────────────────────────────────────────────────── -->
+<section class="page-banner">
+  <div class="container">
+    <h1>{{ config.get('servicios_titulo_pagina', 'Nuestros servicios') }}</h1>
+    <nav class="breadcrumb">
+      <a href="/s/{{ sitio.slug }}/">Inicio</a>
+      <span>›</span>
+      <span>Servicios</span>
+    </nav>
+  </div>
+</section>
+
+<!-- ── Intro ───────────────────────────────────────────────────────────────── -->
+<section style="padding:80px 0;">
+  <div class="container">
+    {% if config.get('servicios_descripcion') %}
+    <div class="section-header fade-in-up" style="margin-bottom:56px;">
+      <h2 class="section-title">¿Qué hacemos?</h2>
+      <p class="section-subtitle">{{ config.get('servicios_descripcion') }}</p>
+    </div>
+    {% endif %}
+
+    {% if secciones.servicios %}
+    <div class="services-grid">
+      {% for item in secciones.servicios %}
+      <div class="service-card fade-in-up">
+        {% if item.get('imagen') %}
+          <img src="{{ item.get('imagen') }}" alt="{{ item.get('titulo','') }}" class="service-img"/>
+        {% else %}
+          <div class="service-icon">⚡</div>
+        {% endif %}
+        <div class="service-body">
+          <h3 class="service-title">{{ item.get('titulo','Servicio') }}</h3>
+          <p class="service-desc">{{ item.get('desc','') }}</p>
+          {% if item.get('precio') %}
+            <p class="service-price">{{ item.get('precio') }}</p>
+          {% endif %}
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <p style="text-align:center;color:#6b7280;padding:40px 0;">
+      Próximamente publicaremos nuestros servicios aquí.
+    </p>
+    {% endif %}
+  </div>
+</section>
+
+<!-- ── CTA ────────────────────────────────────────────────────────────────── -->
+<section class="cta-section">
+  <div class="container">
+    <div class="cta-inner">
+      <h2>¿Te interesa algún servicio?</h2>
+      <p>Escríbenos y te damos más detalles sin compromiso.</p>
+      <a href="/s/{{ sitio.slug }}/contacto/" class="btn-cta-light">Solicitar información</a>
+    </div>
+  </div>
+</section>
+
+{% endblock %}

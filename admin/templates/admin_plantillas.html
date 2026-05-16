@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Plantillas · Panel Admin</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='admin.css') }}"/>
+</head>
+<body>
+
+<nav class="admin-navbar">
+  <div class="navbar-brand">
+    <span class="logo-mark sm">PW</span>
+    <span class="navbar-title">Plantillas Web RD</span>
+  </div>
+  <div class="navbar-actions">
+    <a href="{{ url_for('admin_clientes') }}" class="btn-logout" style="margin-right:8px;">Clientes</a>
+    <a href="{{ url_for('dashboard') }}" class="btn-logout" style="margin-right:8px;">Dashboard</a>
+    <a href="{{ url_for('logout') }}" class="btn-logout">Cerrar sesión</a>
+  </div>
+</nav>
+
+<main class="admin-main">
+
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% for category, message in messages %}
+      <div class="flash-message flash-{{ category }}">{{ message }}</div>
+    {% endfor %}
+  {% endwith %}
+
+  <div class="page-header" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+    <div>
+      <h1 class="page-title">Plantillas del CMS</h1>
+      <p class="page-subtitle">Define qué plantillas pueden elegir los usuarios y qué secciones incluyen.</p>
+    </div>
+    <a href="{{ url_for('admin_plantilla_nueva') }}" class="btn-admin-panel">
+      + Nueva plantilla
+    </a>
+  </div>
+
+  {% if plantillas %}
+  <div class="table-wrap">
+    <table class="admin-table">
+      <thead>
+        <tr>
+          <th>Clave</th>
+          <th>Nombre</th>
+          <th>Tipo</th>
+          <th>Descripción</th>
+          <th>Sitios activos</th>
+          <th>Estado</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for p in plantillas %}
+        <tr class="{{ '' if p.activo else 'row-inactive' }}">
+          <td><code>{{ p.clave }}</code></td>
+          <td><strong>{{ p.nombre }}</strong></td>
+          <td>
+            <span class="badge {{ 'badge-web5' if p.tipo == 'web5' else 'badge-landing' }}">
+              {{ p.tipo }}
+            </span>
+          </td>
+          <td style="max-width:260px;color:#6b7280;font-size:13px;">{{ p.descripcion or '—' }}</td>
+          <td style="text-align:center;">
+            <span class="badge {{ 'badge-success' if conteos[p.id] > 0 else 'badge-muted' }}">
+              {{ conteos[p.id] }}
+            </span>
+          </td>
+          <td>
+            <span class="badge {{ 'badge-success' if p.activo else 'badge-muted' }}">
+              {{ 'Activa' if p.activo else 'Inactiva' }}
+            </span>
+          </td>
+          <td class="cell-actions">
+            <a href="{{ url_for('admin_plantilla_editar', plantilla_id=p.id) }}" class="btn-sm">Editar</a>
+            <form method="POST"
+                  action="{{ url_for('admin_plantilla_toggle', plantilla_id=p.id) }}"
+                  style="display:inline;"
+                  onsubmit="return confirm('¿{{ 'Desactivar' if p.activo else 'Activar' }} esta plantilla?')">
+              <button type="submit" class="btn-sm {{ 'btn-danger' if p.activo else 'btn-success' }}">
+                {{ 'Desactivar' if p.activo else 'Activar' }}
+              </button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="empty-state">
+    <p>No hay plantillas aún. <a href="{{ url_for('admin_plantilla_nueva') }}">Crea la primera.</a></p>
+  </div>
+  {% endif %}
+
+</main>
+
+<style>
+.table-wrap { overflow-x: auto; margin-top: 24px; }
+.admin-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+.admin-table th { background: #f1f5f9; padding: 10px 14px; text-align: left; font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: .5px; color: #64748b; border-bottom: 2px solid #e2e8f0; }
+.admin-table td { padding: 12px 14px; border-bottom: 1px solid #f1f5f9; vertical-align: middle; }
+.admin-table tr:hover td { background: #f8fafc; }
+.row-inactive td { opacity: .55; }
+.cell-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+.badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; }
+.badge-web5    { background: #ede9fe; color: #6d28d9; }
+.badge-landing { background: #dbeafe; color: #1d4ed8; }
+.badge-success { background: #dcfce7; color: #166534; }
+.badge-muted   { background: #f1f5f9; color: #94a3b8; }
+.btn-sm { padding: 5px 12px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; border: 1.5px solid #e2e8f0; background: #fff; color: #374151; text-decoration: none; transition: all .2s; }
+.btn-sm:hover   { background: #f1f5f9; }
+.btn-danger     { border-color: #fecaca; color: #dc2626; background: #fff5f5; }
+.btn-danger:hover { background: #fee2e2; }
+.btn-success    { border-color: #bbf7d0; color: #15803d; background: #f0fdf4; }
+.btn-success:hover { background: #dcfce7; }
+code { background: #f1f5f9; padding: 2px 6px; border-radius: 4px; font-size: 12px; color: #0f172a; }
+</style>
+
+</body>
+</html>

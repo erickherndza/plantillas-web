@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Crear sitio · Plantillas Web RD</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='admin.css') }}">
+</head>
+<body>
+
+  <nav class="admin-navbar">
+    <div class="navbar-brand">
+      <span class="logo-mark sm">PW</span>
+      <span class="navbar-title">Plantillas Web RD</span>
+    </div>
+    <div class="navbar-actions">
+      <a href="{{ url_for('mi_panel') }}" class="btn-back-nav">&larr; Mi panel</a>
+      <a href="{{ url_for('salir') }}" class="btn-logout">Cerrar sesión</a>
+    </div>
+  </nav>
+
+  <main class="admin-main" style="max-width:720px;">
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% for category, message in messages %}
+        <div class="flash-message flash-{{ category }}">{{ message }}</div>
+      {% endfor %}
+    {% endwith %}
+
+    <div class="page-header">
+      <h1 class="page-title">Crear nuevo sitio</h1>
+      <p class="page-subtitle">Elige una plantilla y configura tu sitio en segundos</p>
+    </div>
+
+    <form method="POST" action="{{ url_for('crear_sitio') }}" id="form-crear">
+
+      <!-- Paso 1: Plantilla -->
+      <div class="form-card" style="margin-bottom:24px;">
+        <div class="section-header">
+          <h2 class="section-title">1. Elige una plantilla</h2>
+          <p class="section-desc">Podrás cambiar los colores, textos e imágenes después</p>
+        </div>
+
+        <div class="dashboard-grid" style="margin-top:0;">
+          {% for plantilla in plantillas %}
+            <label class="plantilla-card plantilla-selectable" style="cursor:pointer;"
+                   for="pt_{{ plantilla.id }}">
+              <input type="radio" name="plantilla_id" id="pt_{{ plantilla.id }}"
+                     value="{{ plantilla.id }}" required
+                     style="position:absolute;opacity:0;pointer-events:none;">
+              <div class="card-icon">
+                {% if plantilla.clave == 'doctores' %}🏥
+                {% elif plantilla.clave == 'arquitectura' %}🏛️
+                {% else %}🌐{% endif %}
+              </div>
+              <div class="card-body">
+                <h3 class="card-title">{{ plantilla.nombre }}</h3>
+                <p class="card-id">{{ plantilla.tipo }}</p>
+                {% if plantilla.descripcion %}
+                  <p style="font-size:12px;color:var(--admin-muted);margin-top:6px;">
+                    {{ plantilla.descripcion }}
+                  </p>
+                {% endif %}
+              </div>
+            </label>
+          {% endfor %}
+        </div>
+      </div>
+
+      <!-- Paso 2: Nombre y slug -->
+      <div class="form-card" style="margin-bottom:24px;">
+        <div class="section-header">
+          <h2 class="section-title">2. Nombre de tu negocio</h2>
+          <p class="section-desc">Esto aparecerá en tu sitio web</p>
+        </div>
+
+        <div class="form-group">
+          <label for="nombre_sitio">Nombre del negocio</label>
+          <input type="text" id="nombre_sitio" name="nombre_sitio" required
+                 placeholder="Ej: Clínica San Rafael"
+                 oninput="generarSlug(this.value)">
+        </div>
+
+        <div class="form-group">
+          <label for="slug">Dirección de tu sitio</label>
+          <div style="display:flex;align-items:center;gap:0;border:1.5px solid var(--admin-border);border-radius:var(--radius);overflow:hidden;background:var(--admin-surface);">
+            <span style="padding:10px 12px;background:var(--admin-bg);color:var(--admin-muted);font-size:13px;white-space:nowrap;border-right:1px solid var(--admin-border);">
+              /s/
+            </span>
+            <input type="text" id="slug" name="slug" required
+                   pattern="[a-z0-9][a-z0-9\-]{1,28}[a-z0-9]"
+                   placeholder="mi-negocio"
+                   style="border:none;outline:none;padding:10px 14px;font-size:14px;width:100%;font-family:monospace;background:transparent;">
+          </div>
+          <p class="field-hint">
+            Solo letras minúsculas, números y guiones. Mínimo 3 caracteres.<br>
+            Tu sitio quedará en: <strong id="preview-url">/s/mi-negocio</strong>
+          </p>
+        </div>
+      </div>
+
+      <div class="form-actions" style="border:none;padding-top:0;">
+        <a href="{{ url_for('mi_panel') }}" class="btn-cancelar">Cancelar</a>
+        <button type="submit" class="btn-guardar" style="min-width:180px;">
+          Crear sitio
+        </button>
+      </div>
+
+    </form>
+
+  </main>
+
+  <script>
+    // Auto-generar slug desde nombre
+    function generarSlug(nombre) {
+      const slug = nombre
+        .toLowerCase()
+        .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^a-z0-9\s-]/g, '')
+        .trim()
+        .replace(/\s+/g, '-')
+        .replace(/-+/g, '-')
+        .substring(0, 30);
+      document.getElementById('slug').value = slug;
+      document.getElementById('preview-url').textContent = '/s/' + (slug || 'mi-negocio');
+    }
+
+    // Actualizar preview al escribir slug directamente
+    document.getElementById('slug').addEventListener('input', function() {
+      document.getElementById('preview-url').textContent = '/s/' + (this.value || 'mi-negocio');
+    });
+
+    // Resaltar plantilla seleccionada
+    document.querySelectorAll('input[name="plantilla_id"]').forEach(radio => {
+      radio.addEventListener('change', function() {
+        document.querySelectorAll('.plantilla-selectable').forEach(card => {
+          card.style.borderColor = '';
+          card.style.boxShadow = '';
+        });
+        const label = document.querySelector(`label[for="${this.id}"]`);
+        if (label) {
+          label.style.borderColor = 'var(--admin-accent)';
+          label.style.boxShadow = '0 0 0 3px rgba(3,140,140,.15)';
+        }
+      });
+    });
+  </script>
+
+</body>
+</html>

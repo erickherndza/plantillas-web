@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="description" content="{{ config.get('nosotros_descripcion', sitio.nombre) }}"/>
+  <meta property="og:title" content="{{ sitio.nombre }}"/>
+  <title>{{ sitio.nombre }}</title>
+
+  <!-- Fuentes Google -->
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700;800&family=Montserrat:wght@400;500&display=swap" rel="stylesheet"/>
+
+  <!-- CSS base de la plantilla -->
+  <link href="{{ url_for('static', filename='sites/arquitectura/style.css') }}" rel="stylesheet"/>
+
+  <!-- Variables CSS personalizadas del usuario -->
+  <style>
+    :root {
+      --c-primary: {{ config.get('color_primario', '#0bb180') }};
+      --c-dark:    {{ config.get('color_footer_bg', '#0d1b2a') }};
+      --c-text:    {{ config.get('color_texto', '#2d3748') }};
+    }
+  </style>
+</head>
+<body>
+
+<!-- ── Header ──────────────────────────────────────────────────────────────── -->
+<header class="site-header" id="site-header">
+  <div class="container">
+    <a class="header-brand" href="#">
+      {% if config.get('logo_url') %}
+        <img class="header-logo" src="{{ config.get('logo_url') }}"
+             alt="Logo {{ sitio.nombre }}" style="max-height:44px;width:auto;"/>
+      {% else %}
+        {{ sitio.nombre }}
+      {% endif %}
+    </a>
+    <div class="header-contact">
+      {% if config.get('contacto_telefono') %}
+        <span>📞 {{ config.get('contacto_telefono') }}</span>
+      {% endif %}
+      {% if config.get('contacto_email') %}
+        <span>✉ {{ config.get('contacto_email') }}</span>
+      {% endif %}
+    </div>
+  </div>
+</header>
+
+<!-- ── Navbar ──────────────────────────────────────────────────────────────── -->
+<nav class="navbar" id="navbar">
+  <div class="container">
+    <ul class="nav-list">
+      <li><a class="nav-link" href="#inicio">Inicio</a></li>
+      <li><a class="nav-link" href="#nosotros">Nosotros</a></li>
+      <li><a class="nav-link" href="#servicios">Servicios</a></li>
+      <li><a class="nav-link" href="#proyectos">Proyectos</a></li>
+      {% if secciones.equipo %}
+        <li><a class="nav-link" href="#equipo">Equipo</a></li>
+      {% endif %}
+      <li><a class="nav-link" href="#contacto">Contacto</a></li>
+    </ul>
+    <button class="nav-toggle" id="nav-toggle" aria-label="Menú">☰</button>
+  </div>
+</nav>
+
+<!-- ── Hero ───────────────────────────────────────────────────────────────── -->
+<section class="hero-section" id="inicio">
+  <div class="hero-bg" style="background-image:url('{{ config.get('hero_imagen', '') }}')"></div>
+  <div class="hero-overlay"></div>
+  <div class="container">
+    <div class="hero-content fade-in-up">
+      {% if config.get('hero_eyebrow') %}
+        <p class="hero-eyebrow">{{ config.get('hero_eyebrow') }}</p>
+      {% endif %}
+      <h1 class="hero-title">{{ config.get('hero_titulo', sitio.nombre) }}</h1>
+      <p class="hero-subtitle">{{ config.get('hero_subtitulo', 'Bienvenidos a nuestra página web') }}</p>
+      <div class="hero-actions">
+        <a class="btn-primary" href="{{ config.get('hero_cta_href', '#contacto') }}">
+          {{ config.get('hero_cta_texto', 'Contáctanos') }}
+        </a>
+        <a class="btn-secondary" href="{{ config.get('hero_cta2_href', '#servicios') }}">
+          {{ config.get('hero_cta2_texto', 'Ver servicios') }}
+        </a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── Nosotros ────────────────────────────────────────────────────────────── -->
+<section class="about-section" id="nosotros">
+  <div class="container">
+    <div class="section-header fade-in-up">
+      <h2 class="section-title">Quiénes somos</h2>
+      <p class="section-subtitle">{{ config.get('nosotros_descripcion', 'Somos una empresa comprometida con la excelencia.') }}</p>
+    </div>
+    <div class="mvv-grid">
+      <div class="mvv-card fade-in-up">
+        <div class="mvv-icon">
+          <svg width="60" height="60" fill="none" stroke="{{ config.get('color_primario','#0bb180') }}"
+               stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"
+               viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="12" cy="12" r="10"/>
+          </svg>
+        </div>
+        <h3 class="mvv-card-title">Misión</h3>
+        <p>{{ config.get('nosotros_mision', 'Nuestra misión es ofrecer soluciones de alta calidad.') }}</p>
+      </div>
+      <div class="mvv-card fade-in-up">
+        <div class="mvv-icon">
+          <svg width="60" height="60" fill="none" stroke="{{ config.get('color_primario','#0bb180') }}"
+               stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"
+               viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="12" cy="12" r="10"/>
+          </svg>
+        </div>
+        <h3 class="mvv-card-title">Visión</h3>
+        <p>{{ config.get('nosotros_vision', 'Ser líderes en nuestra industria.') }}</p>
+      </div>
+      <div class="mvv-card fade-in-up">
+        <div class="mvv-icon">
+          <svg width="60" height="60" fill="none" stroke="{{ config.get('color_primario','#0bb180') }}"
+               stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"
+               viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="12" cy="12" r="10"/>
+          </svg>
+        </div>
+        <h3 class="mvv-card-title">Valores</h3>
+        <p>{{ config.get('nosotros_valores', 'Integridad, Excelencia, Innovación') }}</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── Servicios ───────────────────────────────────────────────────────────── -->
+{% if secciones.servicios %}
+<section class="services-section" id="servicios">
+  <div class="container">
+    <div class="section-header fade-in-up">
+      <h2 class="section-title">Nuestros servicios</h2>
+      <p class="section-subtitle">{{ config.get('servicios_descripcion', 'Ofrecemos soluciones adaptadas a tus necesidades.') }}</p>
+    </div>
+    <div class="services-grid">
+      {% for item in secciones.servicios %}
+        <div class="service-card fade-in-up">
+          {% if item.get('imagen') %}
+            <div class="service-icon">
+              <img src="{{ item.imagen }}" alt="{{ item.get('titulo', 'Servicio') }}"/>
+            </div>
+          {% endif %}
+          <h3 class="service-title">{{ item.get('titulo', 'Servicio') }}</h3>
+          <p class="service-desc">{{ item.get('desc', '') }}</p>
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endif %}
+
+<!-- ── Proyectos ───────────────────────────────────────────────────────────── -->
+{% if secciones.proyectos %}
+<section class="portfolio-section" id="proyectos">
+  <div class="container">
+    <div class="section-header fade-in-up">
+      <h2 class="section-title">Nuestros proyectos</h2>
+      <p class="section-subtitle">{{ config.get('proyectos_descripcion', 'Una muestra de nuestros trabajos más destacados.') }}</p>
+    </div>
+    <div class="portfolio-grid">
+      {% for item in secciones.proyectos %}
+        <div class="portfolio-card fade-in-up">
+          {% if item.get('imagen') %}
+            <img src="{{ item.imagen }}" alt="{{ item.get('titulo', 'Proyecto') }}"/>
+          {% else %}
+            <div style="background:var(--c-primary);opacity:0.15;width:100%;height:100%;position:absolute;"></div>
+          {% endif %}
+          <div class="portfolio-overlay">
+            <h3 class="portfolio-title">{{ item.get('titulo', 'Proyecto') }}</h3>
+            <p class="portfolio-category">{{ item.get('categoria', '') }}</p>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endif %}
+
+<!-- ── Equipo ──────────────────────────────────────────────────────────────── -->
+{% if secciones.equipo %}
+<section class="team-section" id="equipo">
+  <div class="container">
+    <div class="section-header fade-in-up">
+      <h2 class="section-title">Nuestro equipo</h2>
+      <p class="section-subtitle">{{ config.get('equipo_descripcion', 'Profesionales comprometidos con tu éxito.') }}</p>
+    </div>
+    <div class="team-grid">
+      {% for miembro in secciones.equipo %}
+        <div class="team-card fade-in-up">
+          <img src="{{ miembro.get('foto', 'https://placehold.co/120x120/e2e8f0/94a3b8?text=' + miembro.get('nombre','')[0:1]) }}"
+               alt="{{ miembro.get('nombre', '') }}"/>
+          <h3 class="team-name">{{ miembro.get('nombre', '') }}</h3>
+          <p class="team-role">{{ miembro.get('rol', '') }}</p>
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endif %}
+
+<!-- ── Contacto ────────────────────────────────────────────────────────────── -->
+<section class="contact-section" id="contacto">
+  <div class="container">
+    <div class="section-header fade-in-up">
+      <h2 class="section-title">Contáctanos</h2>
+      <p class="section-subtitle">{{ config.get('contacto_descripcion', '¿Quieres saber más? Escríbenos y te responderemos pronto.') }}</p>
+    </div>
+    <div class="contact-grid">
+      <div class="contact-info fade-in-up">
+        {% if config.get('contacto_direccion') %}
+          <div class="contact-item">
+            <span class="contact-icon">📍</span>
+            <span>{{ config.get('contacto_direccion') }}</span>
+          </div>
+        {% endif %}
+        {% if config.get('contacto_telefono') %}
+          <div class="contact-item">
+            <span class="contact-icon">📞</span>
+            <span>{{ config.get('contacto_telefono') }}</span>
+          </div>
+        {% endif %}
+        {% if config.get('contacto_email') %}
+          <div class="contact-item">
+            <span class="contact-icon">✉</span>
+            <span>{{ config.get('contacto_email') }}</span>
+          </div>
+        {% endif %}
+      </div>
+      <form class="contact-form fade-in-up" id="contact-form">
+        <div class="form-group">
+          <label for="nombre-c">Nombre completo</label>
+          <input type="text" id="nombre-c" name="nombre" required/>
+        </div>
+        <div class="form-group">
+          <label for="email-c">Correo electrónico</label>
+          <input type="email" id="email-c" name="email" required/>
+        </div>
+        <div class="form-group">
+          <label for="telefono-c">Teléfono</label>
+          <input type="tel" id="telefono-c" name="telefono"/>
+        </div>
+        <div class="form-group">
+          <label for="mensaje-c">Mensaje</label>
+          <textarea id="mensaje-c" name="mensaje" rows="5" required></textarea>
+        </div>
+        <button class="btn-primary" type="submit">Enviar mensaje</button>
+        <div class="form-feedback" id="form-feedback"></div>
+      </form>
+    </div>
+  </div>
+</section>
+
+<!-- ── Footer ──────────────────────────────────────────────────────────────── -->
+<footer class="site-footer">
+  <div class="container">
+    <div class="footer-inner">
+      <div class="footer-brand-col">
+        <p class="footer-brand">{{ sitio.nombre }}</p>
+        <p class="footer-desc">{{ config.get('footer_descripcion', 'Comprometidos con la excelencia y satisfacción de nuestros clientes.') }}</p>
+      </div>
+      <div class="footer-nav">
+        <h4>Navegación</h4>
+        <ul>
+          <li><a href="#inicio">Inicio</a></li>
+          <li><a href="#nosotros">Nosotros</a></li>
+          <li><a href="#servicios">Servicios</a></li>
+          <li><a href="#proyectos">Proyectos</a></li>
+          <li><a href="#contacto">Contacto</a></li>
+        </ul>
+      </div>
+      <div class="footer-contact-col">
+        <h4>Contacto</h4>
+        {% if config.get('contacto_direccion') %}<p>{{ config.get('contacto_direccion') }}</p>{% endif %}
+        {% if config.get('contacto_telefono') %}<p>{{ config.get('contacto_telefono') }}</p>{% endif %}
+        {% if config.get('contacto_email') %}<p>{{ config.get('contacto_email') }}</p>{% endif %}
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>© <span id="current-year"></span> {{ sitio.nombre }}. Todos los derechos reservados.</p>
+    </div>
+  </div>
+</footer>
+
+<script defer src="{{ url_for('static', filename='sites/arquitectura/script.js') }}"></script>
+</body>
+</html>

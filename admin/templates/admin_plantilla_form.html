@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>{{ 'Nueva plantilla' if modo == 'nueva' else 'Editar plantilla' }} · Panel Admin</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='admin.css') }}"/>
+</head>
+<body>
+
+<nav class="admin-navbar">
+  <div class="navbar-brand">
+    <span class="logo-mark sm">PW</span>
+    <span class="navbar-title">Plantillas Web RD</span>
+  </div>
+  <div class="navbar-actions">
+    <a href="{{ url_for('admin_plantillas') }}" class="btn-logout">← Volver</a>
+  </div>
+</nav>
+
+<main class="admin-main" style="max-width:760px;">
+
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% for category, message in messages %}
+      <div class="flash-message flash-{{ category }}">{{ message }}</div>
+    {% endfor %}
+  {% endwith %}
+
+  <div class="page-header">
+    <h1 class="page-title">{{ 'Nueva plantilla' if modo == 'nueva' else 'Editar: ' + p.nombre }}</h1>
+    {% if modo == 'editar' %}
+      <p class="page-subtitle">Clave: <code>{{ p.clave }}</code> — no se puede cambiar.</p>
+    {% else %}
+      <p class="page-subtitle">La clave identifica la carpeta Jinja2 en <code>templates/sites/&lt;clave&gt;/</code></p>
+    {% endif %}
+  </div>
+
+  <form method="POST" class="form-card">
+
+    <!-- Clave (solo en nueva) -->
+    {% if modo == 'nueva' %}
+    <div class="form-group">
+      <label for="clave">Clave <span class="req">*</span></label>
+      <input type="text" id="clave" name="clave" required
+             pattern="[a-z][a-z0-9_\-]{1,29}"
+             placeholder="empresa, doctores, restaurante…"
+             value="{{ request.form.get('clave','') }}"/>
+      <p class="form-hint">Solo minúsculas, números, guiones. Ejemplo: <code>restaurante</code></p>
+    </div>
+    {% endif %}
+
+    <!-- Nombre -->
+    <div class="form-group">
+      <label for="nombre">Nombre visible <span class="req">*</span></label>
+      <input type="text" id="nombre" name="nombre" required
+             placeholder="Web Empresarial — 5 páginas"
+             value="{{ p.nombre if p else request.form.get('nombre','') }}"/>
+    </div>
+
+    <!-- Tipo -->
+    <div class="form-group">
+      <label for="tipo">Tipo de plantilla</label>
+      <select id="tipo" name="tipo">
+        {% set tipo_actual = p.tipo if p else request.form.get('tipo','landing') %}
+        <option value="landing" {{ 'selected' if tipo_actual == 'landing' }}>Landing page (1 página)</option>
+        <option value="web5"    {{ 'selected' if tipo_actual == 'web5'    }}>Web 5 páginas (multi-página)</option>
+      </select>
+    </div>
+
+    <!-- Descripción -->
+    <div class="form-group">
+      <label for="descripcion">Descripción</label>
+      <textarea id="descripcion" name="descripcion" rows="3"
+                placeholder="Describe para qué tipo de negocio es ideal esta plantilla…">{{ p.descripcion if p else request.form.get('descripcion','') }}</textarea>
+    </div>
+
+    <!-- Preview imagen URL -->
+    <div class="form-group">
+      <label for="preview_img">URL de imagen de preview</label>
+      <input type="url" id="preview_img" name="preview_img"
+             placeholder="https://…/preview.png"
+             value="{{ p.preview_img if p else request.form.get('preview_img','') }}"/>
+      <p class="form-hint">Imagen que verá el usuario al elegir la plantilla (opcional).</p>
+    </div>
+
+    <!-- Secciones del editor -->
+    <div class="form-group">
+      <label>Secciones del editor disponibles para el usuario</label>
+      <p class="form-hint">Marca las secciones que el usuario podrá editar para esta plantilla.</p>
+      <div class="checkbox-grid">
+        {% for clave_s, label_s in secciones_disponibles %}
+        <label class="checkbox-item">
+          <input type="checkbox" name="secciones" value="{{ clave_s }}"
+                 {{ 'checked' if clave_s in secciones_activas }}/>
+          <span class="checkbox-label">{{ label_s }}</span>
+        </label>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="form-actions">
+      <a href="{{ url_for('admin_plantillas') }}" class="btn-cancel">Cancelar</a>
+      <button type="submit" class="btn-save">
+        {{ 'Crear plantilla' if modo == 'nueva' else 'Guardar cambios' }}
+      </button>
+    </div>
+
+  </form>
+
+</main>
+
+<style>
+.form-card { background:#fff; border:1px solid #e2e8f0; border-radius:12px; padding:36px; margin-top:24px; }
+.form-group { display:flex; flex-direction:column; gap:6px; margin-bottom:24px; }
+.form-group label { font-size:13px; font-weight:600; color:#374151; }
+.req { color:#e53e3e; }
+.form-group input[type=text],
+.form-group input[type=url],
+.form-group select,
+.form-group textarea {
+  padding:10px 14px; border-radius:8px; border:1.5px solid #e2e8f0;
+  font-size:14px; font-family:inherit; color:#0f172a;
+  outline:none; transition:border-color .2s;
+}
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus { border-color:#0bb180; }
+.form-hint { font-size:12px; color:#94a3b8; }
+code { background:#f1f5f9; padding:2px 6px; border-radius:4px; font-size:12px; }
+.checkbox-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(220px,1fr)); gap:10px; margin-top:8px; }
+.checkbox-item { display:flex; align-items:center; gap:10px; padding:10px 14px; border:1.5px solid #e2e8f0; border-radius:8px; cursor:pointer; transition:border-color .2s, background .2s; }
+.checkbox-item:hover { border-color:#0bb180; background:#f0fdf9; }
+.checkbox-item input[type=checkbox] { width:16px; height:16px; accent-color:#0bb180; flex-shrink:0; }
+.checkbox-label { font-size:13px; color:#374151; }
+.form-actions { display:flex; gap:12px; justify-content:flex-end; margin-top:8px; }
+.btn-save { padding:11px 28px; background:#0bb180; color:#fff; border:none; border-radius:8px; font-weight:700; font-size:14px; cursor:pointer; transition:background .2s; }
+.btn-save:hover { background:#09a070; }
+.btn-cancel { padding:11px 20px; background:none; border:1.5px solid #e2e8f0; border-radius:8px; font-size:14px; color:#6b7280; cursor:pointer; text-decoration:none; display:inline-flex; align-items:center; }
+.btn-cancel:hover { background:#f8fafc; }
+</style>
+
+</body>
+</html>

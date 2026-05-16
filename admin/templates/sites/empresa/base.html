@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="description" content="{{ config.get('nosotros_descripcion', sitio.nombre) }}"/>
+  <title>{% block titulo %}{{ sitio.nombre }}{% endblock %}</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700;800&family=Montserrat:wght@400;500&display=swap" rel="stylesheet"/>
+  <link href="{{ url_for('static', filename='sites/empresa/style.css') }}" rel="stylesheet"/>
+
+  <style>
+    :root {
+      --c-primary: {{ config.get('color_primario', '#0bb180') }};
+      --c-dark:    {{ config.get('color_footer_bg', '#0d1b2a') }};
+      --c-text:    {{ config.get('color_texto', '#2d3748') }};
+    }
+  </style>
+</head>
+<body>
+
+<!-- ── Header ─────────────────────────────────────────────────────────────── -->
+<header class="site-header" id="site-header">
+  <div class="container">
+    <a class="header-brand" href="{{ url_for('ver_sitio', slug=sitio.slug) }}">
+      {% if config.get('logo_url') %}
+        <img src="{{ config.get('logo_url') }}" alt="Logo {{ sitio.nombre }}"
+             style="max-height:44px;width:auto;"/>
+      {% else %}
+        {{ sitio.nombre }}
+      {% endif %}
+    </a>
+    <div class="header-contact">
+      {% if config.get('contacto_telefono') %}
+        <span>📞 {{ config.get('contacto_telefono') }}</span>
+      {% endif %}
+      {% if config.get('contacto_email') %}
+        <span>✉ {{ config.get('contacto_email') }}</span>
+      {% endif %}
+    </div>
+  </div>
+</header>
+
+<!-- ── Navbar ──────────────────────────────────────────────────────────────── -->
+<nav class="navbar" id="navbar">
+  <div class="container">
+    <ul class="nav-list">
+      {% set base = '/s/' + sitio.slug %}
+      <li><a class="nav-link {% if pagina_activa=='inicio' %}active{% endif %}"
+             href="{{ base }}/">Inicio</a></li>
+      <li><a class="nav-link {% if pagina_activa=='nosotros' %}active{% endif %}"
+             href="{{ base }}/nosotros/">Nosotros</a></li>
+      <li><a class="nav-link {% if pagina_activa=='servicios' %}active{% endif %}"
+             href="{{ base }}/servicios/">Servicios</a></li>
+      <li><a class="nav-link {% if pagina_activa=='proyectos' %}active{% endif %}"
+             href="{{ base }}/proyectos/">Proyectos</a></li>
+      <li><a class="nav-link {% if pagina_activa=='contacto' %}active{% endif %}"
+             href="{{ base }}/contacto/">Contacto</a></li>
+    </ul>
+    <button class="nav-toggle" id="nav-toggle" aria-label="Menú">☰</button>
+  </div>
+</nav>
+
+<!-- ── Contenido de la página ─────────────────────────────────────────────── -->
+{% block content %}{% endblock %}
+
+<!-- ── Footer ─────────────────────────────────────────────────────────────── -->
+<footer class="site-footer">
+  <div class="container">
+    <div class="footer-inner">
+      <div class="footer-brand-col">
+        <p class="footer-brand">{{ sitio.nombre }}</p>
+        <p class="footer-desc">{{ config.get('footer_descripcion', 'Comprometidos con la excelencia y satisfacción de nuestros clientes.') }}</p>
+      </div>
+      <div class="footer-nav">
+        <h4>Navegación</h4>
+        <ul>
+          {% set base = '/s/' + sitio.slug %}
+          <li><a href="{{ base }}/">Inicio</a></li>
+          <li><a href="{{ base }}/nosotros/">Nosotros</a></li>
+          <li><a href="{{ base }}/servicios/">Servicios</a></li>
+          <li><a href="{{ base }}/proyectos/">Proyectos</a></li>
+          <li><a href="{{ base }}/contacto/">Contacto</a></li>
+        </ul>
+      </div>
+      <div class="footer-contact-col">
+        <h4>Contacto</h4>
+        {% if config.get('contacto_direccion') %}<p>{{ config.get('contacto_direccion') }}</p>{% endif %}
+        {% if config.get('contacto_telefono') %}<p>{{ config.get('contacto_telefono') }}</p>{% endif %}
+        {% if config.get('contacto_email') %}<p>{{ config.get('contacto_email') }}</p>{% endif %}
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>© <span id="current-year"></span> {{ sitio.nombre }}. Todos los derechos reservados.</p>
+    </div>
+  </div>
+</footer>
+
+<script defer src="{{ url_for('static', filename='sites/empresa/script.js') }}"></script>
+</body>
+</html>

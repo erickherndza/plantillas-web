@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Crear cuenta · Plantillas Web RD</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='admin.css') }}">
+</head>
+<body class="login-body">
+
+  <div class="login-wrap" style="max-width:440px;">
+    <div class="login-card">
+
+      <div class="login-logo">
+        <span class="logo-mark">PW</span>
+        <div>
+          <p class="logo-title">Crear cuenta gratis</p>
+          <p class="logo-sub">Plantillas Web RD</p>
+        </div>
+      </div>
+
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% for category, message in messages %}
+          <div class="alert alert-{{ category }}">{{ message }}</div>
+        {% endfor %}
+      {% endwith %}
+
+      <form method="POST" action="{{ url_for('registro') }}" class="login-form">
+        <div class="form-group">
+          <label for="nombre">Tu nombre</label>
+          <input type="text" id="nombre" name="nombre" required
+                 autocomplete="name" placeholder="Ej: María González">
+        </div>
+        <div class="form-group">
+          <label for="email">Email</label>
+          <input type="email" id="email" name="email" required
+                 autocomplete="email" placeholder="tu@email.com">
+        </div>
+        <div class="form-group">
+          <label for="password">Contraseña</label>
+          <input type="password" id="password" name="password" required
+                 autocomplete="new-password" placeholder="Mínimo 8 caracteres">
+        </div>
+        <div class="form-group">
+          <label for="confirm">Confirmar contraseña</label>
+          <input type="password" id="confirm" name="confirm" required
+                 autocomplete="new-password" placeholder="Repite la contraseña">
+        </div>
+        <button type="submit" class="btn-login">Crear cuenta</button>
+      </form>
+
+      <p class="login-footer" style="margin-top:16px;">
+        ¿Ya tienes cuenta?
+        <a href="{{ url_for('entrar') }}" style="color:var(--admin-accent);font-weight:600;">Inicia sesión</a>
+      </p>
+
+    </div>
+  </div>
+
+</body>
+</html>

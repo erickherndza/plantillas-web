@@ -33,9 +33,14 @@
         <span class="admin-badge">Admin</span>
         <span class="admin-banner-text">Panel de administración activo</span>
       </div>
-      <a href="{{ url_for('admin_clientes') }}" class="btn-admin-panel">
-        Gestionar clientes &rarr;
-      </a>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;">
+        <a href="{{ url_for('admin_clientes') }}" class="btn-admin-panel">
+          Gestionar clientes &rarr;
+        </a>
+        <a href="{{ url_for('admin_plantillas') }}" class="btn-admin-panel" style="background:#024959;">
+          Gestionar plantillas &rarr;
+        </a>
+      </div>
     </div>
     {% endif %}
 

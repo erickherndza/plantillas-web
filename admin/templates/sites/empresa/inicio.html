@@ -1,0 +1,82 @@
+{% extends "sites/empresa/base.html" %}
+
+{% block titulo %}{{ sitio.nombre }} — Inicio{% endblock %}
+
+{% block content %}
+
+<!-- ── Hero ───────────────────────────────────────────────────────────────── -->
+<section class="hero-section" id="inicio">
+  <div class="hero-bg" style="background-image:url('{{ config.get('hero_imagen','') }}')"></div>
+  <div class="hero-overlay"></div>
+  <div class="container">
+    <div class="hero-content fade-in-up">
+      {% if config.get('hero_eyebrow') %}
+        <p class="hero-eyebrow">{{ config.get('hero_eyebrow') }}</p>
+      {% endif %}
+      <h1 class="hero-title">{{ config.get('hero_titulo', sitio.nombre) }}</h1>
+      <p class="hero-subtitle">{{ config.get('hero_subtitulo', 'Bienvenidos a nuestra página web') }}</p>
+      <div class="hero-actions">
+        <a class="btn-primary" href="{{ config.get('hero_cta_href', '/s/' + sitio.slug + '/contacto/') }}">
+          {{ config.get('hero_cta_texto', 'Contáctanos') }}
+        </a>
+        <a class="btn-secondary" href="{{ config.get('hero_cta2_href', '/s/' + sitio.slug + '/servicios/') }}">
+          {{ config.get('hero_cta2_texto', 'Ver servicios') }}
+        </a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── Highlights ─────────────────────────────────────────────────────────── -->
+{% if secciones.servicios %}
+<section class="highlights-section">
+  <div class="container">
+    <div class="section-header fade-in-up">
+      <h2 class="section-title">Lo que hacemos</h2>
+      <p class="section-subtitle">{{ config.get('servicios_descripcion', 'Ofrecemos soluciones adaptadas a tus necesidades.') }}</p>
+    </div>
+    <div class="highlights-grid">
+      {% for item in secciones.servicios[:3] %}
+        <div class="highlight-card fade-in-up">
+          <div class="highlight-icon">⚡</div>
+          <h3 class="highlight-title">{{ item.get('titulo','Servicio') }}</h3>
+          <p class="highlight-desc">{{ item.get('desc','') }}</p>
+        </div>
+      {% endfor %}
+    </div>
+    {% if secciones.servicios|length > 3 %}
+      <div style="text-align:center;margin-top:32px;">
+        <a href="/s/{{ sitio.slug }}/servicios/" class="btn-primary">Ver todos los servicios</a>
+      </div>
+    {% endif %}
+  </div>
+</section>
+{% endif %}
+
+<!-- ── Quiénes somos (preview) ────────────────────────────────────────────── -->
+{% if config.get('nosotros_descripcion') %}
+<section class="about-section">
+  <div class="container">
+    <div class="section-header fade-in-up">
+      <h2 class="section-title">Quiénes somos</h2>
+      <p class="section-subtitle">{{ config.get('nosotros_descripcion') }}</p>
+    </div>
+    <div style="text-align:center;margin-top:8px;">
+      <a href="/s/{{ sitio.slug }}/nosotros/" class="btn-primary">Conoce más sobre nosotros</a>
+    </div>
+  </div>
+</section>
+{% endif %}
+
+<!-- ── CTA ────────────────────────────────────────────────────────────────── -->
+<section class="cta-section">
+  <div class="container">
+    <div class="cta-inner">
+      <h2>¿Listo para comenzar?</h2>
+      <p>Contáctanos hoy y cuéntanos sobre tu proyecto.</p>
+      <a href="/s/{{ sitio.slug }}/contacto/" class="btn-cta-light">Hablar con nosotros</a>
+    </div>
+  </div>
+</section>
+
+{% endblock %}

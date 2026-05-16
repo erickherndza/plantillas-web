@@ -1,13 +1,25 @@
 from flask import (
     Flask, render_template, request, redirect,
-    url_for, session, flash, jsonify, send_from_directory
+    url_for, session, flash, jsonify, send_from_directory, abort
 )
-import json, os, uuid, logging
+import json, os, uuid, logging, time, threading
+from werkzeug.security import generate_password_hash, check_password_hash
 
 from db import (
     init_db, obtener_cliente, obtener_cliente_por_id,
     obtener_plantillas_cliente, listar_clientes,
-    crear_cliente, actualizar_cliente, eliminar_cliente, set_accesos
+    crear_cliente, actualizar_cliente, eliminar_cliente, set_accesos,
+    # CMS multi-usuario
+    listar_plantillas_activas, listar_todas_plantillas,
+    obtener_plantilla_por_id, crear_plantilla, actualizar_plantilla,
+    toggle_plantilla, contar_sitios_por_plantilla,
+    crear_usuario, obtener_usuario_por_email, obtener_usuario_por_id,
+    slug_disponible, crear_sitio as db_crear_sitio, obtener_sitios_usuario, obtener_sitio_por_id,
+    obtener_sitio_por_slug,
+    get_config_sitio, set_config_sitio, set_config_sitio_bulk,
+    set_secciones_contenido, get_secciones_contenido,
+    guardar_mensaje_contacto,
+    listar_mensajes_sitio, marcar_mensaje_leido,
 )
 from parser import (
     extraer_valores, aplicar_cambios,
@@ -15,11 +27,88 @@ from parser import (
 )
 
 app = Flask(__name__)
-app.secret_key = 'admin-plantillas-rd-2026'
+
+# ── SECRET_KEY desde variable de entorno (DT-002) ─────────────────────────────
+_secret = os.environ.get('SECRET_KEY', '')
+if not _secret:
+    # Cargar .env manual si existe (evita dependencia de python-dotenv en dev)
+    _env_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '.env')
+    if os.path.isfile(_env_path):
+        with open(_env_path) as _f:
+            for _line in _f:
+                _line = _line.strip()
+                if _line and not _line.startswith('#') and '=' in _line:
+                    _k, _v = _line.split('=', 1)
+                    os.environ.setdefault(_k.strip(), _v.strip())
+        _secret = os.environ.get('SECRET_KEY', '')
+if not _secret:
+    import secrets as _sec
+    _secret = _sec.token_hex(32)
+    logging.warning('SECRET_KEY no configurada — usando clave temporal. Crea un archivo .env')
+
+app.secret_key = _secret
 
 BASE        = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SCHEMA_PATH = os.path.join(BASE, 'shared', 'site-schema.json')
 UPLOADS_DIR = os.path.join(app.static_folder, 'uploads')
+
+# ── Rate limiter en memoria (DT-004) ──────────────────────────────────────────
+# {ip: {'fails': int, 'last_fail': float, 'blocked_until': float}}
+_rate_store: dict = {}
+_rate_lock  = threading.Lock()
+_MAX_FAILS  = 5       # intentos fallidos antes del bloqueo
+_WINDOW_SEC = 300     # ventana de 5 minutos para contar fallos
+_BLOCK_SEC  = 900     # bloqueo de 15 minutos
+
+def _check_rate(ip: str) -> bool:
+    """Devuelve True si la IP puede intentar login. False si está bloqueada."""
+    now = time.time()
+    with _rate_lock:
+        entry = _rate_store.get(ip, {})
+        if entry.get('blocked_until', 0) > now:
+            return False
+        # Limpiar ventana vencida
+        if now - entry.get('last_fail', 0) > _WINDOW_SEC:
+            _rate_store[ip] = {}
+        return True
+
+def _register_fail(ip: str):
+    """Registra un fallo. Bloquea si supera _MAX_FAILS."""
+    now = time.time()
+    with _rate_lock:
+        entry = _rate_store.setdefault(ip, {'fails': 0})
+        if now - entry.get('last_fail', 0) > _WINDOW_SEC:
+            entry['fails'] = 0
+        entry['fails']     += 1
+        entry['last_fail']  = now
+        if entry['fails'] >= _MAX_FAILS:
+            entry['blocked_until'] = now + _BLOCK_SEC
+            logging.warning('Rate limit: IP %s bloqueada por %ds', ip, _BLOCK_SEC)
+
+def _clear_rate(ip: str):
+    """Limpia el contador tras login exitoso."""
+    with _rate_lock:
+        _rate_store.pop(ip, None)
+
+# ── Magic bytes válidos para uploads (DT-003) ─────────────────────────────────
+_MAGIC = {
+    b'\xff\xd8\xff':       '.jpg',
+    b'\x89PNG\r\n\x1a\n': '.png',
+    b'GIF87a':             '.gif',
+    b'GIF89a':             '.gif',
+    b'RIFF':               '.webp',   # RIFF????WEBP
+}
+
+def _es_imagen_valida(stream) -> bool:
+    """Lee los primeros 12 bytes y verifica la firma del archivo."""
+    header = stream.read(12)
+    stream.seek(0)
+    for magic, _ in _MAGIC.items():
+        if header[:len(magic)] == magic:
+            if magic == b'RIFF':
+                return header[8:12] == b'WEBP'
+            return True
+    return False
 
 
 def cargar_schema():
@@ -95,16 +184,38 @@ def login():
     if 'usuario' in session:
         return redirect(url_for('dashboard'))
     if request.method == 'POST':
+        ip       = request.remote_addr or '0.0.0.0'
         usuario  = request.form.get('usuario', '').strip()
         password = request.form.get('password', '').strip()
-        cliente  = obtener_cliente(usuario)
-        if cliente and cliente['password'] == password:
+
+        if not _check_rate(ip):
+            flash('Demasiados intentos fallidos. Espera 15 minutos e intenta de nuevo.', 'error')
+            return render_template('login.html')
+
+        cliente = obtener_cliente(usuario)
+        # Compatibilidad: acepta hash werkzeug O texto plano (para cuentas viejas)
+        autenticado = False
+        if cliente:
+            stored = cliente['password']
+            if stored.startswith('pbkdf2:') or stored.startswith('scrypt:'):
+                autenticado = check_password_hash(stored, password)
+            else:
+                autenticado = (stored == password)
+                if autenticado:
+                    # Re-hashear la contraseña en caliente
+                    actualizar_cliente(cliente['id'], cliente['nombre'],
+                                       generate_password_hash(password), cliente['plan'])
+
+        if autenticado:
+            _clear_rate(ip)
             session['usuario']    = cliente['usuario']
             session['nombre']     = cliente['nombre'] or cliente['usuario']
             session['plan']       = cliente['plan']
             session['cliente_id'] = cliente['id']
             session['plantillas'] = obtener_plantillas_cliente(cliente['id'])
             return redirect(url_for('dashboard'))
+
+        _register_fail(ip)
         flash('Usuario o contraseña incorrectos', 'error')
     return render_template('login.html')
 
@@ -237,6 +348,9 @@ def upload_imagen(plantilla_id):
     if ext not in {'.png', '.jpg', '.jpeg', '.webp', '.gif'}:
         return jsonify({'ok': False, 'error': 'Formato no permitido. Usa PNG, JPG o WebP'}), 400
 
+    if not _es_imagen_valida(archivo.stream):
+        return jsonify({'ok': False, 'error': 'El archivo no es una imagen válida'}), 400
+
     carpeta = os.path.join(UPLOADS_DIR, plantilla_id)
     os.makedirs(carpeta, exist_ok=True)
 
@@ -330,7 +444,7 @@ def admin_cliente_nuevo():
             flash('Usuario y contraseña son obligatorios.', 'error')
         else:
             try:
-                cid = crear_cliente(usuario, password, nombre, plan)
+                cid = crear_cliente(usuario, generate_password_hash(password), nombre, plan)
                 set_accesos(cid, seleccion)
                 flash(f'Cliente "{usuario}" creado correctamente.', 'success')
                 return redirect(url_for('admin_clientes'))
@@ -354,7 +468,12 @@ def admin_cliente_editar(cliente_id):
         return redirect(url_for('admin_clientes'))
     if request.method == 'POST':
         nombre    = request.form.get('nombre', '').strip()
-        password  = request.form.get('password', '').strip() or cliente['password']
+        pw_raw    = request.form.get('password', '').strip()
+        # Si el admin dejó el campo vacío, conservar la contraseña actual
+        if pw_raw:
+            password = generate_password_hash(pw_raw)
+        else:
+            password = cliente['password']
         plan      = request.form.get('plan', 'landing')
         seleccion = request.form.getlist('plantillas')
         actualizar_cliente(cliente_id, nombre, password, plan)
@@ -386,6 +505,493 @@ def admin_cliente_eliminar(cliente_id):
     eliminar_cliente(cliente_id)
     flash(f'Cliente "{cliente["usuario"]}" eliminado.', 'success')
     return redirect(url_for('admin_clientes'))
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# Admin — CRUD de Plantillas CMS
+# ══════════════════════════════════════════════════════════════════════════════
+
+_SECCIONES_DISPONIBLES = [
+    ('apariencia', 'Apariencia (colores y tipografía)'),
+    ('marca',      'Marca (logo y nombre)'),
+    ('hero',       'Hero (imagen y títulos de portada)'),
+    ('nosotros',   'Nosotros (descripción, misión, visión, valores)'),
+    ('servicios',  'Servicios (lista de servicios)'),
+    ('proyectos',  'Proyectos (portafolio)'),
+    ('equipo',     'Equipo (integrantes)'),
+    ('contacto',   'Contacto (info y formulario)'),
+]
+
+
+@app.route('/admin/plantillas')
+@admin_requerido
+def admin_plantillas():
+    plantillas = listar_todas_plantillas()
+    conteos = {p['id']: contar_sitios_por_plantilla(p['id']) for p in plantillas}
+    return render_template('admin_plantillas.html',
+                           plantillas=plantillas, conteos=conteos)
+
+
+@app.route('/admin/plantillas/nueva', methods=['GET', 'POST'])
+@admin_requerido
+def admin_plantilla_nueva():
+    if request.method == 'POST':
+        clave       = request.form.get('clave', '').strip().lower()
+        nombre      = request.form.get('nombre', '').strip()
+        tipo        = request.form.get('tipo', 'landing')
+        descripcion = request.form.get('descripcion', '').strip()
+        preview_img = request.form.get('preview_img', '').strip()
+        secciones   = request.form.getlist('secciones')
+
+        if not clave or not nombre:
+            flash('La clave y el nombre son obligatorios.', 'error')
+            return render_template('admin_plantilla_form.html',
+                                   modo='nueva', p=None,
+                                   secciones_disponibles=_SECCIONES_DISPONIBLES,
+                                   secciones_activas=[])
+
+        import re as _re
+        if not _re.match(r'^[a-z][a-z0-9_-]{1,29}$', clave):
+            flash('La clave solo puede tener letras minúsculas, números, guiones y guiones bajos.', 'error')
+            return render_template('admin_plantilla_form.html',
+                                   modo='nueva', p=None,
+                                   secciones_disponibles=_SECCIONES_DISPONIBLES,
+                                   secciones_activas=secciones)
+
+        campos_schema = json.dumps({'secciones': secciones}, ensure_ascii=False)
+        try:
+            crear_plantilla(clave, nombre, tipo, descripcion, preview_img, campos_schema)
+            flash(f'Plantilla "{nombre}" creada correctamente.', 'success')
+            return redirect(url_for('admin_plantillas'))
+        except Exception as e:
+            flash(f'Error: la clave "{clave}" ya existe.', 'error')
+            return render_template('admin_plantilla_form.html',
+                                   modo='nueva', p=None,
+                                   secciones_disponibles=_SECCIONES_DISPONIBLES,
+                                   secciones_activas=secciones)
+
+    return render_template('admin_plantilla_form.html',
+                           modo='nueva', p=None,
+                           secciones_disponibles=_SECCIONES_DISPONIBLES,
+                           secciones_activas=[s[0] for s in _SECCIONES_DISPONIBLES])
+
+
+@app.route('/admin/plantillas/<int:plantilla_id>/editar', methods=['GET', 'POST'])
+@admin_requerido
+def admin_plantilla_editar(plantilla_id):
+    p = obtener_plantilla_por_id(plantilla_id)
+    if not p:
+        flash('Plantilla no encontrada.', 'error')
+        return redirect(url_for('admin_plantillas'))
+
+    try:
+        schema_actual = json.loads(p['campos_schema'] or '{}')
+    except Exception:
+        schema_actual = {}
+    secciones_activas = schema_actual.get('secciones', [s[0] for s in _SECCIONES_DISPONIBLES])
+
+    if request.method == 'POST':
+        nombre      = request.form.get('nombre', '').strip()
+        tipo        = request.form.get('tipo', 'landing')
+        descripcion = request.form.get('descripcion', '').strip()
+        preview_img = request.form.get('preview_img', '').strip()
+        secciones   = request.form.getlist('secciones')
+
+        if not nombre:
+            flash('El nombre es obligatorio.', 'error')
+            return render_template('admin_plantilla_form.html',
+                                   modo='editar', p=p,
+                                   secciones_disponibles=_SECCIONES_DISPONIBLES,
+                                   secciones_activas=secciones)
+
+        campos_schema = json.dumps({'secciones': secciones}, ensure_ascii=False)
+        actualizar_plantilla(plantilla_id, nombre, tipo, descripcion, preview_img, campos_schema)
+        flash(f'Plantilla "{nombre}" actualizada.', 'success')
+        return redirect(url_for('admin_plantillas'))
+
+    return render_template('admin_plantilla_form.html',
+                           modo='editar', p=p,
+                           secciones_disponibles=_SECCIONES_DISPONIBLES,
+                           secciones_activas=secciones_activas)
+
+
+@app.route('/admin/plantillas/<int:plantilla_id>/toggle', methods=['POST'])
+@admin_requerido
+def admin_plantilla_toggle(plantilla_id):
+    p = obtener_plantilla_por_id(plantilla_id)
+    if not p:
+        flash('Plantilla no encontrada.', 'error')
+    else:
+        toggle_plantilla(plantilla_id)
+        estado = 'desactivada' if p['activo'] else 'activada'
+        flash(f'Plantilla "{p["nombre"]}" {estado}.', 'success')
+    return redirect(url_for('admin_plantillas'))
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# CMS — Rutas para usuarios finales (registro, login, panel, crear sitio)
+# Session keys: 'uid', 'u_email', 'u_nombre' (distintos de los del admin)
+# ══════════════════════════════════════════════════════════════════════════════
+
+import re
+
+_SLUG_RE = re.compile(r'^[a-z0-9][a-z0-9-]{1,28}[a-z0-9]$')
+
+
+def usuario_requerido(f):
+    from functools import wraps
+    @wraps(f)
+    def wrapper(*args, **kwargs):
+        if 'uid' not in session:
+            flash('Inicia sesión para acceder a tu panel.', 'warning')
+            return redirect(url_for('entrar'))
+        return f(*args, **kwargs)
+    return wrapper
+
+
+# ── Registro ──────────────────────────────────────────────────────────────────
+
+@app.route('/registro', methods=['GET', 'POST'])
+def registro():
+    if 'uid' in session:
+        return redirect(url_for('mi_panel'))
+
+    if request.method == 'POST':
+        nombre   = request.form.get('nombre', '').strip()
+        email    = request.form.get('email', '').strip().lower()
+        password = request.form.get('password', '').strip()
+        confirm  = request.form.get('confirm', '').strip()
+
+        error = None
+        if not nombre or not email or not password:
+            error = 'Todos los campos son obligatorios.'
+        elif '@' not in email or '.' not in email:
+            error = 'Ingresa un email válido.'
+        elif len(password) < 8:
+            error = 'La contraseña debe tener al menos 8 caracteres.'
+        elif password != confirm:
+            error = 'Las contraseñas no coinciden.'
+        elif obtener_usuario_por_email(email):
+            error = 'Ya existe una cuenta con ese email.'
+
+        if error:
+            flash(error, 'error')
+        else:
+            try:
+                uid = crear_usuario(email, generate_password_hash(password), nombre)
+                session['uid']      = uid
+                session['u_email']  = email
+                session['u_nombre'] = nombre
+                flash(f'Bienvenido, {nombre}. Tu cuenta fue creada.', 'success')
+                return redirect(url_for('crear_sitio'))
+            except Exception:
+                flash('Error al crear la cuenta. Intenta de nuevo.', 'error')
+
+    return render_template('registro.html')
+
+
+# ── Login usuario ─────────────────────────────────────────────────────────────
+
+@app.route('/entrar', methods=['GET', 'POST'])
+def entrar():
+    if 'uid' in session:
+        return redirect(url_for('mi_panel'))
+
+    if request.method == 'POST':
+        ip       = request.remote_addr or '0.0.0.0'
+        email    = request.form.get('email', '').strip().lower()
+        password = request.form.get('password', '').strip()
+
+        if not _check_rate(ip):
+            flash('Demasiados intentos fallidos. Espera 15 minutos.', 'error')
+            return render_template('entrar.html')
+
+        usuario = obtener_usuario_por_email(email)
+        if usuario and check_password_hash(usuario['password'], password):
+            _clear_rate(ip)
+            session['uid']      = usuario['id']
+            session['u_email']  = usuario['email']
+            session['u_nombre'] = usuario['nombre'] or email.split('@')[0]
+            return redirect(url_for('mi_panel'))
+
+        _register_fail(ip)
+        flash('Email o contraseña incorrectos.', 'error')
+
+    return render_template('entrar.html')
+
+
+# ── Logout usuario ────────────────────────────────────────────────────────────
+
+@app.route('/salir')
+def salir():
+    session.pop('uid', None)
+    session.pop('u_email', None)
+    session.pop('u_nombre', None)
+    flash('Sesión cerrada.', 'info')
+    return redirect(url_for('entrar'))
+
+
+# ── Panel del usuario ─────────────────────────────────────────────────────────
+
+@app.route('/mi-panel')
+@usuario_requerido
+def mi_panel():
+    sitios = obtener_sitios_usuario(session['uid'])
+    return render_template('mi_panel.html',
+        nombre=session['u_nombre'],
+        email=session['u_email'],
+        sitios=sitios
+    )
+
+
+# ── Crear sitio ───────────────────────────────────────────────────────────────
+
+@app.route('/crear-sitio', methods=['GET', 'POST'])
+@usuario_requerido
+def crear_sitio():
+    plantillas = listar_plantillas_activas()
+
+    if request.method == 'POST':
+        plantilla_id  = request.form.get('plantilla_id', '').strip()
+        nombre_sitio  = request.form.get('nombre_sitio', '').strip()
+        slug          = request.form.get('slug', '').strip().lower()
+
+        error = None
+        if not plantilla_id or not plantilla_id.isdigit():
+            error = 'Selecciona una plantilla.'
+        elif not nombre_sitio:
+            error = 'Ingresa el nombre de tu negocio.'
+        elif not _SLUG_RE.match(slug):
+            error = 'El nombre del sitio solo puede tener letras minúsculas, números y guiones (mínimo 3 caracteres).'
+        elif not slug_disponible(slug):
+            error = 'Ese nombre de sitio ya está en uso. Elige otro.'
+        elif not obtener_plantilla_por_id(int(plantilla_id)):
+            error = 'Plantilla no válida.'
+
+        if error:
+            flash(error, 'error')
+        else:
+            try:
+                sitio_id = db_crear_sitio(
+                    session['uid'], int(plantilla_id), slug, nombre_sitio
+                )
+                # Config inicial por defecto
+                set_config_sitio_bulk(sitio_id, {
+                    'nombre_negocio':       nombre_sitio,
+                    'color_primario':       '#0bb180',
+                    'color_footer_bg':      '#0d1b2a',
+                    'color_texto':          '#2d3748',
+                    'logo_url':             '',
+                    'hero_eyebrow':         nombre_sitio.upper(),
+                    'hero_titulo':          f'Bienvenidos a {nombre_sitio}',
+                    'hero_subtitulo':       'Tu descripción va aquí. Cuéntanos sobre tu negocio.',
+                    'hero_imagen':          '',
+                    'hero_cta_texto':       'Contáctanos',
+                    'hero_cta_href':        '#contacto',
+                    'hero_cta2_texto':      'Ver servicios',
+                    'hero_cta2_href':       '#servicios',
+                    'nosotros_descripcion': f'Somos {nombre_sitio}, comprometidos con la excelencia y la satisfacción de nuestros clientes.',
+                    'nosotros_mision':      'Nuestra misión es ofrecer soluciones de alta calidad que superen las expectativas de nuestros clientes.',
+                    'nosotros_vision':      'Ser líderes en nuestra industria, reconocidos por nuestra innovación y compromiso con la calidad.',
+                    'nosotros_valores':     'Integridad, Excelencia, Innovación, Compromiso',
+                    'servicios_descripcion': 'Ofrecemos soluciones adaptadas a las necesidades de cada cliente.',
+                    'proyectos_descripcion': 'Una muestra de nuestros trabajos más destacados.',
+                    'equipo_descripcion':    'Profesionales comprometidos con tu éxito.',
+                    'contacto_descripcion':  '¿Quieres saber más? Escríbenos y te responderemos pronto.',
+                    'contacto_telefono':    '(809) 000-0000',
+                    'contacto_email':       f'info@{slug}.com',
+                    'contacto_direccion':   'Calle Principal 123, Ciudad',
+                    'footer_descripcion':   'Comprometidos con la excelencia y satisfacción de nuestros clientes.',
+                })
+                # Secciones de contenido por defecto
+                set_secciones_contenido(sitio_id, 'servicios', [
+                    {'titulo': 'Servicio 1', 'desc': 'Descripción del primer servicio que ofreces.', 'imagen': ''},
+                    {'titulo': 'Servicio 2', 'desc': 'Descripción del segundo servicio que ofreces.', 'imagen': ''},
+                    {'titulo': 'Servicio 3', 'desc': 'Descripción del tercer servicio que ofreces.', 'imagen': ''},
+                ])
+                set_secciones_contenido(sitio_id, 'proyectos', [
+                    {'titulo': 'Proyecto 1', 'categoria': 'Categoría', 'imagen': ''},
+                    {'titulo': 'Proyecto 2', 'categoria': 'Categoría', 'imagen': ''},
+                    {'titulo': 'Proyecto 3', 'categoria': 'Categoría', 'imagen': ''},
+                    {'titulo': 'Proyecto 4', 'categoria': 'Categoría', 'imagen': ''},
+                ])
+                set_secciones_contenido(sitio_id, 'equipo', [
+                    {'nombre': 'Nombre Apellido', 'rol': 'Director General', 'foto': ''},
+                    {'nombre': 'Nombre Apellido', 'rol': 'Gerente', 'foto': ''},
+                    {'nombre': 'Nombre Apellido', 'rol': 'Coordinador', 'foto': ''},
+                ])
+                flash(f'Sitio "{nombre_sitio}" creado. Ahora puedes personalizarlo.', 'success')
+                return redirect(url_for('mi_panel'))
+            except Exception as e:
+                log.error('[crear_sitio] error: %s', e)
+                flash('Error al crear el sitio. Intenta de nuevo.', 'error')
+
+    return render_template('crear_sitio.html',
+        nombre=session['u_nombre'],
+        plantillas=plantillas
+    )
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# Editor de sitio del usuario — /editar/<sitio_id>
+# Naming fields: cfg__<clave>  y  rep__<seccion>__<idx>__<campo>
+# ══════════════════════════════════════════════════════════════════════════════
+
+@app.route('/editar/<int:sitio_id>', methods=['GET', 'POST'])
+@usuario_requerido
+def editar_sitio(sitio_id):
+    sitio = obtener_sitio_por_id(sitio_id)
+    if not sitio or sitio['usuario_id'] != session['uid']:
+        abort(403)
+
+    if request.method == 'POST':
+        # ── Campos de configuración (cfg__clave) ─────────────────────────────
+        config_nuevo = {}
+        for key, val in request.form.items():
+            if key.startswith('cfg__'):
+                config_nuevo[key[5:]] = val.strip()
+        if config_nuevo:
+            set_config_sitio_bulk(sitio_id, config_nuevo)
+
+        # ── Repeaters (rep__seccion__idx__campo) ──────────────────────────────
+        secciones_nuevas = {}
+        for key, val in request.form.items():
+            if key.startswith('rep__'):
+                parts = key.split('__')
+                if len(parts) == 4:
+                    _, seccion, idx_str, campo = parts
+                    try:
+                        idx = int(idx_str)
+                    except ValueError:
+                        continue
+                    secciones_nuevas.setdefault(seccion, {}).setdefault(idx, {})[campo] = val.strip()
+
+        for seccion, items_dict in secciones_nuevas.items():
+            items = [items_dict[i] for i in sorted(items_dict.keys())]
+            set_secciones_contenido(sitio_id, seccion, items)
+
+        flash('Cambios guardados. Tu sitio está actualizado.', 'success')
+        return redirect(url_for('editar_sitio', sitio_id=sitio_id))
+
+    config   = get_config_sitio(sitio_id)
+    secciones = {
+        'servicios': get_secciones_contenido(sitio_id, 'servicios'),
+        'proyectos': get_secciones_contenido(sitio_id, 'proyectos'),
+        'equipo':    get_secciones_contenido(sitio_id, 'equipo'),
+    }
+    # Secciones habilitadas según el schema de la plantilla
+    plantilla = obtener_plantilla_por_id(sitio['plantilla_id'])
+    try:
+        schema = json.loads(plantilla['campos_schema'] or '{}') if plantilla else {}
+    except Exception:
+        schema = {}
+    _todas = ['apariencia', 'marca', 'hero', 'nosotros', 'servicios', 'proyectos', 'equipo', 'contacto']
+    secciones_editor = schema.get('secciones', _todas)
+
+    return render_template('editor_sitio.html',
+        sitio=sitio,
+        config=config,
+        secciones=secciones,
+        nombre=session['u_nombre'],
+        secciones_editor=secciones_editor,
+    )
+
+
+@app.route('/upload-sitio/<int:sitio_id>', methods=['POST'])
+@usuario_requerido
+def upload_sitio(sitio_id):
+    sitio = obtener_sitio_por_id(sitio_id)
+    if not sitio or sitio['usuario_id'] != session['uid']:
+        return jsonify({'ok': False, 'error': 'Sin acceso'}), 403
+
+    archivo = request.files.get('imagen')
+    if not archivo or not archivo.filename:
+        return jsonify({'ok': False, 'error': 'Sin archivo'}), 400
+
+    ext = os.path.splitext(archivo.filename)[1].lower()
+    if ext not in {'.png', '.jpg', '.jpeg', '.webp', '.gif'}:
+        return jsonify({'ok': False, 'error': 'Formato no permitido. Usa PNG, JPG o WebP'}), 400
+
+    if not _es_imagen_valida(archivo.stream):
+        return jsonify({'ok': False, 'error': 'El archivo no es una imagen válida'}), 400
+
+    carpeta = os.path.join(UPLOADS_DIR, f'sitio_{sitio_id}')
+    os.makedirs(carpeta, exist_ok=True)
+    nombre = f"{uuid.uuid4().hex[:10]}{ext}"
+    archivo.save(os.path.join(carpeta, nombre))
+
+    url = url_for('static', filename=f'uploads/sitio_{sitio_id}/{nombre}', _external=True)
+    return jsonify({'ok': True, 'url': url})
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# Sitios públicos — /s/<slug>/
+# ══════════════════════════════════════════════════════════════════════════════
+
+_PAGINAS_WEB5 = ['nosotros', 'servicios', 'proyectos', 'contacto']
+
+
+def _contexto_sitio(sitio):
+    """Carga config + secciones comunes para cualquier sitio."""
+    sid = sitio['id']
+    return {
+        'config':   get_config_sitio(sid),
+        'secciones': {
+            'servicios': get_secciones_contenido(sid, 'servicios'),
+            'proyectos': get_secciones_contenido(sid, 'proyectos'),
+            'equipo':    get_secciones_contenido(sid, 'equipo'),
+        },
+    }
+
+
+@app.route('/s/<slug>/')
+@app.route('/s/<slug>')
+def ver_sitio(slug):
+    sitio = obtener_sitio_por_slug(slug)
+    if not sitio:
+        abort(404)
+    ctx = _contexto_sitio(sitio)
+    if sitio['plantilla_tipo'] == 'web5':
+        template = 'sites/empresa/inicio.html'
+    else:
+        template = f"sites/{sitio['plantilla_clave']}/index.html"
+    return render_template(template, sitio=sitio, pagina_activa='inicio', **ctx)
+
+
+@app.route('/s/<slug>/<pagina>/')
+@app.route('/s/<slug>/<pagina>')
+def ver_pagina(slug, pagina):
+    sitio = obtener_sitio_por_slug(slug)
+    if not sitio or sitio['plantilla_tipo'] != 'web5' or pagina not in _PAGINAS_WEB5:
+        abort(404)
+    ctx = _contexto_sitio(sitio)
+    return render_template(
+        f'sites/empresa/{pagina}.html',
+        sitio=sitio, pagina_activa=pagina, **ctx
+    )
+
+
+@app.route('/s/<slug>/enviar-contacto', methods=['POST'])
+def enviar_contacto(slug):
+    sitio = obtener_sitio_por_slug(slug)
+    if not sitio:
+        return jsonify({'ok': False}), 404
+    # Acepta JSON (fetch) o form-data
+    if request.is_json:
+        data     = request.get_json(silent=True) or {}
+        nombre   = data.get('nombre', '').strip()
+        email_c  = data.get('email', '').strip()
+        telefono = data.get('telefono', '').strip()
+        mensaje  = data.get('mensaje', '').strip()
+    else:
+        nombre   = request.form.get('nombre', '').strip()
+        email_c  = request.form.get('email', '').strip()
+        telefono = request.form.get('telefono', '').strip()
+        mensaje  = request.form.get('mensaje', '').strip()
+    if not nombre or not email_c or not mensaje:
+        return jsonify({'ok': False, 'error': 'Nombre, email y mensaje son obligatorios.'}), 400
+    guardar_mensaje_contacto(sitio['id'], nombre, email_c, telefono, mensaje)
+    return jsonify({'ok': True, 'msg': '¡Mensaje recibido! Te contactaremos pronto.'})
 
 
 if __name__ == '__main__':

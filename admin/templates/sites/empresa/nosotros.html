@@ -1,0 +1,100 @@
+{% extends "sites/empresa/base.html" %}
+
+{% block titulo %}{{ sitio.nombre }} — Nosotros{% endblock %}
+
+{% block content %}
+
+<!-- ── Page Banner ─────────────────────────────────────────────────────────── -->
+<section class="page-banner">
+  <div class="container">
+    <h1>Quiénes somos</h1>
+    <nav class="breadcrumb">
+      <a href="/s/{{ sitio.slug }}/">Inicio</a>
+      <span>›</span>
+      <span>Nosotros</span>
+    </nav>
+  </div>
+</section>
+
+<!-- ── Descripción principal ──────────────────────────────────────────────── -->
+<section class="about-section" style="padding:80px 0;">
+  <div class="container">
+    <div class="section-header fade-in-up">
+      <h2 class="section-title">Nuestra historia</h2>
+      <p class="section-subtitle">{{ config.get('nosotros_descripcion', 'Somos una empresa comprometida con la excelencia y la satisfacción de nuestros clientes.') }}</p>
+    </div>
+
+    <!-- Misión, Visión, Valores -->
+    {% set mision  = config.get('nosotros_mision') %}
+    {% set vision  = config.get('nosotros_vision') %}
+    {% set valores = config.get('nosotros_valores') %}
+    {% if mision or vision or valores %}
+    <div class="mvv-grid fade-in-up" style="margin-top:56px;">
+      {% if mision %}
+      <div class="mvv-card">
+        <div class="mvv-icon">🎯</div>
+        <h3>Misión</h3>
+        <p>{{ mision }}</p>
+      </div>
+      {% endif %}
+      {% if vision %}
+      <div class="mvv-card">
+        <div class="mvv-icon">🔭</div>
+        <h3>Visión</h3>
+        <p>{{ vision }}</p>
+      </div>
+      {% endif %}
+      {% if valores %}
+      <div class="mvv-card">
+        <div class="mvv-icon">💎</div>
+        <h3>Valores</h3>
+        <ul class="valores-list">
+          {% for v in valores.split(',') %}
+            <li class="valor-tag">{{ v.strip() }}</li>
+          {% endfor %}
+        </ul>
+      </div>
+      {% endif %}
+    </div>
+    {% endif %}
+  </div>
+</section>
+
+<!-- ── Equipo ──────────────────────────────────────────────────────────────── -->
+{% if secciones.equipo %}
+<section class="team-section" style="padding:80px 0;background:var(--c-bg-alt,#f8fafc);">
+  <div class="container">
+    <div class="section-header fade-in-up">
+      <h2 class="section-title">Nuestro equipo</h2>
+      <p class="section-subtitle">{{ config.get('equipo_descripcion', 'Personas apasionadas que hacen posible cada proyecto.') }}</p>
+    </div>
+    <div class="team-grid">
+      {% for miembro in secciones.equipo %}
+      <div class="team-card fade-in-up">
+        {% if miembro.get('foto') %}
+          <img src="{{ miembro.get('foto') }}" alt="{{ miembro.get('nombre','') }}" class="team-photo"/>
+        {% else %}
+          <div class="team-photo-placeholder">👤</div>
+        {% endif %}
+        <h4 class="team-name">{{ miembro.get('nombre','') }}</h4>
+        <p class="team-cargo">{{ miembro.get('cargo','') }}</p>
+        {% if miembro.get('bio') %}<p class="team-bio">{{ miembro.get('bio') }}</p>{% endif %}
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endif %}
+
+<!-- ── CTA ────────────────────────────────────────────────────────────────── -->
+<section class="cta-section">
+  <div class="container">
+    <div class="cta-inner">
+      <h2>¿Trabajamos juntos?</h2>
+      <p>Cuéntanos sobre tu proyecto y encontraremos la mejor solución.</p>
+      <a href="/s/{{ sitio.slug }}/contacto/" class="btn-cta-light">Contáctanos</a>
+    </div>
+  </div>
+</section>
+
+{% endblock %}

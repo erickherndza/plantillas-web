@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Editar — {{ sitio.nombre }}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='admin.css') }}">
+</head>
+<body>
+
+  <!-- ── Navbar ─────────────────────────────────────────────────────────── -->
+  <nav class="admin-navbar">
+    <div class="navbar-brand">
+      <a href="{{ url_for('mi_panel') }}" class="btn-back-nav">&larr; Mis sitios</a>
+      <span class="navbar-sep">|</span>
+      <span class="navbar-title">{{ sitio.nombre }}</span>
+    </div>
+    <div class="navbar-actions">
+      <a href="{{ url_for('ver_sitio', slug=sitio.slug) }}" target="_blank" class="btn-ver-vivo">
+        Ver sitio &rarr;
+      </a>
+      <span class="navbar-user">{{ nombre }}</span>
+      <a href="{{ url_for('salir') }}" class="btn-logout">Salir</a>
+    </div>
+  </nav>
+
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% for category, message in messages %}
+      <div class="flash-message flash-{{ category }} flash-top">{{ message }}</div>
+    {% endfor %}
+  {% endwith %}
+
+  <div class="editor-layout">
+
+    <!-- ── Sidebar ─────────────────────────────────────────────────────── -->
+    <aside class="editor-sidebar">
+      <p class="sidebar-label">Secciones</p>
+      <nav class="section-nav" id="section-nav">
+        {% set _labels = {
+          'apariencia': ('apariencia', 'Apariencia', ''),
+          'marca':      ('marca',      'Marca',       ''),
+          'hero':       ('hero',       'Hero',        ''),
+          'nosotros':   ('nosotros',   'Nosotros',    ''),
+          'servicios':  ('rep-servicios', 'Servicios', 'section-nav-repeater'),
+          'proyectos':  ('rep-proyectos', 'Proyectos', 'section-nav-repeater'),
+          'equipo':     ('rep-equipo',    'Equipo',    'section-nav-repeater'),
+          'contacto':   ('contacto',   'Contacto',    ''),
+        } %}
+        {% set _first = namespace(done=false) %}
+        {% for sec in secciones_editor if sec in _labels %}
+          {% set _id, _label, _extra = _labels[sec] %}
+          <button type="button"
+                  class="section-nav-item {{ _extra }} {{ 'active' if not _first.done }}"
+                  data-section="{{ _id }}">{{ _label }}</button>
+          {% set _first.done = true %}
+        {% endfor %}
+      </nav>
+      <div class="sidebar-info">
+        Los cambios se guardan en la base de datos. Tu sitio se actualiza al instante.
+      </div>
+    </aside>
+
+    <!-- ── Formulario ──────────────────────────────────────────────────── -->
+    <main class="editor-main">
+      <form method="POST" action="{{ url_for('editar_sitio', sitio_id=sitio.id) }}"
+            id="editor-form" enctype="multipart/form-data">
+
+        <!-- ══ APARIENCIA ════════════════════════════════════════════════ -->
+        <div class="form-section" id="section-apariencia">
+          <div class="section-header">
+            <h2 class="section-title">Apariencia</h2>
+            <p class="section-desc">Colores principales del sitio</p>
+          </div>
+
+          <div class="form-group">
+            <label>Color principal <span class="field-optional">(navbar, títulos, botones)</span></label>
+            <div class="color-field">
+              <input type="color" name="cfg__color_primario" class="color-input js-color"
+                     value="{{ config.get('color_primario', '#0bb180') }}">
+              <div class="color-preview js-color-preview"
+                   style="background:{{ config.get('color_primario', '#0bb180') }}"></div>
+              <span class="color-hex js-color-hex">{{ config.get('color_primario', '#0bb180') }}</span>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Color del footer <span class="field-optional">(fondo del pie de página)</span></label>
+            <div class="color-field">
+              <input type="color" name="cfg__color_footer_bg" class="color-input js-color"
+                     value="{{ config.get('color_footer_bg', '#0d1b2a') }}">
+              <div class="color-preview js-color-preview"
+                   style="background:{{ config.get('color_footer_bg', '#0d1b2a') }}"></div>
+              <span class="color-hex js-color-hex">{{ config.get('color_footer_bg', '#0d1b2a') }}</span>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Color del texto <span class="field-optional">(párrafos y contenido)</span></label>
+            <div class="color-field">
+              <input type="color" name="cfg__color_texto" class="color-input js-color"
+                     value="{{ config.get('color_texto', '#2d3748') }}">
+              <div class="color-preview js-color-preview"
+                   style="background:{{ config.get('color_texto', '#2d3748') }}"></div>
+              <span class="color-hex js-color-hex">{{ config.get('color_texto', '#2d3748') }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- ══ MARCA ═════════════════════════════════════════════════════ -->
+        <div class="form-section hidden" id="section-marca">
+          <div class="section-header">
+            <h2 class="section-title">Marca</h2>
+            <p class="section-desc">Logo y nombre de tu negocio</p>
+          </div>
+
+          <div class="form-group">
+            <label>Nombre del negocio</label>
+            <input type="text" name="cfg__nombre_negocio"
+                   value="{{ config.get('nombre_negocio', sitio.nombre) }}"
+                   placeholder="Ej: Clínica San Rafael">
+          </div>
+
+          <div class="form-group">
+            <label>Logo <span class="field-optional">(PNG transparente, máx. 44px alto)</span></label>
+            <div class="img-upload-zone">
+              <div class="img-upload-preview">
+                {% if config.get('logo_url') %}
+                  <img src="{{ config.get('logo_url') }}" class="img-thumb" alt="Logo" id="logo-preview">
+                {% else %}
+                  <div class="img-placeholder" id="logo-placeholder">Sin logo — se mostrará el nombre del negocio</div>
+                  <img src="" class="img-thumb hidden" id="logo-preview" alt="Logo">
+                {% endif %}
+              </div>
+              <div class="img-upload-actions">
+                <label class="btn-upload-label">
+                  Subir logo
+                  <input type="file" accept="image/png,image/jpeg,image/webp"
+                         id="logo-file" style="display:none">
+                </label>
+                <button type="button" class="btn-remove-img" id="btn-quitar-logo"
+                        {% if not config.get('logo_url') %}style="display:none"{% endif %}>
+                  Quitar logo
+                </button>
+              </div>
+              <input type="hidden" name="cfg__logo_url" id="logo-url-hidden"
+                     value="{{ config.get('logo_url', '') }}">
+              <p class="img-sugerencia">PNG transparente · 200×60 px recomendado · máx 200 KB</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- ══ HERO ══════════════════════════════════════════════════════ -->
+        <div class="form-section hidden" id="section-hero">
+          <div class="section-header">
+            <h2 class="section-title">Hero · Portada</h2>
+            <p class="section-desc">La primera sección que ven tus visitantes</p>
+          </div>
+
+          <div class="form-group">
+            <label>Imagen de fondo</label>
+            <div class="img-bg-field">
+              <input type="text" name="cfg__hero_imagen" id="hero-img-url"
+                     class="img-bg-url-input"
+                     value="{{ config.get('hero_imagen', '') }}"
+                     placeholder="https://... o sube una imagen">
+              <div class="img-bg-actions">
+                <label class="btn-upload-label btn-upload-sm">
+                  Subir imagen
+                  <input type="file" accept="image/*" id="hero-img-file" style="display:none">
+                </label>
+              </div>
+              <p class="img-sugerencia">1600×900 px · JPG o WebP · máx 1 MB</p>
+              <div class="img-bg-preview" id="hero-img-preview"
+                   style="background-image:url('{{ config.get('hero_imagen', '') }}')"></div>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Texto encima del título <span class="field-optional">(eyebrow)</span></label>
+            <input type="text" name="cfg__hero_eyebrow"
+                   value="{{ config.get('hero_eyebrow', '') }}"
+                   placeholder="Ej: EXPERTOS EN SALUD">
+            <p class="field-hint">Aparece en mayúsculas sobre el título principal. Opcional.</p>
+          </div>
+
+          <div class="form-group">
+            <label>Título principal</label>
+            <input type="text" name="cfg__hero_titulo"
+                   value="{{ config.get('hero_titulo', sitio.nombre) }}"
+                   placeholder="Ej: Bienvenidos a Clínica San Rafael">
+          </div>
+
+          <div class="form-group">
+            <label>Subtítulo</label>
+            <textarea name="cfg__hero_subtitulo" rows="3"
+                      placeholder="Descripción breve de tu negocio">{{ config.get('hero_subtitulo', '') }}</textarea>
+          </div>
+
+          <div class="form-group">
+            <label>Botón principal — texto</label>
+            <input type="text" name="cfg__hero_cta_texto"
+                   value="{{ config.get('hero_cta_texto', 'Contáctanos') }}"
+                   placeholder="Ej: Pedir cita">
+          </div>
+
+          <div class="form-group">
+            <label>Botón principal — enlace</label>
+            <input type="text" name="cfg__hero_cta_href"
+                   value="{{ config.get('hero_cta_href', '#contacto') }}"
+                   placeholder="#contacto">
+            <p class="field-hint">Usa #contacto, #servicios, etc. para ir a una sección de la página.</p>
+          </div>
+
+          <div class="form-group">
+            <label>Botón secundario — texto <span class="field-optional">(opcional)</span></label>
+            <input type="text" name="cfg__hero_cta2_texto"
+                   value="{{ config.get('hero_cta2_texto', 'Ver servicios') }}"
+                   placeholder="Ej: Ver servicios">
+          </div>
+
+          <div class="form-group">
+            <label>Botón secundario — enlace</label>
+            <input type="text" name="cfg__hero_cta2_href"
+                   value="{{ config.get('hero_cta2_href', '#servicios') }}"
+                   placeholder="#servicios">
+          </div>
+        </div>
+
+        <!-- ══ NOSOTROS ═══════════════════════════════════════════════════ -->
+        <div class="form-section hidden" id="section-nosotros">
+          <div class="section-header">
+            <h2 class="section-title">Quiénes somos</h2>
+            <p class="section-desc">Descripción, misión, visión y valores</p>
+          </div>
+
+          <div class="form-group">
+            <label>Descripción del negocio</label>
+            <textarea name="cfg__nosotros_descripcion" rows="4"
+                      placeholder="Cuéntanos sobre tu empresa...">{{ config.get('nosotros_descripcion', '') }}</textarea>
+          </div>
+          <div class="form-group">
+            <label>Misión</label>
+            <textarea name="cfg__nosotros_mision" rows="3">{{ config.get('nosotros_mision', '') }}</textarea>
+          </div>
+          <div class="form-group">
+            <label>Visión</label>
+            <textarea name="cfg__nosotros_vision" rows="3">{{ config.get('nosotros_vision', '') }}</textarea>
+          </div>
+          <div class="form-group">
+            <label>Valores</label>
+            <textarea name="cfg__nosotros_valores" rows="2"
+                      placeholder="Ej: Integridad, Excelencia, Innovación">{{ config.get('nosotros_valores', '') }}</textarea>
+          </div>
+        </div>
+
+        <!-- ══ SERVICIOS (repeater) ═══════════════════════════════════════ -->
+        <div class="form-section hidden" id="section-rep-servicios">
+          <div class="section-header">
+            <h2 class="section-title">Servicios</h2>
+            <p class="section-desc">Agrega, edita o elimina los servicios que ofreces</p>
+          </div>
+          <div class="repeater-container" id="rep-servicios">
+            <div class="repeater-list" id="rep-servicios-list">
+              {% for item in secciones.servicios %}
+                {% set idx = loop.index0 %}
+                <div class="repeater-item" data-rep="servicios">
+                  <div class="repeater-item-header">
+                    <span class="repeater-item-num">{{ loop.index }}</span>
+                    <button type="button" class="btn-remove-item" title="Eliminar">✕</button>
+                  </div>
+                  <div class="form-group">
+                    <label>Título del servicio</label>
+                    <input type="text" name="rep__servicios__{{ idx }}__titulo"
+                           value="{{ item.get('titulo', '') }}" placeholder="Ej: Consultoría">
+                  </div>
+                  <div class="form-group">
+                    <label>Descripción</label>
+                    <textarea name="rep__servicios__{{ idx }}__desc" rows="2"
+                              placeholder="Breve descripción del servicio">{{ item.get('desc', '') }}</textarea>
+                  </div>
+                  <div class="form-group">
+                    <label>Imagen <span class="field-optional">(URL o sube una)</span></label>
+                    <div class="img-bg-field">
+                      <input type="text" name="rep__servicios__{{ idx }}__imagen"
+                             class="img-bg-url-input rep-img-url"
+                             value="{{ item.get('imagen', '') }}"
+                             placeholder="https://...">
+                      <div class="img-bg-actions">
+                        <label class="btn-upload-label btn-upload-sm js-rep-upload"
+                               data-target-input="rep__servicios__{{ idx }}__imagen">
+                          Subir imagen
+                          <input type="file" accept="image/*" style="display:none"
+                                 class="rep-img-file" data-sitio="{{ sitio.id }}">
+                        </label>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              {% endfor %}
+            </div>
+            <button type="button" class="btn-add-item" data-add="servicios">+ Agregar servicio</button>
+          </div>
+        </div>
+
+        <!-- ══ PROYECTOS (repeater) ══════════════════════════════════════ -->
+        <div class="form-section hidden" id="section-rep-proyectos">
+          <div class="section-header">
+            <h2 class="section-title">Proyectos</h2>
+            <p class="section-desc">Galería de proyectos o trabajos realizados</p>
+          </div>
+          <div class="repeater-container" id="rep-proyectos">
+            <div class="repeater-list" id="rep-proyectos-list">
+              {% for item in secciones.proyectos %}
+                {% set idx = loop.index0 %}
+                <div class="repeater-item" data-rep="proyectos">
+                  <div class="repeater-item-header">
+                    <span class="repeater-item-num">{{ loop.index }}</span>
+                    <button type="button" class="btn-remove-item" title="Eliminar">✕</button>
+                  </div>
+                  <div class="form-group">
+                    <label>Título del proyecto</label>
+                    <input type="text" name="rep__proyectos__{{ idx }}__titulo"
+                           value="{{ item.get('titulo', '') }}" placeholder="Ej: Casa Moderna">
+                  </div>
+                  <div class="form-group">
+                    <label>Categoría</label>
+                    <input type="text" name="rep__proyectos__{{ idx }}__categoria"
+                           value="{{ item.get('categoria', '') }}" placeholder="Ej: Residencial">
+                  </div>
+                  <div class="form-group">
+                    <label>Imagen</label>
+                    <div class="img-bg-field">
+                      <input type="text" name="rep__proyectos__{{ idx }}__imagen"
+                             class="img-bg-url-input rep-img-url"
+                             value="{{ item.get('imagen', '') }}" placeholder="https://...">
+                      <div class="img-bg-actions">
+                        <label class="btn-upload-label btn-upload-sm">
+                          Subir imagen
+                          <input type="file" accept="image/*" style="display:none"
+                                 class="rep-img-file" data-sitio="{{ sitio.id }}">
+                        </label>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              {% endfor %}
+            </div>
+            <button type="button" class="btn-add-item" data-add="proyectos">+ Agregar proyecto</button>
+          </div>
+        </div>
+
+        <!-- ══ EQUIPO (repeater) ═════════════════════════════════════════ -->
+        <div class="form-section hidden" id="section-rep-equipo">
+          <div class="section-header">
+            <h2 class="section-title">Equipo</h2>
+            <p class="section-desc">Miembros de tu equipo de trabajo</p>
+          </div>
+          <div class="repeater-container" id="rep-equipo">
+            <div class="repeater-list" id="rep-equipo-list">
+              {% for item in secciones.equipo %}
+                {% set idx = loop.index0 %}
+                <div class="repeater-item" data-rep="equipo">
+                  <div class="repeater-item-header">
+                    <span class="repeater-item-num">{{ loop.index }}</span>
+                    <button type="button" class="btn-remove-item" title="Eliminar">✕</button>
+                  </div>
+                  <div class="form-group">
+                    <label>Nombre</label>
+                    <input type="text" name="rep__equipo__{{ idx }}__nombre"
+                           value="{{ item.get('nombre', '') }}" placeholder="Ej: Ana García">
+                  </div>
+                  <div class="form-group">
+                    <label>Cargo / Rol</label>
+                    <input type="text" name="rep__equipo__{{ idx }}__rol"
+                           value="{{ item.get('rol', '') }}" placeholder="Ej: Directora General">
+                  </div>
+                  <div class="form-group">
+                    <label>Foto <span class="field-optional">(URL o sube una)</span></label>
+                    <div class="img-bg-field">
+                      <input type="text" name="rep__equipo__{{ idx }}__foto"
+                             class="img-bg-url-input rep-img-url"
+                             value="{{ item.get('foto', '') }}" placeholder="https://...">
+                      <div class="img-bg-actions">
+                        <label class="btn-upload-label btn-upload-sm">
+                          Subir foto
+                          <input type="file" accept="image/*" style="display:none"
+                                 class="rep-img-file" data-sitio="{{ sitio.id }}">
+                        </label>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              {% endfor %}
+            </div>
+            <button type="button" class="btn-add-item" data-add="equipo">+ Agregar miembro</button>
+          </div>
+        </div>
+
+        <!-- ══ CONTACTO ══════════════════════════════════════════════════ -->
+        <div class="form-section hidden" id="section-contacto">
+          <div class="section-header">
+            <h2 class="section-title">Contacto y Footer</h2>
+            <p class="section-desc">Información de contacto y pie de página</p>
+          </div>
+          <div class="form-group">
+            <label>Texto introductorio de la sección</label>
+            <textarea name="cfg__contacto_descripcion" rows="2"
+                      placeholder="Ej: ¿Quieres saber más? Escríbenos.">{{ config.get('contacto_descripcion', '') }}</textarea>
+          </div>
+          <div class="form-group">
+            <label>Dirección</label>
+            <input type="text" name="cfg__contacto_direccion"
+                   value="{{ config.get('contacto_direccion', '') }}"
+                   placeholder="Ej: Av. 27 de Febrero 123, Santo Domingo">
+          </div>
+          <div class="form-group">
+            <label>Teléfono</label>
+            <input type="tel" name="cfg__contacto_telefono"
+                   value="{{ config.get('contacto_telefono', '') }}"
+                   placeholder="Ej: (809) 555-1234">
+          </div>
+          <div class="form-group">
+            <label>Email</label>
+            <input type="email" name="cfg__contacto_email"
+                   value="{{ config.get('contacto_email', '') }}"
+                   placeholder="info@tunegocio.com">
+          </div>
+          <div class="form-group" style="margin-top:32px;padding-top:24px;border-top:1px solid var(--admin-border);">
+            <label>Descripción en el pie de página</label>
+            <textarea name="cfg__footer_descripcion" rows="2"
+                      placeholder="Ej: Comprometidos con la excelencia y satisfacción de nuestros clientes.">{{ config.get('footer_descripcion', '') }}</textarea>
+          </div>
+        </div>
+
+      </form>
+    </main>
+  </div>
+
+  <!-- ── Footer del editor ──────────────────────────────────────────────── -->
+  <footer class="editor-footer">
+    <div class="editor-footer-inner">
+      <p class="footer-note">Los cambios se aplican de inmediato en <strong>/s/{{ sitio.slug }}/</strong></p>
+      <button type="submit" form="editor-form" class="btn-guardar" id="btn-guardar">
+        <span class="btn-text">Guardar cambios</span>
+        <span class="btn-loading hidden"><span class="spinner"></span> Guardando...</span>
+      </button>
+    </div>
+  </footer>
+
+  <script>
+  (() => {
+    const SITIO_ID = {{ sitio.id }};
+
+    // ── Navegación entre secciones ─────────────────────────────────────
+    // Ocultar todos los paneles al iniciar y mostrar solo el primero activo
+    document.querySelectorAll('.form-section').forEach(s => s.classList.add('hidden'));
+    const firstBtn = document.querySelector('#section-nav .section-nav-item');
+    if (firstBtn) {
+      const firstEl = document.getElementById('section-' + firstBtn.dataset.section);
+      if (firstEl) firstEl.classList.remove('hidden');
+    }
+
+    document.querySelectorAll('#section-nav .section-nav-item').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const target = btn.dataset.section;
+        document.querySelectorAll('#section-nav .section-nav-item').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        document.querySelectorAll('.form-section').forEach(s => s.classList.add('hidden'));
+        const el = document.getElementById('section-' + target);
+        if (el) el.classList.remove('hidden');
+      });
+    });
+
+    // ── Color picker en tiempo real ────────────────────────────────────
+    document.querySelectorAll('.js-color').forEach(input => {
+      const group = input.closest('.color-field');
+      const preview = group.querySelector('.js-color-preview');
+      const hex     = group.querySelector('.js-color-hex');
+      input.addEventListener('input', () => {
+        preview.style.background = input.value;
+        hex.textContent = input.value;
+      });
+    });
+
+    // ── Upload de logo ─────────────────────────────────────────────────
+    const logoFile    = document.getElementById('logo-file');
+    const logoPreview = document.getElementById('logo-preview');
+    const logoHolder  = document.getElementById('logo-placeholder');
+    const logoHidden  = document.getElementById('logo-url-hidden');
+    const btnQuitarLogo = document.getElementById('btn-quitar-logo');
+
+    if (logoFile) {
+      logoFile.addEventListener('change', async () => {
+        if (!logoFile.files[0]) return;
+        const url = await subirImagen(logoFile.files[0], SITIO_ID);
+        if (url) {
+          logoHidden.value = url;
+          logoPreview.src  = url;
+          logoPreview.classList.remove('hidden');
+          if (logoHolder) logoHolder.style.display = 'none';
+          if (btnQuitarLogo) btnQuitarLogo.style.display = '';
+        }
+      });
+    }
+
+    if (btnQuitarLogo) {
+      btnQuitarLogo.addEventListener('click', () => {
+        logoHidden.value = '';
+        logoPreview.src  = '';
+        logoPreview.classList.add('hidden');
+        if (logoHolder) logoHolder.style.display = '';
+        btnQuitarLogo.style.display = 'none';
+      });
+    }
+
+    // ── Upload imagen de hero ──────────────────────────────────────────
+    const heroFile    = document.getElementById('hero-img-file');
+    const heroUrlInput = document.getElementById('hero-img-url');
+    const heroPreview = document.getElementById('hero-img-preview');
+
+    if (heroFile) {
+      heroFile.addEventListener('change', async () => {
+        if (!heroFile.files[0]) return;
+        const url = await subirImagen(heroFile.files[0], SITIO_ID);
+        if (url) {
+          heroUrlInput.value = url;
+          heroPreview.style.backgroundImage = `url('${url}')`;
+        }
+      });
+    }
+
+    if (heroUrlInput) {
+      heroUrlInput.addEventListener('input', () => {
+        heroPreview.style.backgroundImage = `url('${heroUrlInput.value}')`;
+      });
+    }
+
+    // ── Upload en repeaters ────────────────────────────────────────────
+    document.addEventListener('change', async (e) => {
+      if (!e.target.matches('.rep-img-file')) return;
+      const file = e.target.files[0];
+      if (!file) return;
+      const label      = e.target.closest('label');
+      const formGroup  = label.closest('.form-group');
+      const urlInput   = formGroup.querySelector('.rep-img-url');
+      const url = await subirImagen(file, SITIO_ID);
+      if (url && urlInput) urlInput.value = url;
+    });
+
+    // ── Eliminar item de repeater ──────────────────────────────────────
+    document.addEventListener('click', (e) => {
+      if (!e.target.matches('.btn-remove-item')) return;
+      const item = e.target.closest('.repeater-item');
+      if (!item) return;
+      item.remove();
+      renumerarRepeater(item.dataset.rep);
+    });
+
+    // ── Agregar item de repeater ───────────────────────────────────────
+    document.querySelectorAll('.btn-add-item').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const seccion  = btn.dataset.add;
+        const list     = document.getElementById(`rep-${seccion}-list`);
+        const idx      = list.querySelectorAll('.repeater-item').length;
+        const plantilla = TEMPLATES_REPEATER[seccion];
+        if (!plantilla) return;
+
+        const div = document.createElement('div');
+        div.className = 'repeater-item';
+        div.dataset.rep = seccion;
+        div.innerHTML = plantilla(idx, SITIO_ID);
+        list.appendChild(div);
+        renumerarRepeater(seccion);
+      });
+    });
+
+    function renumerarRepeater(seccion) {
+      const list  = document.getElementById(`rep-${seccion}-list`);
+      if (!list) return;
+      const items = list.querySelectorAll('.repeater-item');
+      items.forEach((item, i) => {
+        item.querySelector('.repeater-item-num').textContent = i + 1;
+        item.querySelectorAll('[name]').forEach(field => {
+          field.name = field.name.replace(/rep__\w+__\d+__/, `rep__${seccion}__${i}__`);
+        });
+      });
+    }
+
+    // Templates HTML para items nuevos de cada repeater
+    const TEMPLATES_REPEATER = {
+      servicios: (idx, sid) => `
+        <div class="repeater-item-header">
+          <span class="repeater-item-num">${idx + 1}</span>
+          <button type="button" class="btn-remove-item" title="Eliminar">✕</button>
+        </div>
+        <div class="form-group">
+          <label>Título del servicio</label>
+          <input type="text" name="rep__servicios__${idx}__titulo" placeholder="Ej: Consultoría">
+        </div>
+        <div class="form-group">
+          <label>Descripción</label>
+          <textarea name="rep__servicios__${idx}__desc" rows="2"></textarea>
+        </div>
+        <div class="form-group">
+          <label>Imagen <span class="field-optional">(URL o sube una)</span></label>
+          <div class="img-bg-field">
+            <input type="text" name="rep__servicios__${idx}__imagen" class="img-bg-url-input rep-img-url" placeholder="https://...">
+            <div class="img-bg-actions">
+              <label class="btn-upload-label btn-upload-sm">Subir imagen
+                <input type="file" accept="image/*" style="display:none" class="rep-img-file" data-sitio="${sid}">
+              </label>
+            </div>
+          </div>
+        </div>`,
+
+      proyectos: (idx, sid) => `
+        <div class="repeater-item-header">
+          <span class="repeater-item-num">${idx + 1}</span>
+          <button type="button" class="btn-remove-item" title="Eliminar">✕</button>
+        </div>
+        <div class="form-group">
+          <label>Título del proyecto</label>
+          <input type="text" name="rep__proyectos__${idx}__titulo" placeholder="Ej: Casa Moderna">
+        </div>
+        <div class="form-group">
+          <label>Categoría</label>
+          <input type="text" name="rep__proyectos__${idx}__categoria" placeholder="Ej: Residencial">
+        </div>
+        <div class="form-group">
+          <label>Imagen</label>
+          <div class="img-bg-field">
+            <input type="text" name="rep__proyectos__${idx}__imagen" class="img-bg-url-input rep-img-url" placeholder="https://...">
+            <div class="img-bg-actions">
+              <label class="btn-upload-label btn-upload-sm">Subir imagen
+                <input type="file" accept="image/*" style="display:none" class="rep-img-file" data-sitio="${sid}">
+              </label>
+            </div>
+          </div>
+        </div>`,
+
+      equipo: (idx, sid) => `
+        <div class="repeater-item-header">
+          <span class="repeater-item-num">${idx + 1}</span>
+          <button type="button" class="btn-remove-item" title="Eliminar">✕</button>
+        </div>
+        <div class="form-group">
+          <label>Nombre</label>
+          <input type="text" name="rep__equipo__${idx}__nombre" placeholder="Ej: Ana García">
+        </div>
+        <div class="form-group">
+          <label>Cargo / Rol</label>
+          <input type="text" name="rep__equipo__${idx}__rol" placeholder="Ej: Directora General">
+        </div>
+        <div class="form-group">
+          <label>Foto <span class="field-optional">(URL o sube una)</span></label>
+          <div class="img-bg-field">
+            <input type="text" name="rep__equipo__${idx}__foto" class="img-bg-url-input rep-img-url" placeholder="https://...">
+            <div class="img-bg-actions">
+              <label class="btn-upload-label btn-upload-sm">Subir foto
+                <input type="file" accept="image/*" style="display:none" class="rep-img-file" data-sitio="${sid}">
+              </label>
+            </div>
+          </div>
+        </div>`
+    };
+
+    // ── Subir imagen al servidor ───────────────────────────────────────
+    async function subirImagen(file, sitioId) {
+      const fd = new FormData();
+      fd.append('imagen', file);
+      try {
+        const res  = await fetch(`/upload-sitio/${sitioId}`, { method: 'POST', body: fd });
+        const data = await res.json();
+        if (data.ok) return data.url;
+        alert('Error al subir imagen: ' + data.error);
+      } catch {
+        alert('Error de conexión al subir imagen.');
+      }
+      return null;
+    }
+
+    // ── Spinner al guardar ─────────────────────────────────────────────
+    document.getElementById('editor-form').addEventListener('submit', () => {
+      const btn = document.getElementById('btn-guardar');
+      btn.querySelector('.btn-text').classList.add('hidden');
+      btn.querySelector('.btn-loading').classList.remove('hidden');
+      btn.disabled = true;
+    });
+
+  })();
+  </script>
+
+</body>
+</html>
