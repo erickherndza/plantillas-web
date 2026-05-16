@@ -425,7 +425,85 @@
                    value="{{ config.get('contacto_email', '') }}"
                    placeholder="info@tunegocio.com">
           </div>
+          <!-- ── Mapa de ubicación ──────────────────────────────────── -->
           <div class="form-group" style="margin-top:32px;padding-top:24px;border-top:1px solid var(--admin-border);">
+            <label>Mapa de ubicación</label>
+            <p class="field-hint">Elige cómo mostrar el mapa en tu página de contacto.</p>
+
+            <div class="mapa-tabs" id="mapa-tabs">
+              <button type="button" class="mapa-tab {{ 'active' if config.get('contacto_mapa_modo','coords') == 'ninguno' else '' }}"
+                      data-modo="ninguno">Sin mapa</button>
+              <button type="button" class="mapa-tab {{ 'active' if config.get('contacto_mapa_modo','coords') in ('','coords') else '' }}"
+                      data-modo="coords">Coordenadas</button>
+              <button type="button" class="mapa-tab {{ 'active' if config.get('contacto_mapa_modo') == 'embed' else '' }}"
+                      data-modo="embed">Google Maps URL</button>
+            </div>
+
+            <input type="hidden" name="cfg__contacto_mapa_modo" id="cfg-mapa-modo"
+                   value="{{ config.get('contacto_mapa_modo', 'coords') }}"/>
+
+            <!-- Panel: Coordenadas -->
+            <div class="mapa-panel" id="mapa-panel-coords"
+                 style="{{ 'display:none' if config.get('contacto_mapa_modo') in ('ninguno','embed') else '' }}">
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px;">
+                <div>
+                  <label style="font-size:12px;color:#6b7280;font-weight:600;">Latitud</label>
+                  <input type="text" name="cfg__contacto_mapa_lat"
+                         value="{{ config.get('contacto_mapa_lat', '') }}"
+                         placeholder="Ej: 18.4861"/>
+                </div>
+                <div>
+                  <label style="font-size:12px;color:#6b7280;font-weight:600;">Longitud</label>
+                  <input type="text" name="cfg__contacto_mapa_lng"
+                         value="{{ config.get('contacto_mapa_lng', '') }}"
+                         placeholder="Ej: -69.9312"/>
+                </div>
+              </div>
+              <p class="field-hint" style="margin-top:8px;">
+                ¿Cómo obtener coordenadas?
+                <a href="https://www.google.com/maps" target="_blank" rel="noopener"
+                   style="color:var(--admin-primary);font-weight:600;">
+                  Abre Google Maps →
+                </a>
+                busca tu negocio → clic derecho sobre el punto → copia los números que aparecen (lat, lng).
+              </p>
+              <!-- Preview del mapa OpenStreetMap -->
+              <div id="mapa-coords-preview" style="margin-top:12px;"></div>
+              <button type="button" id="btn-preview-mapa"
+                      style="margin-top:8px;padding:7px 16px;border:1.5px solid var(--admin-border);border-radius:6px;background:#fff;font-size:13px;cursor:pointer;font-weight:600;">
+                Previsualizar mapa
+              </button>
+            </div>
+
+            <!-- Panel: Google Maps embed URL -->
+            <div class="mapa-panel" id="mapa-panel-embed"
+                 style="{{ '' if config.get('contacto_mapa_modo') == 'embed' else 'display:none' }}">
+              <textarea name="cfg__contacto_maps_embed" rows="3"
+                        style="margin-top:12px;font-size:12px;font-family:monospace;"
+                        placeholder="Pega aquí el src del iframe de Google Maps...">{{ config.get('contacto_maps_embed', '') }}</textarea>
+              <p class="field-hint" style="margin-top:6px;">
+                En Google Maps → tu negocio → Compartir → <strong>Insertar un mapa</strong> → copia solo el valor del atributo <code>src="..."</code>.
+              </p>
+            </div>
+          </div>
+
+          <!-- ── Redes sociales ──────────────────────────────────────── -->
+          <div class="form-group" style="margin-top:24px;padding-top:24px;border-top:1px solid var(--admin-border);">
+            <label>Redes sociales</label>
+            <div style="display:flex;flex-direction:column;gap:10px;margin-top:8px;">
+              <input type="text" name="cfg__social_whatsapp"
+                     value="{{ config.get('social_whatsapp', '') }}"
+                     placeholder="WhatsApp: +1 809 555 1234 (número completo con código de país)"/>
+              <input type="url" name="cfg__social_instagram"
+                     value="{{ config.get('social_instagram', '') }}"
+                     placeholder="Instagram: https://instagram.com/tunegocio"/>
+              <input type="url" name="cfg__social_facebook"
+                     value="{{ config.get('social_facebook', '') }}"
+                     placeholder="Facebook: https://facebook.com/tunegocio"/>
+            </div>
+          </div>
+
+          <div class="form-group" style="margin-top:24px;padding-top:24px;border-top:1px solid var(--admin-border);">
             <label>Descripción en el pie de página</label>
             <textarea name="cfg__footer_descripcion" rows="2"
                       placeholder="Ej: Comprometidos con la excelencia y satisfacción de nuestros clientes.">{{ config.get('footer_descripcion', '') }}</textarea>
