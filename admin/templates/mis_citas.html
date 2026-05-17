@@ -68,7 +68,7 @@
           </div>
           <div class="cita-contacto-col">
             {% if cita.paciente_tel %}
-              <a href="https://wa.me/1{{ cita.paciente_tel|replace('(',')|replace(')',')|replace(' ','')|replace('-','') }}"
+              <a href="https://wa.me/1{{ cita.paciente_tel|replace('(', '')|replace(')', '')|replace(' ', '')|replace('-', '') }}"
                  target="_blank" class="cita-wa-link">📱 {{ cita.paciente_tel }}</a>
             {% endif %}
             {% if cita.paciente_email %}
