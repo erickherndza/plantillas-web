@@ -940,13 +940,20 @@
       const fd = new FormData();
       fd.append('imagen', file);
       try {
+        console.log('[upload] enviando a /upload-sitio/' + sitioId, file.name, file.size);
         const res  = await fetch(`/upload-sitio/${sitioId}`, { method: 'POST', body: fd });
+        console.log('[upload] status:', res.status, res.url);
         if (res.status === 413) { alert('Imagen demasiado grande. Máximo 5 MB.'); return null; }
         if (res.status === 403) { alert('Sesión expirada. Recarga la página e inicia sesión de nuevo.'); return null; }
-        const data = await res.json();
-        if (data.ok) return data.url;
+        const rawText = await res.text();
+        console.log('[upload] respuesta raw:', rawText);
+        let data;
+        try { data = JSON.parse(rawText); } catch(e) { alert('Respuesta inválida del servidor. Revisa consola.'); return null; }
+        console.log('[upload] data:', data);
+        if (data.ok) { console.log('[upload] URL:', data.url); return data.url; }
         alert('Error al subir imagen: ' + data.error);
-      } catch {
+      } catch(err) {
+        console.error('[upload] excepción:', err);
         alert('Error al subir imagen. Verifica tu conexión e inténtalo de nuevo.');
       }
       return null;
