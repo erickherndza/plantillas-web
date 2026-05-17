@@ -274,10 +274,10 @@
                 <label class="btn-upload-label">
                   Subir logo
                   <input type="file" accept="image/png,image/jpeg,image/webp"
-                         id="logo-file" style="display:none">
+                         id="logo-file" style="position:absolute;opacity:0;width:0;height:0;overflow:hidden;">
                 </label>
                 <button type="button" class="btn-remove-img" id="btn-quitar-logo"
-                        {% if not config.get('logo_url') %}style="display:none"{% endif %}>
+                        {% if not config.get('logo_url') %}style="position:absolute;opacity:0;width:0;height:0;overflow:hidden;"{% endif %}>
                   Quitar logo
                 </button>
               </div>
@@ -305,7 +305,7 @@
               <div class="img-bg-actions">
                 <label class="btn-upload-label btn-upload-sm">
                   Subir imagen
-                  <input type="file" accept="image/*" id="hero-img-file" style="display:none">
+                  <input type="file" accept="image/*" id="hero-img-file" style="position:absolute;opacity:0;width:0;height:0;overflow:hidden;">
                 </label>
               </div>
               <p class="img-sugerencia">1600×900 px · JPG o WebP · máx 1 MB</p>
@@ -460,7 +460,7 @@
                         <label class="btn-upload-label btn-upload-sm js-rep-upload"
                                data-target-input="rep__servicios__{{ idx }}__imagen">
                           Subir imagen
-                          <input type="file" accept="image/*" style="display:none"
+                          <input type="file" accept="image/*" style="position:absolute;opacity:0;width:0;height:0;overflow:hidden;"
                                  class="rep-img-file" data-sitio="{{ sitio.id }}">
                         </label>
                       </div>
@@ -507,7 +507,7 @@
                       <div class="img-bg-actions">
                         <label class="btn-upload-label btn-upload-sm">
                           Subir imagen
-                          <input type="file" accept="image/*" style="display:none"
+                          <input type="file" accept="image/*" style="position:absolute;opacity:0;width:0;height:0;overflow:hidden;"
                                  class="rep-img-file" data-sitio="{{ sitio.id }}">
                         </label>
                       </div>
@@ -554,7 +554,7 @@
                       <div class="img-bg-actions">
                         <label class="btn-upload-label btn-upload-sm">
                           Subir foto
-                          <input type="file" accept="image/*" style="display:none"
+                          <input type="file" accept="image/*" style="position:absolute;opacity:0;width:0;height:0;overflow:hidden;"
                                  class="rep-img-file" data-sitio="{{ sitio.id }}">
                         </label>
                       </div>
@@ -874,7 +874,7 @@
             <input type="text" name="rep__servicios__${idx}__imagen" class="img-bg-url-input rep-img-url" placeholder="https://...">
             <div class="img-bg-actions">
               <label class="btn-upload-label btn-upload-sm">Subir imagen
-                <input type="file" accept="image/*" style="display:none" class="rep-img-file" data-sitio="${sid}">
+                <input type="file" accept="image/*" style="position:absolute;opacity:0;width:0;height:0;overflow:hidden;" class="rep-img-file" data-sitio="${sid}">
               </label>
             </div>
           </div>
@@ -899,7 +899,7 @@
             <input type="text" name="rep__proyectos__${idx}__imagen" class="img-bg-url-input rep-img-url" placeholder="https://...">
             <div class="img-bg-actions">
               <label class="btn-upload-label btn-upload-sm">Subir imagen
-                <input type="file" accept="image/*" style="display:none" class="rep-img-file" data-sitio="${sid}">
+                <input type="file" accept="image/*" style="position:absolute;opacity:0;width:0;height:0;overflow:hidden;" class="rep-img-file" data-sitio="${sid}">
               </label>
             </div>
           </div>
@@ -924,7 +924,7 @@
             <input type="text" name="rep__equipo__${idx}__foto" class="img-bg-url-input rep-img-url" placeholder="https://...">
             <div class="img-bg-actions">
               <label class="btn-upload-label btn-upload-sm">Subir foto
-                <input type="file" accept="image/*" style="display:none" class="rep-img-file" data-sitio="${sid}">
+                <input type="file" accept="image/*" style="position:absolute;opacity:0;width:0;height:0;overflow:hidden;" class="rep-img-file" data-sitio="${sid}">
               </label>
             </div>
           </div>
