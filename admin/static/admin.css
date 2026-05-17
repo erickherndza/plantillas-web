@@ -469,6 +469,7 @@ img { max-width: 100%; display: block; }
 .img-upload-actions { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
 
 .btn-upload-label {
+  position: relative;
   display: inline-block;
   padding: 8px 16px;
   background: var(--admin-accent);
@@ -477,6 +478,7 @@ img { max-width: 100%; display: block; }
   font-size: 12px; font-weight: 600;
   cursor: pointer;
   transition: filter .2s;
+  overflow: hidden;
 }
 .btn-upload-label:hover { filter: brightness(1.1); }
 .btn-upload-sm { padding: 6px 12px; font-size: 11px; }
