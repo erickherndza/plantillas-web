@@ -60,11 +60,17 @@
             </div>
             <div class="card-actions">
               <a href="{{ url_for('editar_sitio', sitio_id=sitio.id) }}" class="btn-editar">
-                Personalizar sitio
+                Personalizar
               </a>
               <a href="{{ url_for('ver_sitio', slug=sitio.slug) }}" target="_blank" class="btn-preview">
                 Ver sitio
               </a>
+              {% if sitio.plantilla_clave == 'doctores' %}
+              <a href="{{ url_for('mis_citas', sitio_id=sitio.id) }}" class="btn-preview"
+                 style="background:var(--admin-accent);color:#fff;border-color:var(--admin-accent)">
+                📅 Citas
+              </a>
+              {% endif %}
             </div>
           </div>
         {% endfor %}

@@ -108,6 +108,23 @@ def init_db():
         );
     """)
 
+    # Tabla de citas médicas
+    conn.executescript("""
+        CREATE TABLE IF NOT EXISTS citas (
+            id              INTEGER PRIMARY KEY AUTOINCREMENT,
+            sitio_id        INTEGER NOT NULL REFERENCES sitios(id) ON DELETE CASCADE,
+            especialista    TEXT    NOT NULL DEFAULT '',
+            fecha           TEXT    NOT NULL,
+            hora            TEXT    NOT NULL,
+            paciente_nombre TEXT    NOT NULL,
+            paciente_email  TEXT    NOT NULL DEFAULT '',
+            paciente_tel    TEXT    NOT NULL DEFAULT '',
+            motivo          TEXT    DEFAULT '',
+            estado          TEXT    DEFAULT 'pendiente',
+            created_at      TEXT    DEFAULT (datetime('now'))
+        );
+    """)
+
     # Migración: columna campos_schema en plantillas (idempotente)
     try:
         conn.execute("ALTER TABLE plantillas ADD COLUMN campos_schema TEXT DEFAULT '{}'")
@@ -531,5 +548,57 @@ def set_secciones_contenido(sitio_id: int, seccion: str, items: list):
             "INSERT INTO secciones_contenido (sitio_id, seccion, orden, datos) VALUES (?, ?, ?, ?)",
             (sitio_id, seccion, orden, json.dumps(item, ensure_ascii=False))
         )
+    conn.commit()
+    conn.close()
+
+# ── Citas ─────────────────────────────────────────────────────────────────────
+
+def verificar_disponibilidad(sitio_id: int, especialista: str, fecha: str, hora: str) -> bool:
+    """Devuelve True si el slot está disponible (sin cita confirmada/pendiente)."""
+    conn = get_db()
+    row = conn.execute("""
+        SELECT id FROM citas
+        WHERE sitio_id=? AND especialista=? AND fecha=? AND hora=?
+          AND estado IN ('pendiente','confirmada')
+    """, (sitio_id, especialista, fecha, hora)).fetchone()
+    conn.close()
+    return row is None
+
+def crear_cita(sitio_id: int, especialista: str, fecha: str, hora: str,
+               paciente_nombre: str, paciente_email: str, paciente_tel: str, motivo: str) -> int:
+    conn = get_db()
+    cur = conn.execute("""
+        INSERT INTO citas (sitio_id, especialista, fecha, hora,
+                           paciente_nombre, paciente_email, paciente_tel, motivo)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    """, (sitio_id, especialista, fecha, hora,
+          paciente_nombre, paciente_email, paciente_tel, motivo))
+    conn.commit()
+    cita_id = cur.lastrowid
+    conn.close()
+    return cita_id
+
+def horas_ocupadas(sitio_id: int, especialista: str, fecha: str) -> list:
+    """Devuelve lista de horas ocupadas para un especialista en una fecha."""
+    conn = get_db()
+    rows = conn.execute("""
+        SELECT hora FROM citas
+        WHERE sitio_id=? AND especialista=? AND fecha=?
+          AND estado IN ('pendiente','confirmada')
+    """, (sitio_id, especialista, fecha)).fetchall()
+    conn.close()
+    return [r['hora'] for r in rows]
+
+def listar_citas_sitio(sitio_id: int) -> list:
+    conn = get_db()
+    rows = conn.execute("""
+        SELECT * FROM citas WHERE sitio_id=? ORDER BY fecha, hora
+    """, (sitio_id,)).fetchall()
+    conn.close()
+    return rows
+
+def actualizar_estado_cita(cita_id: int, estado: str):
+    conn = get_db()
+    conn.execute("UPDATE citas SET estado=? WHERE id=?", (estado, cita_id))
     conn.commit()
     conn.close()

@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mis citas · {{ sitio.nombre }}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='admin.css') }}">
+</head>
+<body>
+
+  <nav class="admin-navbar">
+    <div class="navbar-brand">
+      <span class="logo-mark sm">PW</span>
+      <span class="navbar-title">{{ sitio.nombre }}</span>
+    </div>
+    <div class="navbar-actions">
+      <a href="{{ url_for('editar_sitio', sitio_id=sitio.id) }}" class="btn-back-nav">&larr; Editor</a>
+      <a href="{{ url_for('mi_panel') }}" class="btn-back-nav">Mi panel</a>
+      <a href="{{ url_for('salir') }}" class="btn-logout">Cerrar sesión</a>
+    </div>
+  </nav>
+
+  <main class="admin-main">
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% for category, message in messages %}
+        <div class="flash-message flash-{{ category }}">{{ message }}</div>
+      {% endfor %}
+    {% endwith %}
+
+    <div class="page-header" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px">
+      <div>
+        <h1 class="page-title">Citas agendadas</h1>
+        <p class="page-subtitle">{{ sitio.nombre }} · {{ citas|length }} cita{{ 's' if citas|length != 1 }}</p>
+      </div>
+      <a href="{{ url_for('ver_sitio', slug=sitio.slug) }}/agendar" target="_blank"
+         class="btn-editar" style="padding:10px 20px">Ver página de citas</a>
+    </div>
+
+    <!-- Filtros rápidos -->
+    <div style="display:flex;gap:8px;margin-bottom:24px;flex-wrap:wrap">
+      <button class="filtro-btn active" data-estado="todos">Todas ({{ citas|length }})</button>
+      <button class="filtro-btn" data-estado="pendiente" style="--c:var(--admin-warn)">
+        Pendientes ({{ citas|selectattr('estado','equalto','pendiente')|list|length }})
+      </button>
+      <button class="filtro-btn" data-estado="confirmada" style="--c:#16a34a">
+        Confirmadas ({{ citas|selectattr('estado','equalto','confirmada')|list|length }})
+      </button>
+      <button class="filtro-btn" data-estado="cancelada" style="--c:#94a3b8">
+        Canceladas ({{ citas|selectattr('estado','equalto','cancelada')|list|length }})
+      </button>
+    </div>
+
+    {% if citas %}
+      <div class="citas-lista">
+        {% for cita in citas %}
+        <div class="cita-row" data-estado="{{ cita.estado }}">
+          <div class="cita-fecha-col">
+            <span class="cita-fecha">{{ cita.fecha }}</span>
+            <span class="cita-hora">{{ cita.hora }}</span>
+          </div>
+          <div class="cita-info-col">
+            <strong class="cita-paciente">{{ cita.paciente_nombre }}</strong>
+            <span class="cita-esp">con {{ cita.especialista }}</span>
+            {% if cita.motivo %}
+              <span class="cita-motivo">{{ cita.motivo }}</span>
+            {% endif %}
+          </div>
+          <div class="cita-contacto-col">
+            {% if cita.paciente_tel %}
+              <a href="https://wa.me/1{{ cita.paciente_tel|replace('(',')|replace(')',')|replace(' ','')|replace('-','') }}"
+                 target="_blank" class="cita-wa-link">📱 {{ cita.paciente_tel }}</a>
+            {% endif %}
+            {% if cita.paciente_email %}
+              <span style="font-size:12px;color:var(--admin-muted)">{{ cita.paciente_email }}</span>
+            {% endif %}
+          </div>
+          <div class="cita-estado-col">
+            <span class="estado-badge estado-{{ cita.estado }}">{{ cita.estado }}</span>
+            <form method="POST" action="{{ url_for('cambiar_estado_cita', sitio_id=sitio.id) }}"
+                  style="display:flex;gap:4px;margin-top:6px">
+              <input type="hidden" name="cita_id" value="{{ cita.id }}">
+              {% if cita.estado != 'confirmada' %}
+                <button name="estado" value="confirmada" class="btn-estado btn-confirmar">✓ Confirmar</button>
+              {% endif %}
+              {% if cita.estado != 'cancelada' %}
+                <button name="estado" value="cancelada" class="btn-estado btn-cancelar">✕ Cancelar</button>
+              {% endif %}
+            </form>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="empty-state">
+        <p style="font-size:40px;margin-bottom:16px">📅</p>
+        <p style="font-weight:600;margin-bottom:8px">Aún no hay citas agendadas</p>
+        <p>Cuando los pacientes agenden una cita aparecerá aquí.</p>
+      </div>
+    {% endif %}
+
+  </main>
+
+  <style>
+    .filtro-btn {
+      padding: 7px 16px; border-radius: 999px; border: 1.5px solid var(--admin-border);
+      background: #fff; cursor: pointer; font-size: 13px; font-weight: 600;
+      color: var(--admin-text-muted); transition: all .2s;
+    }
+    .filtro-btn.active, .filtro-btn:hover {
+      border-color: var(--c, var(--admin-accent));
+      color: var(--c, var(--admin-accent));
+      background: rgba(3,140,140,.06);
+    }
+    .citas-lista { display: flex; flex-direction: column; gap: 12px; }
+    .cita-row {
+      display: grid;
+      grid-template-columns: 100px 1fr 180px 160px;
+      gap: 16px; align-items: start;
+      background: #fff; border: 1.5px solid var(--admin-border);
+      border-radius: var(--radius); padding: 20px;
+      transition: box-shadow .2s;
+    }
+    .cita-row:hover { box-shadow: 0 4px 12px rgba(0,0,0,.07); }
+    .cita-fecha-col { display: flex; flex-direction: column; gap: 4px; }
+    .cita-fecha { font-weight: 700; font-size: 14px; color: var(--admin-text); }
+    .cita-hora  { font-size: 20px; font-weight: 800; color: var(--admin-accent); }
+    .cita-info-col { display: flex; flex-direction: column; gap: 4px; }
+    .cita-paciente { font-size: 15px; color: var(--admin-text); }
+    .cita-esp    { font-size: 13px; color: var(--admin-text-muted); }
+    .cita-motivo { font-size: 12px; color: var(--admin-text-muted); font-style: italic; margin-top: 4px; }
+    .cita-contacto-col { display: flex; flex-direction: column; gap: 4px; }
+    .cita-wa-link { font-size: 13px; color: #16a34a; font-weight: 600; }
+    .cita-estado-col { display: flex; flex-direction: column; align-items: flex-start; }
+    .estado-badge {
+      display: inline-block; padding: 3px 10px; border-radius: 999px;
+      font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px;
+    }
+    .estado-pendiente  { background: #fef9c3; color: #854d0e; }
+    .estado-confirmada { background: #dcfce7; color: #15803d; }
+    .estado-cancelada  { background: #f1f5f9; color: #94a3b8; }
+    .btn-estado { padding: 5px 10px; border-radius: var(--radius); border: 1.5px solid;
+                  font-size: 11px; font-weight: 700; cursor: pointer; transition: all .2s; }
+    .btn-confirmar { border-color: #16a34a; color: #16a34a; background: #fff; }
+    .btn-confirmar:hover { background: #16a34a; color: #fff; }
+    .btn-cancelar  { border-color: #e53e3e; color: #e53e3e; background: #fff; }
+    .btn-cancelar:hover  { background: #e53e3e; color: #fff; }
+    @media (max-width: 768px) {
+      .cita-row { grid-template-columns: 1fr 1fr; }
+      .cita-estado-col { grid-column: span 2; }
+    }
+    @media (max-width: 480px) {
+      .cita-row { grid-template-columns: 1fr; }
+      .cita-estado-col { grid-column: 1; }
+    }
+  </style>
+
+  <script>
+    document.querySelectorAll('.filtro-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.filtro-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        const estado = btn.dataset.estado;
+        document.querySelectorAll('.cita-row').forEach(row => {
+          row.style.display = (estado === 'todos' || row.dataset.estado === estado) ? '' : 'none';
+        });
+      });
+    });
+  </script>
+
+</body>
+</html>

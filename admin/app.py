@@ -20,6 +20,8 @@ from db import (
     set_secciones_contenido, get_secciones_contenido,
     guardar_mensaje_contacto,
     listar_mensajes_sitio, marcar_mensaje_leido,
+    verificar_disponibilidad, crear_cita, horas_ocupadas,
+    listar_citas_sitio, actualizar_estado_cita,
 )
 from parser import (
     extraer_valores, aplicar_cambios,
@@ -799,7 +801,13 @@ def crear_sitio():
                         'menu_proyectos':  'Casos de éxito',
                         'nosotros_mision': 'Brindar atención médica de excelencia con tecnología moderna y un trato humano.',
                         'nosotros_vision': 'Ser el consultorio médico de referencia de nuestra comunidad.',
-                        'nosotros_valores':'Ética, Precisión, Compasión, Compromiso',
+                        'nosotros_valores':  'Ética, Precisión, Compasión, Compromiso',
+                        'menu_equipo':       'Especialistas',
+                        'menu_proyectos':    'Casos clínicos',
+                        'menu_contacto':     'Agendar cita',
+                        'hero_cta_href':     '#cita',
+                        'servicios_descripcion': 'Contamos con las especialidades médicas que necesitas.',
+                        'equipo_descripcion':    'Nuestro equipo de especialistas certificados a tu servicio.',
                     },
                     'restaurante': {
                         'color_primario':    '#c2410c',
@@ -920,23 +928,58 @@ def crear_sitio():
                 # El tema de la plantilla sobreescribe los defaults base
                 _config_base.update(_defaults_tema)
                 set_config_sitio_bulk(sitio_id, _config_base)
-                # Secciones de contenido por defecto
-                set_secciones_contenido(sitio_id, 'servicios', [
-                    {'titulo': 'Servicio 1', 'desc': 'Descripción del primer servicio que ofreces.', 'imagen': ''},
-                    {'titulo': 'Servicio 2', 'desc': 'Descripción del segundo servicio que ofreces.', 'imagen': ''},
-                    {'titulo': 'Servicio 3', 'desc': 'Descripción del tercer servicio que ofreces.', 'imagen': ''},
-                ])
-                set_secciones_contenido(sitio_id, 'proyectos', [
-                    {'titulo': 'Proyecto 1', 'categoria': 'Categoría', 'imagen': ''},
-                    {'titulo': 'Proyecto 2', 'categoria': 'Categoría', 'imagen': ''},
-                    {'titulo': 'Proyecto 3', 'categoria': 'Categoría', 'imagen': ''},
-                    {'titulo': 'Proyecto 4', 'categoria': 'Categoría', 'imagen': ''},
-                ])
-                set_secciones_contenido(sitio_id, 'equipo', [
-                    {'nombre': 'Nombre Apellido', 'rol': 'Director General', 'foto': ''},
-                    {'nombre': 'Nombre Apellido', 'rol': 'Gerente', 'foto': ''},
-                    {'nombre': 'Nombre Apellido', 'rol': 'Coordinador', 'foto': ''},
-                ])
+
+                # Secciones de contenido por defecto — varían según la plantilla
+                if _clave == 'doctores':
+                    set_secciones_contenido(sitio_id, 'servicios', [
+                        {'titulo': 'Medicina General', 'desc': 'Atención primaria, diagnóstico y tratamiento de enfermedades comunes.', 'imagen': ''},
+                        {'titulo': 'Cardiología', 'desc': 'Diagnóstico y tratamiento de enfermedades del corazón y sistema circulatorio.', 'imagen': ''},
+                        {'titulo': 'Pediatría', 'desc': 'Atención médica integral para niños y adolescentes.', 'imagen': ''},
+                    ])
+                    set_secciones_contenido(sitio_id, 'proyectos', [
+                        {'titulo': 'Caso clínico 1', 'categoria': 'Cardiología', 'imagen': ''},
+                        {'titulo': 'Caso clínico 2', 'categoria': 'Medicina General', 'imagen': ''},
+                        {'titulo': 'Caso clínico 3', 'categoria': 'Pediatría', 'imagen': ''},
+                    ])
+                    set_secciones_contenido(sitio_id, 'equipo', [
+                        {'nombre': 'Dr. Nombre Apellido', 'rol': 'Médico General', 'foto': '', 'email': '', 'telefono': '', 'whatsapp': ''},
+                        {'nombre': 'Dra. Nombre Apellido', 'rol': 'Cardióloga', 'foto': '', 'email': '', 'telefono': '', 'whatsapp': ''},
+                        {'nombre': 'Dr. Nombre Apellido', 'rol': 'Pediatra', 'foto': '', 'email': '', 'telefono': '', 'whatsapp': ''},
+                    ])
+                elif _clave == 'restaurante':
+                    set_secciones_contenido(sitio_id, 'servicios', [
+                        {'titulo': 'Entradas', 'desc': 'Selección de entradas frescas para comenzar tu experiencia.', 'imagen': ''},
+                        {'titulo': 'Platos principales', 'desc': 'Nuestros platos estrella preparados con ingredientes de primera.', 'imagen': ''},
+                        {'titulo': 'Postres', 'desc': 'Dulces tentaciones para cerrar con el mejor sabor.', 'imagen': ''},
+                    ])
+                    set_secciones_contenido(sitio_id, 'proyectos', [
+                        {'titulo': 'Cena romántica', 'categoria': 'Eventos', 'imagen': ''},
+                        {'titulo': 'Celebración familiar', 'categoria': 'Eventos', 'imagen': ''},
+                        {'titulo': 'Plato del día', 'categoria': 'Menú', 'imagen': ''},
+                        {'titulo': 'Nuestro ambiente', 'categoria': 'Galería', 'imagen': ''},
+                    ])
+                    set_secciones_contenido(sitio_id, 'equipo', [
+                        {'nombre': 'Chef Nombre', 'rol': 'Chef Ejecutivo', 'foto': ''},
+                        {'nombre': 'Nombre Apellido', 'rol': 'Sous Chef', 'foto': ''},
+                        {'nombre': 'Nombre Apellido', 'rol': 'Sommelier', 'foto': ''},
+                    ])
+                else:
+                    set_secciones_contenido(sitio_id, 'servicios', [
+                        {'titulo': 'Servicio 1', 'desc': 'Descripción del primer servicio que ofreces.', 'imagen': ''},
+                        {'titulo': 'Servicio 2', 'desc': 'Descripción del segundo servicio que ofreces.', 'imagen': ''},
+                        {'titulo': 'Servicio 3', 'desc': 'Descripción del tercer servicio que ofreces.', 'imagen': ''},
+                    ])
+                    set_secciones_contenido(sitio_id, 'proyectos', [
+                        {'titulo': 'Proyecto 1', 'categoria': 'Categoría', 'imagen': ''},
+                        {'titulo': 'Proyecto 2', 'categoria': 'Categoría', 'imagen': ''},
+                        {'titulo': 'Proyecto 3', 'categoria': 'Categoría', 'imagen': ''},
+                        {'titulo': 'Proyecto 4', 'categoria': 'Categoría', 'imagen': ''},
+                    ])
+                    set_secciones_contenido(sitio_id, 'equipo', [
+                        {'nombre': 'Nombre Apellido', 'rol': 'Director General', 'foto': ''},
+                        {'nombre': 'Nombre Apellido', 'rol': 'Gerente', 'foto': ''},
+                        {'nombre': 'Nombre Apellido', 'rol': 'Coordinador', 'foto': ''},
+                    ])
                 flash(f'Sitio "{nombre_sitio}" creado. Ahora puedes personalizarlo.', 'success')
                 return redirect(url_for('mi_panel'))
             except Exception as e:
@@ -1112,6 +1155,82 @@ def enviar_contacto(slug):
         return jsonify({'ok': False, 'error': 'Nombre, email y mensaje son obligatorios.'}), 400
     guardar_mensaje_contacto(sitio['id'], nombre, email_c, telefono, mensaje)
     return jsonify({'ok': True, 'msg': '¡Mensaje recibido! Te contactaremos pronto.'})
+
+
+# ── Sistema de citas ──────────────────────────────────────────────────────────
+
+@app.route('/s/<slug>/agendar')
+def agendar_cita(slug):
+    sitio = obtener_sitio_por_slug(slug)
+    if not sitio:
+        abort(404)
+    ctx = _contexto_sitio(sitio)
+    especialistas = ctx['secciones'].get('equipo', [])
+    return render_template('sites/empresa/cita.html',
+        sitio=sitio, pagina_activa='cita',
+        especialistas=especialistas, **ctx)
+
+@app.route('/s/<slug>/horas-ocupadas')
+def horas_ocupadas_api(slug):
+    sitio = obtener_sitio_por_slug(slug)
+    if not sitio:
+        return jsonify([])
+    especialista = request.args.get('especialista', '')
+    fecha        = request.args.get('fecha', '')
+    if not especialista or not fecha:
+        return jsonify([])
+    ocupadas = horas_ocupadas(sitio['id'], especialista, fecha)
+    return jsonify(ocupadas)
+
+@app.route('/s/<slug>/agendar', methods=['POST'])
+def crear_cita_pub(slug):
+    sitio = obtener_sitio_por_slug(slug)
+    if not sitio:
+        return jsonify({'ok': False}), 404
+    data = request.get_json(silent=True) or {}
+    especialista    = data.get('especialista', '').strip()
+    fecha           = data.get('fecha', '').strip()
+    hora            = data.get('hora', '').strip()
+    paciente_nombre = data.get('nombre', '').strip()
+    paciente_email  = data.get('email', '').strip()
+    paciente_tel    = data.get('telefono', '').strip()
+    motivo          = data.get('motivo', '').strip()
+
+    if not all([especialista, fecha, hora, paciente_nombre, paciente_tel]):
+        return jsonify({'ok': False, 'error': 'Completa todos los campos obligatorios.'}), 400
+
+    if not verificar_disponibilidad(sitio['id'], especialista, fecha, hora):
+        return jsonify({'ok': False,
+                        'error': f'Lo sentimos, el horario {hora} del {fecha} con {especialista} ya está reservado. Por favor elige otro horario.'}), 409
+
+    crear_cita(sitio['id'], especialista, fecha, hora,
+               paciente_nombre, paciente_email, paciente_tel, motivo)
+    return jsonify({'ok': True,
+                    'msg': f'¡Cita confirmada! {especialista} te atenderá el {fecha} a las {hora}. Recibirás un recordatorio.'})
+
+# ── Panel de citas del dueño del sitio ───────────────────────────────────────
+
+@app.route('/mis-citas/<int:sitio_id>')
+@usuario_requerido
+def mis_citas(sitio_id):
+    sitio = obtener_sitio_por_id(sitio_id)
+    if not sitio or sitio['usuario_id'] != session['uid']:
+        abort(403)
+    citas = listar_citas_sitio(sitio_id)
+    return render_template('mis_citas.html',
+        sitio=sitio, citas=citas, nombre=session['u_nombre'])
+
+@app.route('/mis-citas/<int:sitio_id>/cambiar-estado', methods=['POST'])
+@usuario_requerido
+def cambiar_estado_cita(sitio_id):
+    sitio = obtener_sitio_por_id(sitio_id)
+    if not sitio or sitio['usuario_id'] != session['uid']:
+        abort(403)
+    cita_id = request.form.get('cita_id', type=int)
+    estado  = request.form.get('estado', '')
+    if cita_id and estado in ('pendiente', 'confirmada', 'cancelada'):
+        actualizar_estado_cita(cita_id, estado)
+    return redirect(url_for('mis_citas', sitio_id=sitio_id))
 
 
 if __name__ == '__main__':
