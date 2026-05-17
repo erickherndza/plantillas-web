@@ -943,9 +943,14 @@ def crear_sitio():
                         {'titulo': 'Caso clínico 3', 'categoria': 'Pediatría', 'imagen': ''},
                     ])
                     set_secciones_contenido(sitio_id, 'equipo', [
-                        {'nombre': 'Dr. Nombre Apellido', 'rol': 'Médico General', 'foto': '', 'email': '', 'telefono': '', 'whatsapp': ''},
-                        {'nombre': 'Dra. Nombre Apellido', 'rol': 'Cardióloga', 'foto': '', 'email': '', 'telefono': '', 'whatsapp': ''},
-                        {'nombre': 'Dr. Nombre Apellido', 'rol': 'Pediatra', 'foto': '', 'email': '', 'telefono': '', 'whatsapp': ''},
+                        {'nombre': 'Dr. Nombre Apellido', 'rol': 'Médico General', 'credenciales': 'Medicina General · Universidad Nacional', 'foto': '', 'email': '', 'telefono': '', 'whatsapp': ''},
+                        {'nombre': 'Dra. Nombre Apellido', 'rol': 'Cardióloga', 'credenciales': 'Cardiología · Hospital Central', 'foto': '', 'email': '', 'telefono': '', 'whatsapp': ''},
+                        {'nombre': 'Dr. Nombre Apellido', 'rol': 'Pediatra', 'credenciales': 'Pediatría · Instituto Médico', 'foto': '', 'email': '', 'telefono': '', 'whatsapp': ''},
+                    ])
+                    set_secciones_contenido(sitio_id, 'testimonios', [
+                        {'nombre': 'María García', 'texto': 'Excelente atención médica. Los especialistas son muy profesionales y el trato es muy humano. Lo recomiendo al 100%.', 'especialidad': 'Paciente de Cardiología'},
+                        {'nombre': 'Juan Pérez', 'texto': 'Mi hijo ha sido atendido aquí desde pequeño. Los pediatras son increíbles, siempre con mucha paciencia y dedicación.', 'especialidad': 'Padre de paciente'},
+                        {'nombre': 'Ana Rodríguez', 'texto': 'Servicio de primera calidad. Las instalaciones son modernas y el personal siempre está dispuesto a ayudar.', 'especialidad': 'Paciente de Medicina General'},
                     ])
                 elif _clave == 'restaurante':
                     set_secciones_contenido(sitio_id, 'servicios', [
@@ -1098,9 +1103,10 @@ def _contexto_sitio(sitio):
     return {
         'config':   get_config_sitio(sid),
         'secciones': {
-            'servicios': get_secciones_contenido(sid, 'servicios'),
-            'proyectos': get_secciones_contenido(sid, 'proyectos'),
-            'equipo':    get_secciones_contenido(sid, 'equipo'),
+            'servicios':   get_secciones_contenido(sid, 'servicios'),
+            'proyectos':   get_secciones_contenido(sid, 'proyectos'),
+            'equipo':      get_secciones_contenido(sid, 'equipo'),
+            'testimonios': get_secciones_contenido(sid, 'testimonios'),
         },
     }
 
@@ -1113,9 +1119,9 @@ def ver_sitio(slug):
         abort(404)
     ctx = _contexto_sitio(sitio)
     clave = sitio['plantilla_clave']
-    # Plantillas con template propio de una sola página (no web5)
-    _single_page = {'arquitectura'}
-    if clave in _single_page:
+    # Cada plantilla con template propio usa index.html en su carpeta
+    _own_template = {'arquitectura', 'doctores'}
+    if clave in _own_template:
         template = f'sites/{clave}/index.html'
     else:
         template = 'sites/empresa/inicio.html'

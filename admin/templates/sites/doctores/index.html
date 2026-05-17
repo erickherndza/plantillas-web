@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="description" content="{{ config.get('nosotros_descripcion', sitio.nombre) }}"/>
+  <title>{{ sitio.nombre }}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700;900&display=swap" rel="stylesheet"/>
+  <link href="{{ url_for('static', filename='sites/doctores/style.css') }}" rel="stylesheet"/>
+  <style>
+    :root {
+      --c-primary: {{ config.get('color_primario', '#0093b8') }};
+      --c-accent:  {{ config.get('color_acento',  '#00B4D8') }};
+      --c-dark:    {{ config.get('color_footer_bg','#03045E') }};
+      --c-text:    {{ config.get('color_texto',    '#1e293b') }};
+      --c-bg:      {{ config.get('color_seccion_bg','#f0f8ff') }};
+    }
+    .navbar { background: {{ config.get('color_navbar_bg', config.get('color_primario','#0093b8')) }}; }
+  </style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="site-header">
+  <div class="container">
+    <a class="header-brand" href="#">
+      <div class="brand-icon">✚</div>
+      {% if config.get('logo_url') %}
+        <img src="{{ config.get('logo_url') }}" alt="{{ config.get('nombre_negocio', sitio.nombre) }}" style="max-height:40px;width:auto;">
+      {% else %}
+        {{ config.get('nombre_negocio', sitio.nombre) }}
+      {% endif %}
+    </a>
+    <div class="header-contact">
+      {% if config.get('contacto_telefono') %}
+        <span>📞 {{ config.get('contacto_telefono') }}</span>
+      {% endif %}
+      {% if config.get('contacto_email') %}
+        <span>✉ {{ config.get('contacto_email') }}</span>
+      {% endif %}
+      <span class="header-badge">Citas disponibles</span>
+    </div>
+  </div>
+</header>
+
+<!-- NAVBAR -->
+<nav class="navbar" id="navbar">
+  <div class="container">
+    <ul class="nav-list" id="nav-list">
+      <li><a href="#inicio">{{ config.get('menu_inicio','Inicio') }}</a></li>
+      <li><a href="#nosotros">{{ config.get('menu_nosotros','Nosotros') }}</a></li>
+      <li><a href="#especialidades">{{ config.get('menu_servicios','Especialidades') }}</a></li>
+      <li><a href="#medicos">{{ config.get('menu_equipo','Especialistas') }}</a></li>
+      <li><a href="#citas">Agenda tu cita</a></li>
+      <li><a href="#contacto">{{ config.get('menu_contacto','Contacto') }}</a></li>
+    </ul>
+    <button class="nav-toggle" id="nav-toggle" aria-label="Menú">☰</button>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero-section" id="inicio">
+  <div class="hero-bg" style="background-image:url('{{ config.get('hero_imagen','') }}')"></div>
+  <div class="hero-overlay"></div>
+  <div class="container">
+    <div class="hero-content fade-in-up">
+      {% if config.get('hero_eyebrow') %}
+        <p class="hero-eyebrow">{{ config.get('hero_eyebrow') }}</p>
+      {% endif %}
+      <h1 class="hero-title">{{ config.get('hero_titulo', sitio.nombre) }}</h1>
+      <p class="hero-subtitle">{{ config.get('hero_subtitulo','Cuidamos tu salud con profesionalismo y dedicación.') }}</p>
+      <div class="hero-actions">
+        <a class="btn-primary" href="{{ config.get('hero_cta_href','#citas') }}">
+          {{ config.get('hero_cta_texto','Agendar cita') }}
+        </a>
+        <a class="btn-secondary" href="{{ config.get('hero_cta2_href','#especialidades') }}">
+          {{ config.get('hero_cta2_texto','Ver especialidades') }}
+        </a>
+      </div>
+      <div class="hero-stats">
+        <div class="hero-stat">
+          <div class="stat-number">{{ config.get('stat1_num','+8K') }}</div>
+          <div class="stat-label">{{ config.get('stat1_label','Pacientes atendidos') }}</div>
+        </div>
+        <div class="hero-stat">
+          <div class="stat-number">{{ config.get('stat2_num','+15') }}</div>
+          <div class="stat-label">{{ config.get('stat2_label','Especialidades') }}</div>
+        </div>
+        <div class="hero-stat">
+          <div class="stat-number">{{ config.get('stat3_num','+12') }}</div>
+          <div class="stat-label">{{ config.get('stat3_label','Años de experiencia') }}</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- NOSOTROS -->
+<section class="about-section" id="nosotros">
+  <div class="container">
+    <div class="section-header fade-in-up">
+      <h2 class="section-title">Quiénes somos</h2>
+      <p class="section-subtitle">{{ config.get('nosotros_descripcion','Somos un centro médico comprometido con tu bienestar.') }}</p>
+    </div>
+    <div class="mvv-grid">
+      <div class="mvv-card fade-in-up">
+        <div class="mvv-icon">🎯</div>
+        <h3 class="mvv-card-title">Misión</h3>
+        <p>{{ config.get('nosotros_mision','Brindar atención médica de excelencia con tecnología moderna y trato humano.') }}</p>
+      </div>
+      <div class="mvv-card fade-in-up">
+        <div class="mvv-icon">🔭</div>
+        <h3 class="mvv-card-title">Visión</h3>
+        <p>{{ config.get('nosotros_vision','Ser el centro médico de referencia de nuestra comunidad.') }}</p>
+      </div>
+      <div class="mvv-card fade-in-up">
+        <div class="mvv-icon">⭐</div>
+        <h3 class="mvv-card-title">Valores</h3>
+        <p>{{ config.get('nosotros_valores','Ética · Precisión · Compasión · Compromiso') }}</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ESPECIALIDADES -->
+{% if secciones.servicios %}
+<section class="services-section" id="especialidades">
+  <div class="container">
+    <div class="section-header fade-in-up">
+      <h2 class="section-title">Nuestras especialidades</h2>
+      <p class="section-subtitle">{{ config.get('servicios_descripcion','Contamos con las especialidades médicas que necesitas.') }}</p>
+    </div>
+    <div class="services-grid">
+      {% for item in secciones.servicios %}
+      <div class="service-card fade-in-up">
+        <div class="service-icon-wrap">
+          {% if item.get('imagen') %}<img src="{{ item.imagen }}" alt="{{ item.get('titulo','') }}" style="width:32px;height:32px;object-fit:contain;">
+          {% else %}🏥{% endif %}
+        </div>
+        <div>
+          <h3 class="service-title">{{ item.get('titulo','Especialidad') }}</h3>
+          <p class="service-desc">{{ item.get('desc','') }}</p>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endif %}
+
+<!-- MÉDICOS / ESPECIALISTAS -->
+{% if secciones.equipo %}
+<section class="team-section" id="medicos">
+  <div class="container">
+    <div class="section-header fade-in-up">
+      <h2 class="section-title">Nuestro equipo médico</h2>
+      <p class="section-subtitle">{{ config.get('equipo_descripcion','Especialistas certificados comprometidos con tu salud.') }}</p>
+    </div>
+    <div class="team-grid">
+      {% for m in secciones.equipo %}
+      <div class="team-card fade-in-up">
+        {% if m.get('foto') %}
+          <img src="{{ m.foto }}" alt="{{ m.get('nombre','') }}">
+        {% else %}
+          <div class="team-avatar">{{ m.get('nombre','D')[0] }}</div>
+        {% endif %}
+        <div class="team-info">
+          <h3 class="team-name">{{ m.get('nombre','') }}</h3>
+          <p class="team-role">{{ m.get('rol','') }}</p>
+          {% if m.get('credenciales') %}
+            <p class="team-credentials">{{ m.get('credenciales','') }}</p>
+          {% endif %}
+          <div class="team-contact">
+            {% if m.get('whatsapp') %}
+              <a href="https://wa.me/{{ m.whatsapp|replace(' ','')|replace('-','')|replace('(',')|replace(')','') }}" target="_blank">
+                📱 WhatsApp
+              </a>
+            {% elif m.get('telefono') %}
+              <a href="tel:{{ m.telefono }}">📞 {{ m.telefono }}</a>
+            {% endif %}
+            {% if m.get('email') %}
+              <a href="mailto:{{ m.email }}">✉ {{ m.email }}</a>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endif %}
+
+<!-- TESTIMONIOS -->
+{% if secciones.testimonios %}
+<section class="testimonios-section" id="testimonios">
+  <div class="container">
+    <div class="section-header fade-in-up">
+      <h2 class="section-title">Lo que dicen nuestros pacientes</h2>
+      <p class="section-subtitle" style="color:rgba(255,255,255,.75)">La satisfacción de nuestros pacientes es nuestra mayor recompensa.</p>
+    </div>
+    <div class="testimonios-grid">
+      {% for t in secciones.testimonios %}
+      <div class="testimonio-card fade-in-up">
+        <div class="testimonio-estrellas">★★★★★</div>
+        <p class="testimonio-texto">"{{ t.get('texto','') }}"</p>
+        <div class="testimonio-autor">
+          <div class="testimonio-avatar">{{ t.get('nombre','P')[0] }}</div>
+          <div>
+            <div class="testimonio-nombre">{{ t.get('nombre','Paciente') }}</div>
+            <div class="testimonio-rol">{{ t.get('especialidad','') }}</div>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endif %}
+
+<!-- AGENDA TU CITA -->
+<section class="citas-section" id="citas">
+  <div class="container">
+    <div class="section-header fade-in-up">
+      <h2 class="section-title">Agenda tu cita</h2>
+      <p class="section-subtitle">Selecciona especialista, fecha y hora. Las citas son por orden de llegada.</p>
+    </div>
+
+    <!-- Pasos -->
+    <div class="citas-steps" id="citas-steps">
+      <div class="step active" id="stp-1"><span class="step-num">1</span><span class="step-label">Especialista</span></div>
+      <div class="step-line"></div>
+      <div class="step" id="stp-2"><span class="step-num">2</span><span class="step-label">Fecha</span></div>
+      <div class="step-line"></div>
+      <div class="step" id="stp-3"><span class="step-num">3</span><span class="step-label">Hora</span></div>
+      <div class="step-line"></div>
+      <div class="step" id="stp-4"><span class="step-num">4</span><span class="step-label">Confirmar</span></div>
+    </div>
+
+    <!-- Especialista selector -->
+    <div class="citas-layout">
+      <div class="citas-panel" id="panel-cal">
+
+        <!-- Paso 1: elegir especialista -->
+        <div id="bloque-especialista">
+          <h3>👨‍⚕️ Selecciona el especialista</h3>
+          <div style="display:flex;flex-direction:column;gap:10px" id="esp-lista">
+            {% if secciones.equipo %}
+              {% for m in secciones.equipo %}
+              <label style="display:flex;align-items:center;gap:12px;padding:12px;border:1.5px solid var(--c-border);border-radius:var(--radius);cursor:pointer;transition:all .2s" class="esp-option">
+                <input type="radio" name="especialista" value="{{ m.get('nombre','') }}" style="display:none">
+                <div style="width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,var(--c-primary),var(--c-accent));display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:16px;flex-shrink:0">{{ m.get('nombre','D')[0] }}</div>
+                <div>
+                  <div style="font-weight:800;font-size:14px;color:var(--c-text)">{{ m.get('nombre','') }}</div>
+                  <div style="font-size:12px;color:var(--c-primary);font-weight:700">{{ m.get('rol','') }}</div>
+                </div>
+              </label>
+              {% endfor %}
+            {% else %}
+              <p style="color:var(--c-muted);font-size:13px">No hay especialistas configurados aún.</p>
+            {% endif %}
+          </div>
+        </div>
+
+        <!-- Paso 2: calendario (oculto hasta elegir especialista) -->
+        <div id="bloque-calendario" style="display:none">
+          <h3>📅 Selecciona la fecha</h3>
+          <div class="cal-header">
+            <button class="cal-nav-btn" id="cal-prev">&#8249;</button>
+            <span class="cal-title" id="cal-titulo"></span>
+            <button class="cal-nav-btn" id="cal-next">&#8250;</button>
+          </div>
+          <div class="cal-weekdays">
+            <span>Do</span><span>Lu</span><span>Ma</span><span>Mi</span><span>Ju</span><span>Vi</span><span>Sá</span>
+          </div>
+          <div class="cal-grid" id="cal-grid"></div>
+          <div class="cal-leyenda" style="margin-top:14px">
+            <div class="leyenda-item"><div class="dot disponible"></div> Disponible</div>
+            <div class="leyenda-item"><div class="dot limitado"></div> Sábado (limitado)</div>
+            <div class="leyenda-item"><div class="dot no-disponible"></div> No disponible</div>
+          </div>
+        </div>
+
+        <!-- Paso 3: horarios -->
+        <div id="bloque-horarios" style="display:none">
+          <h3>🕐 Selecciona el horario</h3>
+          <div class="horarios-header" id="horarios-label">Horarios disponibles</div>
+          <div class="horarios-grid" id="horarios-grid"></div>
+          <button type="button" id="btn-cambiar-fecha" style="margin-top:14px;background:none;border:1.5px solid var(--c-border);padding:8px 16px;border-radius:var(--radius);font-size:12px;cursor:pointer;font-weight:700;color:var(--c-muted)">
+            ← Cambiar fecha
+          </button>
+        </div>
+      </div>
+
+      <!-- Formulario de datos -->
+      <div class="citas-panel" id="panel-form">
+        <h3>📋 Tus datos</h3>
+        <div class="seleccion-resumen" id="sel-resumen"></div>
+        <div class="contact-form" id="cita-form">
+          <div class="form-group">
+            <label>Nombre completo *</label>
+            <input type="text" id="pac-nombre" placeholder="Tu nombre completo">
+          </div>
+          <div class="form-group">
+            <label>Teléfono / WhatsApp *</label>
+            <input type="tel" id="pac-tel" placeholder="(809) 000-0000">
+          </div>
+          <div class="form-group">
+            <label>Correo electrónico</label>
+            <input type="email" id="pac-email" placeholder="tu@email.com">
+          </div>
+          <div class="form-group">
+            <label>Especialidad requerida</label>
+            <select id="pac-especialidad">
+              <option value="">Seleccionar...</option>
+              {% if secciones.servicios %}
+                {% for s in secciones.servicios %}
+                  <option value="{{ s.get('titulo','') }}">{{ s.get('titulo','') }}</option>
+                {% endfor %}
+              {% endif %}
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Motivo de la consulta</label>
+            <textarea id="pac-motivo" rows="3" placeholder="Describe brevemente el motivo..."></textarea>
+          </div>
+          <button type="button" id="btn-confirmar-cita" class="btn-primary" style="width:100%;justify-content:center;padding:14px;opacity:.5;pointer-events:none">
+            Confirmar cita
+          </button>
+          <div class="form-feedback" id="form-feedback"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CONTACTO -->
+<section class="contact-section" id="contacto">
+  <div class="container">
+    <div class="section-header fade-in-up">
+      <h2 class="section-title">Encuéntranos</h2>
+      <p class="section-subtitle">{{ config.get('contacto_descripcion','Estamos aquí para atenderte.') }}</p>
+    </div>
+    <div class="contact-grid">
+      <ul class="contact-list fade-in-up">
+        {% if config.get('contacto_direccion') %}
+        <li class="contact-item">
+          <div class="contact-icon-box">📍</div>
+          <div><strong>Dirección</strong><p>{{ config.get('contacto_direccion') }}</p></div>
+        </li>
+        {% endif %}
+        {% if config.get('contacto_telefono') %}
+        <li class="contact-item">
+          <div class="contact-icon-box">📞</div>
+          <div><strong>Teléfono</strong><a href="tel:{{ config.get('contacto_telefono') }}">{{ config.get('contacto_telefono') }}</a></div>
+        </li>
+        {% endif %}
+        {% if config.get('contacto_email') %}
+        <li class="contact-item">
+          <div class="contact-icon-box">✉</div>
+          <div><strong>Email</strong><a href="mailto:{{ config.get('contacto_email') }}">{{ config.get('contacto_email') }}</a></div>
+        </li>
+        {% endif %}
+        {% if config.get('horario') %}
+        <li class="contact-item">
+          <div class="contact-icon-box">🕐</div>
+          <div><strong>Horario</strong><p>{{ config.get('horario') }}</p></div>
+        </li>
+        {% endif %}
+      </ul>
+      <div class="map-placeholder fade-in-up">
+        {% if config.get('contacto_mapa_embed') %}
+          <iframe src="{{ config.get('contacto_mapa_embed') }}" allowfullscreen loading="lazy"></iframe>
+        {% else %}
+          <span>📍 Mapa de ubicación</span>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer class="site-footer">
+  <div class="container">
+    <div class="footer-inner">
+      <div class="footer-brand-col">
+        <div class="footer-brand"><span style="background:rgba(255,255,255,.15);padding:4px 8px;border-radius:6px">✚</span> {{ sitio.nombre }}</div>
+        <p class="footer-desc">{{ config.get('footer_descripcion','Comprometidos con tu salud y bienestar.') }}</p>
+      </div>
+      <div class="footer-nav">
+        <h4>Navegación</h4>
+        <ul>
+          <li><a href="#inicio">{{ config.get('menu_inicio','Inicio') }}</a></li>
+          <li><a href="#nosotros">{{ config.get('menu_nosotros','Nosotros') }}</a></li>
+          <li><a href="#especialidades">{{ config.get('menu_servicios','Especialidades') }}</a></li>
+          <li><a href="#medicos">{{ config.get('menu_equipo','Especialistas') }}</a></li>
+          <li><a href="#citas">Agendar cita</a></li>
+          <li><a href="#contacto">Contacto</a></li>
+        </ul>
+      </div>
+      <div class="footer-contact-col">
+        <h4>Contacto</h4>
+        {% if config.get('contacto_direccion') %}<p>{{ config.get('contacto_direccion') }}</p>{% endif %}
+        {% if config.get('contacto_telefono') %}<a href="tel:{{ config.get('contacto_telefono') }}">{{ config.get('contacto_telefono') }}</a>{% endif %}
+        {% if config.get('contacto_email') %}<a href="mailto:{{ config.get('contacto_email') }}">{{ config.get('contacto_email') }}</a>{% endif %}
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>© <span id="yr"></span> {{ sitio.nombre }}. Todos los derechos reservados.</p>
+    </div>
+  </div>
+</footer>
+
+<script>
+const SLUG = '{{ sitio.slug }}';
+const HORAS = ['08:00','08:30','09:00','09:30','10:00','10:30','11:00','11:30',
+               '14:00','14:30','15:00','15:30','16:00','16:30','17:00','17:30'];
+let selEsp=null, selFecha=null, selHora=null, calY, calM;
+
+// Año footer
+document.getElementById('yr').textContent = new Date().getFullYear();
+
+// Navbar toggle
+document.getElementById('nav-toggle').addEventListener('click', () => {
+  document.getElementById('nav-list').classList.toggle('open');
+});
+
+// Navbar scroll
+window.addEventListener('scroll', () => {
+  document.getElementById('navbar').classList.toggle('navbar--scrolled', window.scrollY > 50);
+});
+
+// Fade-in on scroll
+const obs = new IntersectionObserver(entries => {
+  entries.forEach(e => { if(e.isIntersecting) e.target.classList.add('is-visible'); });
+}, {threshold:.15});
+document.querySelectorAll('.fade-in-up').forEach(el => obs.observe(el));
+
+// ── ESPECIALISTAS ──────────────────────────────────────────────────────────
+document.querySelectorAll('.esp-option').forEach(label => {
+  label.addEventListener('click', () => {
+    document.querySelectorAll('.esp-option').forEach(l => {
+      l.style.borderColor = ''; l.style.background = '';
+    });
+    label.style.borderColor = 'var(--c-primary)';
+    label.style.background = 'rgba(0,147,184,.06)';
+    selEsp = label.querySelector('input').value;
+    selFecha = null; selHora = null;
+    setStep(2);
+    document.getElementById('bloque-especialista').style.display = 'none';
+    document.getElementById('bloque-calendario').style.display = 'block';
+    document.getElementById('bloque-horarios').style.display = 'none';
+    initCal();
+    actualizarResumen();
+  });
+});
+
+// ── CALENDARIO ────────────────────────────────────────────────────────────
+function initCal() {
+  const hoy = new Date();
+  calY = hoy.getFullYear(); calM = hoy.getMonth();
+  renderCal();
+}
+function renderCal() {
+  const MESES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio',
+                 'Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+  document.getElementById('cal-titulo').textContent = MESES[calM]+' '+calY;
+  const grid = document.getElementById('cal-grid');
+  grid.innerHTML = '';
+  const hoy = new Date(); hoy.setHours(0,0,0,0);
+  const primer = new Date(calY, calM, 1).getDay();
+  const total  = new Date(calY, calM+1, 0).getDate();
+  for(let i=0;i<primer;i++){
+    const d=document.createElement('button'); d.className='cal-day empty'; d.disabled=true; grid.appendChild(d);
+  }
+  for(let d=1;d<=total;d++){
+    const f=new Date(calY,calM,d);
+    const btn=document.createElement('button');
+    btn.type='button'; btn.className='cal-day'; btn.textContent=d;
+    const fiso=toISO(f);
+    if(f<hoy||f.getDay()===0){btn.disabled=true;btn.classList.add(f.getDay()===0?'domingo':'');}
+    else{
+      if(selFecha===fiso) btn.classList.add('selected');
+      if(f.toDateString()===hoy.toDateString()) btn.classList.add('today');
+      btn.addEventListener('click',()=>elegirFecha(fiso,btn));
+    }
+    grid.appendChild(btn);
+  }
+}
+document.getElementById('cal-prev').addEventListener('click',()=>{calM--;if(calM<0){calM=11;calY--;}renderCal();});
+document.getElementById('cal-next').addEventListener('click',()=>{calM++;if(calM>11){calM=0;calY++;}renderCal();});
+
+async function elegirFecha(fiso, btn){
+  selFecha=fiso; selHora=null;
+  document.querySelectorAll('.cal-day').forEach(b=>b.classList.remove('selected'));
+  btn.classList.add('selected');
+  setStep(3);
+  document.getElementById('bloque-calendario').style.display='none';
+  document.getElementById('bloque-horarios').style.display='block';
+  document.getElementById('horarios-label').textContent='Cargando horarios...';
+  const resp=await fetch(`/s/${SLUG}/horas-ocupadas?especialista=${encodeURIComponent(selEsp)}&fecha=${fiso}`);
+  const ocupadas=await resp.json();
+  const grid=document.getElementById('horarios-grid');
+  grid.innerHTML='';
+  document.getElementById('horarios-label').textContent=`Horarios — ${formatFecha(fiso)}`;
+  HORAS.forEach(h=>{
+    const btn=document.createElement('button');
+    btn.type='button'; btn.className='slot'+(ocupadas.includes(h)?' ocupado':'');
+    btn.textContent=h; btn.title=ocupadas.includes(h)?'⚠️ Horario reservado':'';
+    if(!ocupadas.includes(h)) btn.addEventListener('click',()=>elegirHora(h,btn));
+    else btn.disabled=true;
+    grid.appendChild(btn);
+  });
+  if(ocupadas.length>=HORAS.length-2){
+    const av=document.createElement('p');
+    av.style.cssText='grid-column:1/-1;font-size:12px;color:#e53e3e;font-weight:700;margin-top:4px';
+    av.textContent='⚠️ Pocos horarios disponibles. Considera otro día.';
+    grid.appendChild(av);
+  }
+  actualizarResumen();
+}
+
+document.getElementById('btn-cambiar-fecha').addEventListener('click',()=>{
+  selFecha=null; selHora=null;
+  setStep(2);
+  document.getElementById('bloque-horarios').style.display='none';
+  document.getElementById('bloque-calendario').style.display='block';
+  renderCal();
+  actualizarResumen();
+});
+
+function elegirHora(h,btn){
+  selHora=h;
+  document.querySelectorAll('.slot').forEach(b=>b.classList.remove('selected'));
+  btn.classList.add('selected');
+  setStep(4);
+  actualizarResumen();
+  habilitarConfirmar();
+}
+
+// ── RESUMEN + CONFIRMAR ──────────────────────────────────────────────────
+function actualizarResumen(){
+  const box=document.getElementById('sel-resumen');
+  if(selEsp||selFecha||selHora){
+    box.classList.add('visible');
+    box.innerHTML='';
+    if(selEsp) box.innerHTML+=`<span class="seleccion-badge">👨‍⚕️ ${selEsp}</span>`;
+    if(selFecha) box.innerHTML+=`<span class="seleccion-badge">📅 ${formatFecha(selFecha)}</span>`;
+    if(selHora) box.innerHTML+=`<span class="seleccion-badge">🕐 ${selHora}</span>`;
+  } else {
+    box.classList.remove('visible');
+  }
+}
+function habilitarConfirmar(){
+  const btn=document.getElementById('btn-confirmar-cita');
+  if(selEsp&&selFecha&&selHora){btn.style.opacity='1';btn.style.pointerEvents='auto';}
+}
+document.getElementById('btn-confirmar-cita').addEventListener('click', async()=>{
+  const nombre=document.getElementById('pac-nombre').value.trim();
+  const tel=document.getElementById('pac-tel').value.trim();
+  const email=document.getElementById('pac-email').value.trim();
+  const esp=document.getElementById('pac-especialidad').value;
+  const motivo=document.getElementById('pac-motivo').value.trim();
+  const fb=document.getElementById('form-feedback');
+  if(!nombre||!tel){mostrarFb('⚠️ Nombre y teléfono son obligatorios.','#fff3cd','#856404');return;}
+  const btn=document.getElementById('btn-confirmar-cita');
+  btn.disabled=true;btn.textContent='Agendando...';
+  const r=await fetch(`/s/${SLUG}/agendar`,{
+    method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({especialista:selEsp,fecha:selFecha,hora:selHora,
+                         nombre,email,telefono:tel,motivo:motivo+(esp?` | Especialidad: ${esp}`:'')})
+  });
+  const d=await r.json();
+  if(d.ok){
+    mostrarFb('✅ '+d.msg,'#d1fae5','#065f46');
+    btn.style.display='none';
+    elegirFecha(selFecha,document.querySelector('.cal-day.selected'));
+  } else {
+    mostrarFb('⚠️ '+d.error,'#fee2e2','#991b1b');
+    btn.disabled=false;btn.textContent='Confirmar cita';
+  }
+});
+
+// ── HELPERS ───────────────────────────────────────────────────────────────
+function setStep(n){
+  document.querySelectorAll('.step').forEach((s,i)=>{
+    s.classList.remove('active','done');
+    if(i+1<n) s.classList.add('done');
+    else if(i+1===n) s.classList.add('active');
+  });
+}
+function mostrarFb(msg,bg,col){
+  const el=document.getElementById('form-feedback');
+  el.style.cssText=`display:block;background:${bg};color:${col};padding:14px;border-radius:var(--radius);font-weight:700;margin-top:12px;text-align:center`;
+  el.textContent=msg;
+}
+function toISO(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+function formatFecha(iso){
+  const [y,m,d]=iso.split('-');
+  const meses=['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+  return `${parseInt(d)} de ${meses[parseInt(m)-1]} de ${y}`;
+}
+</script>
+</body>
+</html>
