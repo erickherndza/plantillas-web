@@ -55,6 +55,7 @@
       .highlight-icon, .mvv-icon { display: none; }
     {% endif %}
   </style>
+  {% if config.get('css_personalizado') %}<style>{{ config.get('css_personalizado') }}</style>{% endif %}
 </head>
 <body>
 

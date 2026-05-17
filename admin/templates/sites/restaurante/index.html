@@ -20,9 +20,17 @@
       --font-title: 'Playfair Display', serif;
       --font-body:  'Lato', sans-serif;
       {% set _btn = {'redondeado':'999px','suave':'8px','cuadrado':'2px'} %}
-      --btn-radius: {{ _btn.get(config.get('cfg__btn_forma','suave'), '8px') }};
-      --card-radius: 8px;
+      --btn-radius: {{ _btn.get(config.get('btn_forma','suave'), '8px') }};
+      {% set _r = {'cuadrado':'0px','suave':'4px','redondeado':'12px','muy-redondeado':'24px'} %}
+      --card-radius: {{ _r.get(config.get('estilo_esquinas','suave'), '4px') }};
+      {% set _shadow = {'sin-sombra':'none','sutil':'0 1px 4px rgba(0,0,0,.08)','media':'0 4px 16px rgba(0,0,0,.14)','marcada':'0 8px 32px rgba(0,0,0,.22)'} %}
+      --card-shadow: {{ _shadow.get(config.get('estilo_sombra','media'), '0 4px 16px rgba(0,0,0,.14)') }};
+      {% set _icon_shape = {'emoji':'0','circulo':'50%','cuadrado':'8px','sin-icono':'0'} %}
+      --icon-shape:   {{ _icon_shape.get(config.get('estilo_icono','emoji'), '0') }};
+      --c-icon-bg:    {{ config.get('color_icono', config.get('color_primario','#c2410c')) }}22;
+      --icon-padding: {{ '12px' if config.get('estilo_icono','emoji') in ('circulo','cuadrado') else '0' }};
     }
+    {% if config.get('estilo_icono') == 'sin-icono' %}.rest-menu-icon,.lb-card-icon { display:none; }{% endif %}
     /* Hero centrado estilo restaurante */
     .lb-hero { min-height: 100vh; text-align: center; }
     .lb-hero-overlay { background: linear-gradient(180deg, rgba(28,10,0,.7) 0%, rgba(28,10,0,.5) 100%); }
@@ -50,6 +58,7 @@
     /* Decorative divider */
     .rest-divider { text-align: center; font-size: 28px; padding: 8px 0; color: var(--c-accent); }
   </style>
+  {% if config.get('css_personalizado') %}<style>{{ config.get('css_personalizado') }}</style>{% endif %}
 </head>
 <body>
 
@@ -90,8 +99,8 @@
       <h1 class="lb-hero-title">{{ config.get('hero_titulo', sitio.nombre) }}</h1>
       <p class="lb-hero-sub" style="margin:0 auto 32px;">{{ config.get('hero_subtitulo','Sabores que despiertan los sentidos.') }}</p>
       <div class="lb-hero-btns" style="justify-content:center;">
-        <a class="lb-btn-primary" href="#menu">{{ config.get('hero_cta_texto','Ver menú') }}</a>
-        <a class="lb-btn-outline" href="#reservar">Reservar mesa</a>
+        <a class="lb-btn-primary" href="{{ config.get('hero_cta_href','#menu') }}">{{ config.get('hero_cta_texto','Ver menú') }}</a>
+        <a class="lb-btn-outline" href="{{ config.get('hero_cta2_href','#reservar') }}">{{ config.get('hero_cta2_texto','Reservar mesa') }}</a>
       </div>
     </div>
   </div>

@@ -66,7 +66,14 @@ ul   { list-style: none; }
   transition: box-shadow .25s, transform .25s;
 }
 .lb-card:hover { box-shadow: 0 8px 24px rgba(0,0,0,.12); transform: translateY(-3px); }
-.lb-card-icon { font-size: 36px; margin-bottom: 16px; }
+.lb-card-icon {
+  font-size: 36px; margin-bottom: 16px; display: inline-flex;
+  align-items: center; justify-content: center;
+  border-radius: var(--icon-shape, 50%);
+  background: var(--c-icon-bg, transparent);
+  padding: var(--icon-padding, 0);
+  line-height: 1;
+}
 .lb-card-title { font-size: 18px; font-weight: 700; margin-bottom: 8px; color: var(--c-dark); }
 .lb-card-desc { font-size: 14px; color: #64748b; line-height: 1.65; }
 

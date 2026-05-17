@@ -19,6 +19,7 @@
     }
     .navbar { background: {{ config.get('color_navbar_bg', config.get('color_primario','#0093b8')) }}; }
   </style>
+  {% if config.get('css_personalizado') %}<style>{{ config.get('css_personalizado') }}</style>{% endif %}
 </head>
 <body>
 

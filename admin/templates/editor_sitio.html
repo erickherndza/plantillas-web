@@ -54,6 +54,7 @@
                   data-section="{{ _id }}">{{ _label }}</button>
           {% set _first.done = true %}
         {% endfor %}
+        <button type="button" class="section-nav-item" data-section="css">CSS avanzado</button>
       </nav>
       <div class="sidebar-info">
         Los cambios se guardan en la base de datos. Tu sitio se actualiza al instante.
@@ -215,7 +216,17 @@
                 <option value="{{ val }}" {{ 'selected' if config.get('estilo_icono','circulo') == val }}>{{ lbl }}</option>
               {% endfor %}
             </select>
-            <p class="field-hint">Solo aplica a las tarjetas de servicios en la página de inicio.</p>
+            <p class="field-hint">Forma del fondo detrás del emoji en las tarjetas.</p>
+          </div>
+
+          <div class="form-group">
+            <label>Color del ícono</label>
+            <div style="display:flex;gap:12px;align-items:center;">
+              <input type="color" name="cfg__color_icono" class="color-input js-color"
+                     value="{{ config.get('color_icono', config.get('color_primario','#038C8C')) }}"
+                     style="width:44px;height:36px;">
+              <span class="field-hint" style="margin:0;">Color del fondo de los íconos (circulo o cuadrado).</span>
+            </div>
           </div>
 
           <!-- Etiquetas del menú -->
@@ -667,6 +678,24 @@
             <label>Descripción en el pie de página</label>
             <textarea name="cfg__footer_descripcion" rows="2"
                       placeholder="Ej: Comprometidos con la excelencia y satisfacción de nuestros clientes.">{{ config.get('footer_descripcion', '') }}</textarea>
+          </div>
+        </div>
+
+        <!-- ══ CSS AVANZADO ═══════════════════════════════════════════════ -->
+        <div class="form-section hidden" id="section-css">
+          <div class="section-header">
+            <h2 class="section-title">CSS personalizado</h2>
+            <p class="section-desc">Escribe CSS propio para ajustar cualquier detalle visual del sitio. Se aplica por encima de todos los estilos.</p>
+          </div>
+          <div class="form-group">
+            <label>CSS adicional</label>
+            <textarea name="cfg__css_personalizado" rows="18"
+                      style="font-family:monospace;font-size:13px;tab-size:2;"
+                      placeholder="/* Ejemplo: cambiar el color del título hero */&#10;.lb-hero-title { color: #ffd700; }&#10;&#10;/* Ocultar una sección */&#10;.lb-team-grid { display: none; }&#10;&#10;/* Cambiar tipografía */&#10;* { font-family: 'Georgia', serif; }">{{ config.get('css_personalizado', '') }}</textarea>
+            <p class="field-hint" style="margin-top:8px;">
+              Este CSS se inyecta al final del &lt;head&gt; — tiene máxima prioridad.<br>
+              Usa las herramientas de desarrollador del navegador (F12) para inspeccionar clases y IDs.
+            </p>
           </div>
         </div>
 

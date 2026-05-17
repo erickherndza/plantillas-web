@@ -52,6 +52,7 @@
       .highlight-icon { background: none; font-size:32px; }
     {% endif %}
   </style>
+  {% if config.get('css_personalizado') %}<style>{{ config.get('css_personalizado') }}</style>{% endif %}
 </head>
 <body data-plantilla="{{ sitio.plantilla_clave }}">
 

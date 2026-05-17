@@ -20,11 +20,19 @@
       --font-title:    '{{ config.get('fuente_titulos','Inter') }}', sans-serif;
       --font-body:     '{{ config.get('fuente_cuerpo', 'Inter') }}', sans-serif;
       {% set _btn = {'redondeado':'999px','suave':'8px','cuadrado':'2px'} %}
-      --btn-radius: {{ _btn.get(config.get('cfg__btn_forma','redondeado'), '999px') }};
+      --btn-radius: {{ _btn.get(config.get('btn_forma','redondeado'), '999px') }};
       {% set _r = {'cuadrado':'0px','suave':'4px','redondeado':'12px','muy-redondeado':'24px'} %}
-      --card-radius: {{ _r.get(config.get('cfg__estilo_esquinas','redondeado'), '12px') }};
+      --card-radius: {{ _r.get(config.get('estilo_esquinas','redondeado'), '12px') }};
+      {% set _shadow = {'sin-sombra':'none','sutil':'0 1px 4px rgba(0,0,0,.08)','media':'0 4px 16px rgba(0,0,0,.14)','marcada':'0 8px 32px rgba(0,0,0,.22)'} %}
+      --card-shadow: {{ _shadow.get(config.get('estilo_sombra','sutil'), '0 1px 4px rgba(0,0,0,.08)') }};
+      {% set _icon_shape = {'emoji':'0','circulo':'50%','cuadrado':'8px','sin-icono':'0'} %}
+      --icon-shape:   {{ _icon_shape.get(config.get('estilo_icono','circulo'), '50%') }};
+      --c-icon-bg:    {{ config.get('color_icono', config.get('color_primario','#1e40af')) }}22;
+      --icon-padding: {{ '12px' if config.get('estilo_icono','circulo') in ('circulo','cuadrado') else '0' }};
     }
+    {% if config.get('estilo_icono','circulo') == 'sin-icono' %}.lb-card-icon { display:none; }{% endif %}
   </style>
+  {% if config.get('css_personalizado') %}<style>{{ config.get('css_personalizado') }}</style>{% endif %}
 </head>
 <body>
 
@@ -58,15 +66,17 @@
   {% endif %}
   <div class="lb-hero-overlay"></div>
   <div class="container">
-    <div class="lb-hero-content fade-up">
+    {% set _ali = config.get('hero_alineacion','izquierda') %}
+    <div class="lb-hero-content fade-up"
+         style="{{ 'margin:0 auto;text-align:center;' if _ali=='centro' else ('margin-left:auto;text-align:right;' if _ali=='derecha' else '') }}">
       {% if config.get('hero_eyebrow') %}
         <p class="lb-hero-eyebrow">{{ config.get('hero_eyebrow') }}</p>
       {% endif %}
       <h1 class="lb-hero-title">{{ config.get('hero_titulo', sitio.nombre) }}</h1>
       <p class="lb-hero-sub">{{ config.get('hero_subtitulo', 'Soluciones profesionales para tu negocio.') }}</p>
-      <div class="lb-hero-btns">
-        <a class="lb-btn-primary" href="#contacto">{{ config.get('hero_cta_texto','Contáctanos') }}</a>
-        <a class="lb-btn-outline" href="#servicios">{{ config.get('hero_cta2_texto','Ver servicios') }}</a>
+      <div class="lb-hero-btns" style="{{ 'justify-content:center;' if _ali=='centro' else ('justify-content:flex-end;' if _ali=='derecha' else '') }}">
+        <a class="lb-btn-primary" href="{{ config.get('hero_cta_href','#contacto') }}">{{ config.get('hero_cta_texto','Contáctanos') }}</a>
+        <a class="lb-btn-outline" href="{{ config.get('hero_cta2_href','#servicios') }}">{{ config.get('hero_cta2_texto','Ver servicios') }}</a>
       </div>
     </div>
   </div>
