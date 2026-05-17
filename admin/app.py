@@ -1124,8 +1124,9 @@ def ver_sitio(slug):
     clave  = sitio['plantilla_clave']
     # Formato: 'landing' = una sola página propia, 'web5' = multi-página empresa
     formato = sitio['formato'] if 'formato' in sitio.keys() else 'web5'
-    if formato == 'landing' or clave in {'arquitectura', 'doctores'}:
-        # Cada plantilla con template propio usa sites/{clave}/index.html
+    # Plantillas que SIEMPRE usan su propio index.html (tienen diseño único)
+    _own_template = {'arquitectura', 'doctores', 'empresa', 'restaurante', 'salon', 'abogados'}
+    if formato == 'landing' or clave in _own_template:
         template = f'sites/{clave}/index.html'
     else:
         template = 'sites/empresa/inicio.html'
