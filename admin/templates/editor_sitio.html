@@ -221,12 +221,14 @@
 
           <div class="form-group">
             <label>Color del ícono</label>
-            <div style="display:flex;gap:12px;align-items:center;">
+            <div class="color-field">
               <input type="color" name="cfg__color_icono" class="color-input js-color"
-                     value="{{ config.get('color_icono', config.get('color_primario','#038C8C')) }}"
-                     style="width:44px;height:36px;">
-              <span class="field-hint" style="margin:0;">Color del fondo de los íconos (circulo o cuadrado).</span>
+                     value="{{ config.get('color_icono', config.get('color_primario','#038C8C')) }}">
+              <div class="color-preview js-color-preview"
+                   style="background:{{ config.get('color_icono', config.get('color_primario','#038C8C')) }}"></div>
+              <span class="color-hex js-color-hex">{{ config.get('color_icono', config.get('color_primario','#038C8C')) }}</span>
             </div>
+            <p class="field-hint">Color del fondo de los íconos (circulo o cuadrado).</p>
           </div>
 
           <!-- Etiquetas del menú -->
