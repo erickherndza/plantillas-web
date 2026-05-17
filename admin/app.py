@@ -22,6 +22,7 @@ from db import (
     listar_mensajes_sitio, marcar_mensaje_leido,
     verificar_disponibilidad, crear_cita, horas_ocupadas,
     listar_citas_sitio, actualizar_estado_cita,
+    eliminar_sitio,
 )
 from parser import (
     extraer_valores, aplicar_cambios,
@@ -1231,6 +1232,18 @@ def cambiar_estado_cita(sitio_id):
     if cita_id and estado in ('pendiente', 'confirmada', 'cancelada'):
         actualizar_estado_cita(cita_id, estado)
     return redirect(url_for('mis_citas', sitio_id=sitio_id))
+
+
+@app.route('/eliminar-sitio/<int:sitio_id>', methods=['POST'])
+@usuario_requerido
+def eliminar_sitio_route(sitio_id):
+    sitio = obtener_sitio_por_id(sitio_id)
+    if not sitio or sitio['usuario_id'] != session['uid']:
+        abort(403)
+    nombre = sitio['nombre']
+    eliminar_sitio(sitio_id)
+    flash(f'El sitio "{nombre}" fue eliminado correctamente.', 'success')
+    return redirect(url_for('mi_panel'))
 
 
 if __name__ == '__main__':

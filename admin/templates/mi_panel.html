@@ -71,6 +71,10 @@
                 📅 Citas
               </a>
               {% endif %}
+              <form method="POST" action="{{ url_for('eliminar_sitio_route', sitio_id=sitio.id) }}"
+                    onsubmit="return confirm('¿Eliminar el sitio «{{ sitio.nombre }}»?\n\nEsta acción borrará el sitio, toda su configuración y las citas agendadas. No se puede deshacer.')">
+                <button type="submit" class="btn-eliminar">🗑 Eliminar</button>
+              </form>
             </div>
           </div>
         {% endfor %}

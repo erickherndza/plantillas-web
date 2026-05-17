@@ -467,6 +467,14 @@ def obtener_sitio_por_id(sitio_id: int):
     conn.close()
     return row
 
+def eliminar_sitio(sitio_id: int):
+    """Elimina el sitio y todo su contenido (CASCADE)."""
+    conn = get_db()
+    conn.execute("PRAGMA foreign_keys = ON")
+    conn.execute("DELETE FROM sitios WHERE id = ?", (sitio_id,))
+    conn.commit()
+    conn.close()
+
 
 # ── Configuración del sitio (CMS) ─────────────────────────────────────────────
 

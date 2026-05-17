@@ -196,6 +196,15 @@ img { max-width: 100%; display: block; }
 }
 .btn-preview:hover { border-color: var(--admin-accent); color: var(--admin-accent); }
 
+.btn-eliminar {
+  display: block; width: 100%; padding: 9px 16px;
+  background: none; border: 1.5px solid #fca5a5;
+  border-radius: var(--radius); color: #dc2626;
+  font-size: 13px; font-weight: 600; cursor: pointer;
+  transition: all .2s; text-align: center;
+}
+.btn-eliminar:hover { background: #dc2626; color: #fff; border-color: #dc2626; }
+
 .empty-state {
   text-align: center; padding: 60px 24px;
   color: var(--admin-muted); font-size: 15px;
