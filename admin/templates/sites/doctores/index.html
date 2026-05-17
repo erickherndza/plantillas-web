@@ -174,7 +174,7 @@
           {% endif %}
           <div class="team-contact">
             {% if m.get('whatsapp') %}
-              <a href="https://wa.me/{{ m.whatsapp|replace(' ','')|replace('-','')|replace('(',')|replace(')','') }}" target="_blank">
+              <a href="https://wa.me/{{ m.whatsapp|replace(' ', '')|replace('-', '')|replace('(', '')|replace(')', '') }}" target="_blank">
                 📱 WhatsApp
               </a>
             {% elif m.get('telefono') %}
