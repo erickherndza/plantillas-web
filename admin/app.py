@@ -1124,11 +1124,11 @@ def ver_sitio(slug):
     clave  = sitio['plantilla_clave']
     # Formato: 'landing' = una sola página propia, 'web5' = multi-página empresa
     formato = sitio['formato'] if 'formato' in sitio.keys() else 'web5'
-    # Plantillas que SIEMPRE usan su propio index.html (tienen diseño único)
-    _own_template = {'arquitectura', 'doctores', 'empresa', 'restaurante', 'salon', 'abogados'}
-    if formato == 'landing' or clave in _own_template:
+    if formato == 'landing':
+        # Landing page: cada plantilla usa su propio index.html de una sola página
         template = f'sites/{clave}/index.html'
     else:
+        # Web completa (web5): sistema multi-página basado en empresa
         template = 'sites/empresa/inicio.html'
     return render_template(template, sitio=sitio, pagina_activa='inicio', **ctx)
 

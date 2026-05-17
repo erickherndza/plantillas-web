@@ -285,6 +285,17 @@
           {% endif %}
         </div>
       </div>
+      <div class="fade-up">
+        {% if config.get('contacto_maps_embed') or config.get('contacto_mapa_lat') %}
+        <div style="height:200px;margin-bottom:20px;overflow:hidden;">
+          {% if config.get('contacto_maps_embed') %}
+            <iframe src="{{ config.get('contacto_maps_embed') }}" style="width:100%;height:100%;border:none;" allowfullscreen loading="lazy"></iframe>
+          {% else %}
+            <iframe src="https://www.openstreetmap.org/export/embed.html?bbox={{ (config.get('contacto_mapa_lng')|float - 0.01)|round(6) }},{{ (config.get('contacto_mapa_lat')|float - 0.01)|round(6) }},{{ (config.get('contacto_mapa_lng')|float + 0.01)|round(6) }},{{ (config.get('contacto_mapa_lat')|float + 0.01)|round(6) }}&layer=mapnik&marker={{ config.get('contacto_mapa_lat') }},{{ config.get('contacto_mapa_lng') }}"
+                    style="width:100%;height:100%;border:none;" allowfullscreen loading="lazy"></iframe>
+          {% endif %}
+        </div>
+        {% endif %}
       <form class="abo-form fade-up" method="POST" action="/s/{{ sitio.slug }}/enviar-contacto">
         <input type="text"  name="nombre"   placeholder="Nombre completo" required>
         <input type="email" name="email"    placeholder="Correo electrónico" required>
@@ -292,6 +303,7 @@
         <textarea name="mensaje" placeholder="Describa brevemente su caso (confidencial)" required></textarea>
         <button type="submit">Enviar consulta</button>
       </form>
+      </div>
     </div>
   </div>
 </section>

@@ -370,8 +370,12 @@
         {% endif %}
       </ul>
       <div class="map-placeholder fade-in-up">
-        {% if config.get('contacto_mapa_embed') %}
-          <iframe src="{{ config.get('contacto_mapa_embed') }}" allowfullscreen loading="lazy"></iframe>
+        {% if config.get('contacto_maps_embed') %}
+          <iframe src="{{ config.get('contacto_maps_embed') }}" allowfullscreen loading="lazy"
+                  style="width:100%;height:100%;border:none;"></iframe>
+        {% elif config.get('contacto_mapa_lat') and config.get('contacto_mapa_lng') %}
+          <iframe src="https://www.openstreetmap.org/export/embed.html?bbox={{ (config.get('contacto_mapa_lng')|float - 0.01)|round(6) }},{{ (config.get('contacto_mapa_lat')|float - 0.01)|round(6) }},{{ (config.get('contacto_mapa_lng')|float + 0.01)|round(6) }},{{ (config.get('contacto_mapa_lat')|float + 0.01)|round(6) }}&layer=mapnik&marker={{ config.get('contacto_mapa_lat') }},{{ config.get('contacto_mapa_lng') }}"
+                  allowfullscreen loading="lazy" style="width:100%;height:100%;border:none;"></iframe>
         {% else %}
           <span>📍 Mapa de ubicación</span>
         {% endif %}
