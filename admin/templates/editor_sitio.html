@@ -933,15 +933,21 @@
 
     // ── Subir imagen al servidor ───────────────────────────────────────
     async function subirImagen(file, sitioId) {
+      if (file.size > 5 * 1024 * 1024) {
+        alert('La imagen es demasiado grande. Máximo 5 MB.');
+        return null;
+      }
       const fd = new FormData();
       fd.append('imagen', file);
       try {
         const res  = await fetch(`/upload-sitio/${sitioId}`, { method: 'POST', body: fd });
+        if (res.status === 413) { alert('Imagen demasiado grande. Máximo 5 MB.'); return null; }
+        if (res.status === 403) { alert('Sesión expirada. Recarga la página e inicia sesión de nuevo.'); return null; }
         const data = await res.json();
         if (data.ok) return data.url;
         alert('Error al subir imagen: ' + data.error);
       } catch {
-        alert('Error de conexión al subir imagen.');
+        alert('Error al subir imagen. Verifica tu conexión e inténtalo de nuevo.');
       }
       return null;
     }

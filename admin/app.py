@@ -50,6 +50,7 @@ if not _secret:
     logging.warning('SECRET_KEY no configurada — usando clave temporal. Crea un archivo .env')
 
 app.secret_key = _secret
+app.config['MAX_CONTENT_LENGTH'] = 5 * 1024 * 1024  # 5 MB máximo por imagen
 
 BASE        = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SCHEMA_PATH = os.path.join(BASE, 'shared', 'site-schema.json')
@@ -360,7 +361,7 @@ def upload_imagen(plantilla_id):
     nombre = f"{uuid.uuid4().hex[:10]}{ext}"
     archivo.save(os.path.join(carpeta, nombre))
 
-    url = url_for('static', filename=f'uploads/{plantilla_id}/{nombre}', _external=True)
+    url = url_for('static', filename=f'uploads/{plantilla_id}/{nombre}')
     return jsonify({'ok': True, 'url': url})
 
 
@@ -1089,7 +1090,7 @@ def upload_sitio(sitio_id):
     nombre = f"{uuid.uuid4().hex[:10]}{ext}"
     archivo.save(os.path.join(carpeta, nombre))
 
-    url = url_for('static', filename=f'uploads/sitio_{sitio_id}/{nombre}', _external=True)
+    url = url_for('static', filename=f'uploads/sitio_{sitio_id}/{nombre}')
     return jsonify({'ok': True, 'url': url})
 
 
