@@ -65,10 +65,50 @@
         </div>
       </div>
 
-      <!-- Paso 2: Nombre y slug -->
+      <!-- Paso 2: Formato del sitio -->
       <div class="form-card" style="margin-bottom:24px;">
         <div class="section-header">
-          <h2 class="section-title">2. Nombre de tu negocio</h2>
+          <h2 class="section-title">2. Tipo de sitio</h2>
+          <p class="section-desc">¿Quieres una sola página o un sitio con varias secciones?</p>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:4px;">
+
+          <label class="formato-card" style="cursor:pointer;display:block;border:2px solid var(--admin-border);border-radius:var(--radius);padding:20px 18px;transition:all .2s;position:relative;">
+            <input type="radio" name="formato" value="landing" required
+                   style="position:absolute;top:12px;right:12px;width:16px;height:16px;accent-color:var(--admin-accent);">
+            <div style="font-size:32px;margin-bottom:10px;">🏠</div>
+            <strong style="font-size:15px;display:block;margin-bottom:6px;">Landing page</strong>
+            <p style="font-size:12px;color:var(--admin-muted);margin:0;line-height:1.5;">
+              Una sola página con toda la info del negocio. Ideal para campañas, consultorios pequeños o negocios que empiezan.
+            </p>
+            <span style="display:inline-block;margin-top:10px;font-size:11px;font-weight:700;
+                         background:#e0f2fe;color:#0369a1;padding:2px 8px;border-radius:999px;">
+              Más simple
+            </span>
+          </label>
+
+          <label class="formato-card" style="cursor:pointer;display:block;border:2px solid var(--admin-border);border-radius:var(--radius);padding:20px 18px;transition:all .2s;position:relative;">
+            <input type="radio" name="formato" value="web5" required
+                   style="position:absolute;top:12px;right:12px;width:16px;height:16px;accent-color:var(--admin-accent);">
+            <div style="font-size:32px;margin-bottom:10px;">📄</div>
+            <strong style="font-size:15px;display:block;margin-bottom:6px;">Web completa</strong>
+            <p style="font-size:12px;color:var(--admin-muted);margin:0;line-height:1.5;">
+              Sitio con páginas separadas: Inicio, Nosotros, Servicios, Portafolio y Contacto. Ideal para empresas y profesionales.
+            </p>
+            <span style="display:inline-block;margin-top:10px;font-size:11px;font-weight:700;
+                         background:#dcfce7;color:#15803d;padding:2px 8px;border-radius:999px;">
+              Más completo
+            </span>
+          </label>
+
+        </div>
+      </div>
+
+      <!-- Paso 3: Nombre y slug -->
+      <div class="form-card" style="margin-bottom:24px;">
+        <div class="section-header">
+          <h2 class="section-title">3. Nombre de tu negocio</h2>
           <p class="section-desc">Esto aparecerá en tu sitio web</p>
         </div>
 
@@ -137,6 +177,23 @@
           card.style.background = '';
         });
         const label = this.closest('.plantilla-selectable');
+        if (label) {
+          label.style.borderColor = 'var(--admin-accent)';
+          label.style.boxShadow = '0 0 0 3px rgba(3,140,140,.15)';
+          label.style.background = 'rgba(3,140,140,.04)';
+        }
+      });
+    });
+
+    // Resaltar formato seleccionado
+    document.querySelectorAll('input[name="formato"]').forEach(radio => {
+      radio.addEventListener('change', function() {
+        document.querySelectorAll('.formato-card').forEach(card => {
+          card.style.borderColor = '';
+          card.style.boxShadow = '';
+          card.style.background = '';
+        });
+        const label = this.closest('.formato-card');
         if (label) {
           label.style.borderColor = 'var(--admin-accent)';
           label.style.boxShadow = '0 0 0 3px rgba(3,140,140,.15)';

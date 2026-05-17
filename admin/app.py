@@ -758,6 +758,9 @@ def crear_sitio():
         plantilla_id  = request.form.get('plantilla_id', '').strip()
         nombre_sitio  = request.form.get('nombre_sitio', '').strip()
         slug          = request.form.get('slug', '').strip().lower()
+        formato       = request.form.get('formato', 'web5').strip()
+        if formato not in ('landing', 'web5'):
+            formato = 'web5'
 
         error = None
         if not plantilla_id or not plantilla_id.isdigit():
@@ -776,7 +779,7 @@ def crear_sitio():
         else:
             try:
                 sitio_id = db_crear_sitio(
-                    session['uid'], int(plantilla_id), slug, nombre_sitio
+                    session['uid'], int(plantilla_id), slug, nombre_sitio, formato
                 )
                 # Obtener la clave de la plantilla elegida para aplicar defaults específicos
                 _pobj = obtener_plantilla_por_id(int(plantilla_id))
@@ -1118,10 +1121,11 @@ def ver_sitio(slug):
     if not sitio:
         abort(404)
     ctx = _contexto_sitio(sitio)
-    clave = sitio['plantilla_clave']
-    # Cada plantilla con template propio usa index.html en su carpeta
-    _own_template = {'arquitectura', 'doctores'}
-    if clave in _own_template:
+    clave  = sitio['plantilla_clave']
+    # Formato: 'landing' = una sola página propia, 'web5' = multi-página empresa
+    formato = sitio['formato'] if 'formato' in sitio.keys() else 'web5'
+    if formato == 'landing' or clave in {'arquitectura', 'doctores'}:
+        # Cada plantilla con template propio usa sites/{clave}/index.html
         template = f'sites/{clave}/index.html'
     else:
         template = 'sites/empresa/inicio.html'

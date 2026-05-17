@@ -132,6 +132,13 @@ def init_db():
     except Exception:
         pass  # ya existe
 
+    # Migración: columna formato en sitios (idempotente)
+    try:
+        conn.execute("ALTER TABLE sitios ADD COLUMN formato TEXT DEFAULT 'web5'")
+        conn.commit()
+    except Exception:
+        pass  # ya existe
+
     # Seed plantillas base si no existen
     _schema_completo = '{"secciones": ["apariencia", "marca", "hero", "nosotros", "servicios", "proyectos", "equipo", "contacto"]}'
     _plantillas_seed = [
@@ -418,11 +425,11 @@ def slug_disponible(slug: str) -> bool:
     return row is None
 
 
-def crear_sitio(usuario_id: int, plantilla_id: int, slug: str, nombre: str) -> int:
+def crear_sitio(usuario_id: int, plantilla_id: int, slug: str, nombre: str, formato: str = 'web5') -> int:
     conn = get_db()
     cur = conn.execute(
-        "INSERT INTO sitios (usuario_id, plantilla_id, slug, nombre) VALUES (?, ?, ?, ?)",
-        (usuario_id, plantilla_id, slug.lower().strip(), nombre.strip())
+        "INSERT INTO sitios (usuario_id, plantilla_id, slug, nombre, formato) VALUES (?, ?, ?, ?, ?)",
+        (usuario_id, plantilla_id, slug.lower().strip(), nombre.strip(), formato)
     )
     sitio_id = cur.lastrowid
     conn.commit()
