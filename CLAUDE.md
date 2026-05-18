@@ -4,15 +4,27 @@
 
 ---
 
+## PLATAFORMA — LEER PRIMERO
+
+**El proyecto vive en PythonAnywhere (remoto), NO se prueba en local.**
+- URL del panel admin: la que tenga configurada en PythonAnywhere (Web tab)
+- Los cambios se despliegan así:
+  1. Editar localmente
+  2. `git push github master` (el remote local se llama `github`, NO `origin`)
+  3. En PythonAnywhere → Bash console: `cd ~/plantillas-web && git pull`
+  4. PythonAnywhere → Web tab → **Reload**
+- NO usar `python3 app.py` local para probar — el servidor corre en PythonAnywhere
+- La BD (`plantillas.db`) vive en PythonAnywhere. Si se necesita modificar: Bash console → `python3 script.py`
+
+---
+
 ## PROTOCOLO DE INICIO DE SESIÓN
 
-1. Leer este archivo completo (ESTADO ACTUAL primero, luego ROADMAP)
-2. Verificar que el panel admin levanta:
-   `cd ~/plantillas-web/admin && python3 app.py` (puerto 5002)
-3. Verificar importación sin errores:
+1. Leer este archivo completo
+2. Verificar importación sin errores EN LOCAL (solo para detectar errores de Python):
    `cd ~/plantillas-web/admin && python3 -c "import app; print('OK')"`
-4. Abrir con: "Retomamos desde [último_hecho]. Próximo paso: [top_pendiente]. ¿Arranco?"
-5. Si hay error de importación → NO continuar hasta resolverlo
+3. Abrir con: "Retomamos desde [último_hecho]. Próximo paso: [top_pendiente]. ¿Arranco?"
+4. Si hay bug: reproducirlo en PythonAnywhere, NO en local
 
 ---
 
@@ -36,7 +48,7 @@ Un CMS SaaS que permite:
 
 ---
 
-## ESTADO ACTUAL (2026-05-16)
+## ESTADO ACTUAL (2026-05-18)
 
 ### Lo que existe y funciona
 | Componente | Estado | Observación |
@@ -44,7 +56,7 @@ Un CMS SaaS que permite:
 | Panel admin Flask (puerto 5002) | Funcional | Auth, CRUD clientes, editor |
 | DB: clientes + accesos | Funcional | SQLite WAL |
 | Editor de campos + repeaters | Funcional | BeautifulSoup sobre HTML |
-| Upload de imágenes | Funcional | `/static/uploads/<plantilla_id>/` |
+| Upload de imágenes | Funcional | `/static/uploads/sitio_<id>/` — URLs relativas (/static/...) |
 | Preview local `/local/<id>/` | Funcional | Sirve HTML desde disco |
 | Deploy vía git push | Funcional | Cloudflare Workers (~30s) |
 | Plantilla "arquitectura" | Completa | Landing page 1 sección |
@@ -287,11 +299,14 @@ contacto_email      → ...
 
 ## COMANDOS CLAVE
 
-### Iniciar panel admin (actual)
+### Deploy (flujo normal)
 ```bash
-cd ~/plantillas-web/admin
-python3 app.py
-# → http://localhost:5002
+# 1. Local — push a GitHub
+git push github master
+
+# 2. PythonAnywhere — Bash console
+cd ~/plantillas-web && git pull
+# Luego: Web tab → Reload
 ```
 
 ### Verificar importación
@@ -363,6 +378,18 @@ cp ~/plantillas-web/admin/plantillas.db ~/plantillas-web/admin/plantillas_$(date
 **Causa raíz:** La ruta Flask `def crear_sitio()` shadea el import `from db import crear_sitio`. Dentro de la ruta, llamar a `crear_sitio(args)` ejecuta la función Flask, no la de DB.
 **Fix:** Importar con alias: `from db import crear_sitio as db_crear_sitio`.
 **Prevención:** Cuando un nombre de ruta Flask coincide con un helper de DB, SIEMPRE importar el helper con alias `db_` al inicio del archivo.
+
+### E-006: position:absolute en botón sin positioned container → overlay de página entera
+**Error:** Al hacer click en "Subir logo" nada pasaba (o pasaba solo al segundo click).
+**Causa raíz:** `btn-quitar-logo` tenía `position:absolute;top:0;left:0;width:100%;height:100%` pero su contenedor `.img-upload-actions` no tiene `position:relative`. El botón se ancló al `<body>` y cubrió toda la página interceptando todos los clicks.
+**Fix:** Cambiar a `display:none` para ocultar. Nunca usar `opacity:0 + position:absolute` sin un contenedor posicionado explícitamente.
+**Prevención:** Si un elemento absoluto debe "desaparecer": usar `display:none`. Si debe ocupar su contenedor: el contenedor DEBE tener `position:relative`.
+
+### E-007: url_for(_external=True) genera URLs con localhost en producción
+**Error:** Imágenes subidas al editor no se veían en el portal del sitio.
+**Causa raíz:** `url_for('static', ..., _external=True)` genera la URL absoluta con el host actual. En desarrollo es `http://localhost:5002/...`. Esa URL se guarda en la BD y en producción (PythonAnywhere) apunta al localhost incorrecto.
+**Fix:** Remover `_external=True` → `url_for` devuelve `/static/...` (relativa, funciona en cualquier host).
+**Prevención:** En Flask, NUNCA guardar en DB URLs generadas con `_external=True`. Solo usar URLs relativas `/static/...`.
 
 ---
 
@@ -448,3 +475,18 @@ cp ~/plantillas-web/admin/plantillas.db ~/plantillas-web/admin/plantillas_$(date
 - Colores completos: +3 variables (acento, navbar, fondo secciones) → total 6 colores controlables
 - Navbar: color independiente del primary (default = primary si no se configura)
 - Pendiente: estilos de cards (paso 4), renombrar menú (paso 5), botones/hero (paso 6)
+
+### 2026-05-17 (sesión 3 — fixes de upload)
+- **Contexto confirmado: app en PythonAnywhere, no en local**
+- Fix: `url_for(..., _external=True)` generaba `http://localhost/...` en PythonAnywhere → removido `_external=True` en `upload_sitio` y `upload_imagen`, ahora devuelven `/static/...`
+- Fix: file inputs en editor_sitio.html cambiados de `display:none` → `opacity:0;position:absolute;top:0;left:0;width:100%;height:100%` para que Chrome pueda dispararlos desde el label
+- Fix: `color_icono` no tenía wrapper `.color-field` → crash en JS bloqueaba todos los event listeners de upload → agregado wrapper correcto
+- Fix: logs de debug en `subirImagen` (console.log en cada paso del AJAX)
+- CSS: `.btn-upload-label` tiene `position:relative; overflow:hidden` — el file input absoluto se ancla AHÍ, no al body
+
+### 2026-05-18 (sesión 4 — fix overlay logo)
+- **BUG CRÍTICO encontrado y resuelto:** `btn-quitar-logo` con `position:absolute;top:0;left:0;width:100%;height:100%` se anclaba al `<body>` (`.img-upload-actions` no tiene `position:relative`) → cubría TODA LA PÁGINA como overlay invisible → interceptaba todos los clicks
+- Fix: cambiado a `display:none` cuando no hay logo (seguro, no crea overlay)
+- Fix DB: URLs con `http://localhost:5002/...` en `configuracion_sitio` limpiadas → convertidas a `/static/...` relativas
+- **LECCIÓN:** `display:none` para ocultar elementos, nunca `opacity:0 + position:absolute` a menos que el contenedor tenga `position:relative`
+- **Regla de deploy establecida:** siempre actualizar CLAUDE.md al final de cada sesión
