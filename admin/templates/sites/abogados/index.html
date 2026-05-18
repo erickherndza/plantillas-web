@@ -88,6 +88,7 @@
     .abo-form button:hover { opacity: .88; }
     @media (max-width: 768px) { .abo-contact-grid { grid-template-columns: 1fr; } }
   </style>
+  {% if config.get('custom_css') %}<style>{{ config.get('custom_css') }}</style>{% endif %}
   {% if config.get('css_personalizado') %}<style>{{ config.get('css_personalizado') }}</style>{% endif %}
 </head>
 <body>

@@ -1,5 +1,5 @@
 from flask import (
-    Flask, render_template, request, redirect,
+    Flask, render_template, render_template_string, request, redirect,
     url_for, session, flash, jsonify, send_from_directory, abort
 )
 import json, os, uuid, logging, time, threading
@@ -1256,6 +1256,74 @@ def eliminar_sitio_route(sitio_id):
     eliminar_sitio(sitio_id)
     flash(f'El sitio "{nombre}" fue eliminado correctamente.', 'success')
     return redirect(url_for('mi_panel'))
+
+
+# ── CSS Builder API ───────────────────────────────────────────────────────────
+
+@app.route('/admin/sites/<int:site_id>/css-builder')
+@usuario_requerido
+def css_builder(site_id):
+    """Panel visual del CSS Builder."""
+    from css_engine import get_tokens
+    from css_presets import list_presets
+
+    sitio = obtener_sitio_por_id(site_id)
+    if not sitio or sitio['usuario_id'] != session['uid']:
+        abort(404)
+
+    tokens, variants = get_tokens(site_id)
+    presets = list_presets()
+
+    # Renderizar el panel embebido
+    panel_path = os.path.join(os.path.dirname(__file__), '..', 'css_builder_panel.html')
+    with open(panel_path, encoding='utf-8') as f:
+        panel_html = f.read()
+
+    return render_template_string(panel_html,
+        site_id=site_id,
+        sitio=sitio,
+        tokens=tokens,
+        variants=variants,
+        presets=presets,
+    )
+
+
+@app.route('/api/sites/<int:site_id>/css/rebuild', methods=['POST'])
+@usuario_requerido
+def rebuild_css(site_id):
+    """Guarda tokens + variants y regenera el CSS del sitio."""
+    import json as _json
+    from css_engine import save_tokens, generate_css
+    from db import get_config_sitio
+
+    sitio = obtener_sitio_por_id(site_id)
+    if not sitio or sitio['usuario_id'] != session['uid']:
+        return jsonify({'ok': False, 'error': 'No autorizado'}), 403
+
+    data = request.get_json(silent=True) or {}
+
+    design_tokens   = data.get('design_tokens')
+    section_variants = data.get('section_variants')
+
+    if design_tokens is None and section_variants is None:
+        return jsonify({'ok': False, 'error': 'Faltan design_tokens o section_variants'}), 400
+
+    # Guardar JSONs primero
+    if design_tokens is not None and section_variants is not None:
+        save_tokens(site_id, design_tokens, section_variants)
+    elif design_tokens is not None:
+        from db import set_config_sitio as _set
+        _set(site_id, 'design_tokens', _json.dumps(design_tokens, ensure_ascii=False))
+    elif section_variants is not None:
+        from db import set_config_sitio as _set
+        _set(site_id, 'section_variants', _json.dumps(section_variants, ensure_ascii=False))
+
+    # Generar CSS
+    css = generate_css(site_id)
+    config = get_config_sitio(site_id)
+    version = int(config.get('css_version', '1') or '1')
+
+    return jsonify({'ok': True, 'css_length': len(css), 'version': version})
 
 
 if __name__ == '__main__':

@@ -116,6 +116,17 @@ img { max-width: 100%; display: block; }
 }
 .btn-logout:hover { background: rgba(255,255,255,0.18); }
 
+.btn-css-builder {
+  padding: 6px 14px;
+  background: #7c3aed;
+  color: #fff;
+  border-radius: var(--radius);
+  font-size: 12px;
+  font-weight: 600;
+  transition: filter .2s;
+}
+.btn-css-builder:hover { filter: brightness(1.15); }
+
 .btn-ver-vivo {
   padding: 6px 14px;
   background: var(--admin-accent);

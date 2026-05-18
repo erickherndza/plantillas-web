@@ -16,6 +16,9 @@
       <span class="navbar-title">{{ sitio.nombre }}</span>
     </div>
     <div class="navbar-actions">
+      <a href="{{ url_for('css_builder', site_id=sitio.id) }}" class="btn-css-builder">
+        Diseño &amp; Colores
+      </a>
       <a href="{{ url_for('ver_sitio', slug=sitio.slug) }}" target="_blank" class="btn-ver-vivo">
         Ver sitio &rarr;
       </a>

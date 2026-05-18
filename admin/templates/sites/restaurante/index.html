@@ -58,6 +58,7 @@
     /* Decorative divider */
     .rest-divider { text-align: center; font-size: 28px; padding: 8px 0; color: var(--c-accent); }
   </style>
+  {% if config.get('custom_css') %}<style>{{ config.get('custom_css') }}</style>{% endif %}
   {% if config.get('css_personalizado') %}<style>{{ config.get('css_personalizado') }}</style>{% endif %}
 </head>
 <body>

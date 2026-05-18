@@ -32,6 +32,7 @@
     }
     {% if config.get('estilo_icono','circulo') == 'sin-icono' %}.lb-card-icon { display:none; }{% endif %}
   </style>
+  {% if config.get('custom_css') %}<style>{{ config.get('custom_css') }}</style>{% endif %}
   {% if config.get('css_personalizado') %}<style>{{ config.get('css_personalizado') }}</style>{% endif %}
 </head>
 <body>

@@ -66,6 +66,7 @@
     }
     .salon-cita-form button:hover { opacity: .9; }
   </style>
+  {% if config.get('custom_css') %}<style>{{ config.get('custom_css') }}</style>{% endif %}
   {% if config.get('css_personalizado') %}<style>{{ config.get('css_personalizado') }}</style>{% endif %}
 </head>
 <body>
