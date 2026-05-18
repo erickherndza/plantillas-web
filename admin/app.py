@@ -1281,6 +1281,7 @@ def css_builder(site_id):
 
     return render_template_string(panel_html,
         site_id=site_id,
+        site=sitio,
         sitio=sitio,
         tokens=tokens,
         variants=variants,
