@@ -1274,12 +1274,7 @@ def css_builder(site_id):
     tokens, variants = get_tokens(site_id)
     presets = list_presets()
 
-    # Renderizar el panel embebido
-    panel_path = os.path.join(os.path.dirname(__file__), '..', 'css_builder_panel.html')
-    with open(panel_path, encoding='utf-8') as f:
-        panel_html = f.read()
-
-    return render_template_string(panel_html,
+    return render_template('css_builder_panel.html',
         site_id=site_id,
         site=sitio,
         sitio=sitio,

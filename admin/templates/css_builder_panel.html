@@ -1,0 +1,1491 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CSS Builder — {{ site.nombre }}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@500;600;700&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* ── Reset & Base ── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg:        #0e1117;
+  --bg2:       #161b24;
+  --bg3:       #1e2535;
+  --line:      rgba(255,255,255,0.07);
+  --line2:     rgba(255,255,255,0.13);
+  --text:      #e2e8f0;
+  --muted:     rgba(226,232,240,0.45);
+  --faint:     rgba(226,232,240,0.22);
+  --accent:    #7c6af7;
+  --accent2:   #a78bfa;
+  --success:   #34d399;
+  --warn:      #f59e0b;
+  --danger:    #f87171;
+  --mono:      'DM Mono', monospace;
+  --sans:      'DM Sans', sans-serif;
+  --display:   'Syne', sans-serif;
+  --r:         8px;
+  --r-lg:      14px;
+}
+html { font-size: 14px; }
+body {
+  font-family: var(--sans);
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: 240px 1fr 300px;
+  grid-template-rows: 52px 1fr;
+  grid-template-areas:
+    "topbar topbar topbar"
+    "sidebar main preview";
+}
+a { color: inherit; text-decoration: none; }
+button { font-family: var(--sans); }
+input, select, textarea { font-family: var(--sans); }
+
+/* ── Topbar ── */
+.topbar {
+  grid-area: topbar;
+  background: var(--bg2);
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  align-items: center;
+  padding: 0 20px;
+  gap: 16px;
+}
+.topbar-logo {
+  font-family: var(--display);
+  font-size: 15px;
+  font-weight: 700;
+  color: #fff;
+  letter-spacing: .01em;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+.topbar-logo .dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+.topbar-site {
+  font-size: 12px;
+  color: var(--muted);
+  background: var(--bg3);
+  border: 1px solid var(--line);
+  padding: 4px 10px;
+  border-radius: 20px;
+}
+.topbar-site span { color: var(--text); font-weight: 500; }
+.topbar-spacer { flex: 1; }
+.topbar-status {
+  font-size: 11px;
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.status-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--success);
+}
+.status-dot.building { background: var(--warn); animation: pulse .8s ease-in-out infinite; }
+.btn-build {
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  padding: 7px 16px;
+  border-radius: var(--r);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: opacity .15s;
+}
+.btn-build:hover { opacity: .85; }
+.btn-build:disabled { opacity: .4; cursor: not-allowed; }
+
+/* ── Sidebar ── */
+.sidebar {
+  grid-area: sidebar;
+  background: var(--bg2);
+  border-right: 1px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+}
+.sidebar-section {
+  padding: 16px 14px 8px;
+  border-bottom: 1px solid var(--line);
+}
+.sidebar-label {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--faint);
+  margin-bottom: 8px;
+}
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 8px 10px;
+  border-radius: var(--r);
+  font-size: 13px;
+  color: var(--muted);
+  cursor: pointer;
+  transition: all .15s;
+  border: none;
+  background: none;
+  width: 100%;
+  text-align: left;
+}
+.nav-item:hover { background: var(--bg3); color: var(--text); }
+.nav-item.active { background: rgba(124,106,247,0.15); color: var(--accent2); }
+.nav-icon {
+  width: 16px; height: 16px;
+  opacity: .6;
+  flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+}
+.nav-item.active .nav-icon { opacity: 1; }
+.nav-badge {
+  margin-left: auto;
+  font-size: 10px;
+  background: var(--bg3);
+  border: 1px solid var(--line);
+  padding: 1px 6px;
+  border-radius: 20px;
+  color: var(--faint);
+}
+.nav-item.active .nav-badge {
+  background: rgba(124,106,247,.2);
+  border-color: rgba(124,106,247,.3);
+  color: var(--accent2);
+}
+
+/* ── Main editor area ── */
+.main {
+  grid-area: main;
+  overflow-y: auto;
+  padding: 24px 28px;
+}
+.editor-panel { display: none; }
+.editor-panel.active { display: block; }
+
+/* Panel heading */
+.panel-title {
+  font-family: var(--display);
+  font-size: 18px;
+  font-weight: 600;
+  color: #fff;
+  margin-bottom: 4px;
+}
+.panel-desc {
+  font-size: 13px;
+  color: var(--muted);
+  margin-bottom: 24px;
+}
+
+/* Field group */
+.field-group {
+  background: var(--bg2);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  margin-bottom: 16px;
+  overflow: hidden;
+}
+.field-group-title {
+  padding: 12px 16px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--faint);
+  border-bottom: 1px solid var(--line);
+  background: rgba(255,255,255,.02);
+}
+.field-row {
+  display: grid;
+  grid-template-columns: 140px 1fr;
+  align-items: center;
+  gap: 16px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--line);
+}
+.field-row:last-child { border-bottom: none; }
+.field-label {
+  font-size: 13px;
+  color: var(--muted);
+  font-weight: 500;
+}
+.field-note {
+  font-size: 11px;
+  color: var(--faint);
+  margin-top: 2px;
+}
+.field-control { display: flex; align-items: center; gap: 10px; }
+
+/* Color input */
+.color-input-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--bg3);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  padding: 5px 10px;
+  width: 160px;
+  cursor: pointer;
+  transition: border-color .15s;
+}
+.color-input-wrap:hover { border-color: var(--line2); }
+.color-swatch {
+  width: 18px; height: 18px;
+  border-radius: 4px;
+  border: 1px solid rgba(255,255,255,.15);
+  flex-shrink: 0;
+  cursor: pointer;
+}
+.color-hex {
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--text);
+  background: none;
+  border: none;
+  outline: none;
+  width: 80px;
+  text-transform: uppercase;
+}
+input[type="color"] {
+  width: 0; height: 0; opacity: 0; position: absolute;
+}
+
+/* Select */
+.field-select {
+  background: var(--bg3);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  color: var(--text);
+  padding: 7px 10px;
+  font-size: 13px;
+  outline: none;
+  cursor: pointer;
+  min-width: 180px;
+  transition: border-color .15s;
+}
+.field-select:hover { border-color: var(--line2); }
+.field-select:focus { border-color: var(--accent); }
+
+/* Toggle */
+.toggle-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  color: var(--muted);
+  cursor: pointer;
+  user-select: none;
+}
+.toggle-track {
+  width: 34px; height: 19px;
+  background: var(--bg3);
+  border: 1px solid var(--line2);
+  border-radius: 20px;
+  position: relative;
+  transition: background .2s;
+  flex-shrink: 0;
+}
+.toggle-track.on { background: var(--accent); border-color: var(--accent); }
+.toggle-thumb {
+  width: 13px; height: 13px;
+  background: #fff;
+  border-radius: 50%;
+  position: absolute;
+  top: 2px; left: 3px;
+  transition: transform .2s;
+}
+.toggle-track.on .toggle-thumb { transform: translateX(15px); }
+
+/* Variant picker grid */
+.variant-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 10px;
+  padding: 16px;
+}
+.variant-card {
+  background: var(--bg3);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  padding: 12px;
+  cursor: pointer;
+  transition: all .15s;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.variant-card:hover { border-color: var(--line2); }
+.variant-card.selected {
+  border-color: var(--accent);
+  background: rgba(124,106,247,.1);
+}
+.variant-thumb {
+  height: 36px;
+  background: rgba(255,255,255,.04);
+  border-radius: 5px;
+  border: 1px solid var(--line);
+  display: flex;
+  align-items: center;
+  padding: 0 8px;
+  gap: 5px;
+}
+.vt-bar { height: 5px; border-radius: 3px; background: rgba(255,255,255,.2); }
+.vt-bar.logo { width: 28px; background: rgba(255,255,255,.4); }
+.vt-bar.sm { width: 16px; }
+.vt-bar.pill { border-radius: 20px; width: 24px; background: var(--accent); opacity: .7; }
+.variant-name {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text);
+}
+.variant-desc {
+  font-size: 11px;
+  color: var(--faint);
+  line-height: 1.4;
+}
+
+/* Section toggle rows */
+.sections-list { padding: 8px; }
+.section-row {
+  display: grid;
+  grid-template-columns: auto 1fr auto auto;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 8px;
+  border-radius: var(--r);
+  transition: background .15s;
+}
+.section-row:hover { background: var(--bg3); }
+.section-drag { color: var(--faint); cursor: grab; font-size: 16px; }
+.section-name { font-size: 13px; font-weight: 500; color: var(--text); }
+.section-variant-select {
+  background: var(--bg3);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  color: var(--muted);
+  padding: 5px 8px;
+  font-size: 12px;
+  outline: none;
+  cursor: pointer;
+}
+.section-variant-select:focus { border-color: var(--accent); }
+.section-active-toggle { cursor: pointer; }
+
+/* Font preview */
+.font-preview {
+  background: var(--bg3);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  padding: 10px 14px;
+  font-size: 18px;
+  color: var(--text);
+  min-width: 220px;
+  transition: border-color .15s;
+}
+.font-preview:hover { border-color: var(--line2); }
+
+/* Preset cards */
+.presets-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  padding: 16px;
+}
+.preset-card {
+  background: var(--bg3);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  padding: 14px;
+  cursor: pointer;
+  transition: all .18s;
+}
+.preset-card:hover { border-color: var(--line2); transform: translateY(-2px); }
+.preset-swatches {
+  display: flex;
+  gap: 5px;
+  margin-bottom: 10px;
+}
+.preset-swatch {
+  width: 22px; height: 22px;
+  border-radius: 5px;
+  border: 1px solid rgba(255,255,255,.1);
+}
+.preset-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 3px;
+}
+.preset-note {
+  font-size: 11px;
+  color: var(--faint);
+  line-height: 1.4;
+}
+.btn-apply-preset {
+  margin-top: 10px;
+  font-size: 11px;
+  padding: 4px 10px;
+  border: 1px solid var(--line2);
+  border-radius: 20px;
+  background: none;
+  color: var(--muted);
+  cursor: pointer;
+  transition: all .15s;
+}
+.btn-apply-preset:hover {
+  border-color: var(--accent);
+  color: var(--accent2);
+}
+
+/* ── Preview panel ── */
+.preview {
+  grid-area: preview;
+  background: var(--bg2);
+  border-left: 1px solid var(--line);
+  display: flex;
+  flex-direction: column;
+}
+.preview-topbar {
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.preview-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: .07em;
+  text-transform: uppercase;
+  color: var(--faint);
+}
+.preview-device-btns { display: flex; gap: 4px; }
+.device-btn {
+  background: none;
+  border: 1px solid var(--line);
+  color: var(--faint);
+  width: 28px; height: 24px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 12px;
+  display: flex; align-items: center; justify-content: center;
+  transition: all .15s;
+}
+.device-btn.active, .device-btn:hover {
+  border-color: var(--line2);
+  color: var(--text);
+  background: var(--bg3);
+}
+.preview-frame-wrap {
+  flex: 1;
+  overflow: hidden;
+  padding: 12px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+}
+.preview-frame {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  overflow: hidden;
+  background: #0a0f1e;
+  transition: max-width .25s;
+}
+.preview-frame.mobile { max-width: 375px; }
+
+/* Preview mockup content */
+.mock-header {
+  height: 48px;
+  background: rgba(255,255,255,.04);
+  border-bottom: 1px solid rgba(255,255,255,.06);
+  display: flex;
+  align-items: center;
+  padding: 0 14px;
+  gap: 10px;
+}
+.mock-logo { width: 50px; height: 8px; border-radius: 4px; background: rgba(255,255,255,.4); }
+.mock-nav { flex: 1; display: flex; justify-content: center; gap: 8px; }
+.mock-nav-dot { width: 24px; height: 5px; border-radius: 3px; background: rgba(255,255,255,.15); }
+.mock-cta { width: 44px; height: 20px; border-radius: 4px; }
+.mock-hero {
+  padding: 28px 14px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+.mock-eyebrow { width: 64px; height: 14px; border-radius: 20px; opacity: .5; }
+.mock-h1 { width: 80%; height: 12px; border-radius: 6px; opacity: .7; }
+.mock-h1-2 { width: 55%; height: 12px; border-radius: 6px; opacity: .7; }
+.mock-sub { width: 70%; height: 7px; border-radius: 3px; opacity: .35; }
+.mock-sub-2 { width: 60%; height: 7px; border-radius: 3px; opacity: .35; }
+.mock-btns { display: flex; gap: 6px; margin-top: 4px; }
+.mock-btn { width: 60px; height: 22px; border-radius: 5px; }
+.mock-section {
+  padding: 18px 14px;
+  border-top: 1px solid rgba(255,255,255,.05);
+}
+.mock-section-title { width: 40%; height: 8px; border-radius: 4px; opacity: .5; margin: 0 auto 12px; }
+.mock-cards { display: flex; gap: 6px; }
+.mock-card { flex: 1; height: 52px; border-radius: 6px; background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.06); }
+.mock-footer {
+  padding: 14px;
+  border-top: 1px solid rgba(255,255,255,.05);
+  display: flex;
+  gap: 8px;
+}
+.mock-footer-col { flex: 1; display: flex; flex-direction: column; gap: 5px; }
+.mock-footer-line { height: 5px; border-radius: 3px; background: rgba(255,255,255,.1); }
+
+/* CSS output panel */
+.css-output {
+  background: var(--bg);
+  border-top: 1px solid var(--line);
+  max-height: 200px;
+  overflow-y: auto;
+}
+.css-output-header {
+  padding: 8px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--line);
+  background: var(--bg2);
+}
+.css-output-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: .07em;
+  text-transform: uppercase;
+  color: var(--faint);
+}
+.css-chars { font-size: 11px; color: var(--faint); font-family: var(--mono); }
+.css-code {
+  font-family: var(--mono);
+  font-size: 10.5px;
+  line-height: 1.7;
+  padding: 10px 14px;
+  color: rgba(226,232,240,.5);
+  white-space: pre;
+  overflow-x: auto;
+}
+.css-code .kw { color: #7c6af7; }
+.css-code .val { color: #34d399; }
+.css-code .cm { color: rgba(226,232,240,.25); }
+
+/* ── Animations ── */
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+@keyframes spin { to { transform: rotate(360deg); } }
+.spin { animation: spin .7s linear infinite; }
+
+/* ── Scrollbars ── */
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--line2); border-radius: 4px; }
+
+/* ── Toast ── */
+.toast-wrap {
+  position: fixed;
+  bottom: 20px; right: 20px;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.toast {
+  background: var(--bg2);
+  border: 1px solid var(--line2);
+  border-radius: var(--r);
+  padding: 10px 16px;
+  font-size: 13px;
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  animation: slideIn .2s ease;
+}
+.toast.ok { border-color: rgba(52,211,153,.3); }
+.toast.err { border-color: rgba(248,113,113,.3); }
+.toast-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+.toast.ok .toast-dot { background: var(--success); }
+.toast.err .toast-dot { background: var(--danger); }
+@keyframes slideIn { from { opacity:0; transform: translateX(16px); } to { opacity:1; transform:none; } }
+</style>
+</head>
+<body>
+
+<!-- ══ TOPBAR ══ -->
+<header class="topbar">
+  <div class="topbar-logo">
+    <span class="dot"></span>
+    CSS Builder
+  </div>
+  <div class="topbar-site">Editando: <span id="site-name">Kreando</span></div>
+  <div class="topbar-spacer"></div>
+  <div class="topbar-status">
+    <span class="status-dot" id="status-dot"></span>
+    <span id="status-text">Listo</span>
+  </div>
+  <button class="btn-build" id="btn-build" onclick="buildCSS()">
+    <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M5 3l14 9-14 9V3z"/></svg>
+    Generar CSS
+  </button>
+</header>
+
+<!-- ══ SIDEBAR ══ -->
+<nav class="sidebar">
+  <div class="sidebar-section">
+    <div class="sidebar-label">Editor</div>
+    <button class="nav-item active" onclick="switchPanel('colors')">
+      <span class="nav-icon">🎨</span> Colores
+    </button>
+    <button class="nav-item" onclick="switchPanel('typography')">
+      <span class="nav-icon">Aa</span> Tipografía
+    </button>
+    <button class="nav-item" onclick="switchPanel('shape')">
+      <span class="nav-icon">⬜</span> Forma &amp; Espacio
+    </button>
+    <button class="nav-item" onclick="switchPanel('effects')">
+      <span class="nav-icon">✦</span> Efectos
+    </button>
+  </div>
+  <div class="sidebar-section">
+    <div class="sidebar-label">Secciones</div>
+    <button class="nav-item" onclick="switchPanel('header')">
+      <span class="nav-icon">☰</span> Header <span class="nav-badge">6</span>
+    </button>
+    <button class="nav-item" onclick="switchPanel('hero')">
+      <span class="nav-icon">▲</span> Hero <span class="nav-badge">4</span>
+    </button>
+    <button class="nav-item" onclick="switchPanel('sections')">
+      <span class="nav-icon">▦</span> Otras secciones
+    </button>
+    <button class="nav-item" onclick="switchPanel('footer')">
+      <span class="nav-icon">▽</span> Footer <span class="nav-badge">4</span>
+    </button>
+  </div>
+  <div class="sidebar-section">
+    <div class="sidebar-label">Inicio rápido</div>
+    <button class="nav-item" onclick="switchPanel('presets')">
+      <span class="nav-icon">⚡</span> Presets
+    </button>
+  </div>
+</nav>
+
+<!-- ══ MAIN EDITOR ══ -->
+<main class="main">
+
+  <!-- PANEL: Colores -->
+  <div class="editor-panel active" id="panel-colors">
+    <div class="panel-title">Colores</div>
+    <div class="panel-desc">Define la paleta base del site. Todos los estilos derivan de estos 4 colores.</div>
+
+    <div class="field-group">
+      <div class="field-group-title">Paleta principal</div>
+      <div class="field-row">
+        <div><div class="field-label">Color primario</div><div class="field-note">CTAs, acentos, iconos</div></div>
+        <div class="field-control">
+          <div class="color-input-wrap" onclick="openPicker('primary')">
+            <div class="color-swatch" id="swatch-primary" style="background:#00d4a0"></div>
+            <input class="color-hex" id="hex-primary" value="#00D4A0" oninput="syncFromHex('primary',this.value)">
+            <input type="color" id="picker-primary" value="#00d4a0" oninput="syncFromPicker('primary',this.value)">
+          </div>
+        </div>
+      </div>
+      <div class="field-row">
+        <div><div class="field-label">Color secundario</div><div class="field-note">Fondo base / contraste</div></div>
+        <div class="field-control">
+          <div class="color-input-wrap" onclick="openPicker('secondary')">
+            <div class="color-swatch" id="swatch-secondary" style="background:#0a0f1e"></div>
+            <input class="color-hex" id="hex-secondary" value="#0A0F1E" oninput="syncFromHex('secondary',this.value)">
+            <input type="color" id="picker-secondary" value="#0a0f1e" oninput="syncFromPicker('secondary',this.value)">
+          </div>
+        </div>
+      </div>
+      <div class="field-row">
+        <div><div class="field-label">Acento</div><div class="field-note">Links, botón secundario</div></div>
+        <div class="field-control">
+          <div class="color-input-wrap" onclick="openPicker('accent')">
+            <div class="color-swatch" id="swatch-accent" style="background:#0088cc"></div>
+            <input class="color-hex" id="hex-accent" value="#0088CC" oninput="syncFromHex('accent',this.value)">
+            <input type="color" id="picker-accent" value="#0088cc" oninput="syncFromPicker('accent',this.value)">
+          </div>
+        </div>
+      </div>
+      <div class="field-row">
+        <div><div class="field-label">Neutro</div><div class="field-note">Texto sobre fondo oscuro</div></div>
+        <div class="field-control">
+          <div class="color-input-wrap" onclick="openPicker('neutral')">
+            <div class="color-swatch" id="swatch-neutral" style="background:#e8eaf0"></div>
+            <input class="color-hex" id="hex-neutral" value="#E8EAF0" oninput="syncFromHex('neutral',this.value)">
+            <input type="color" id="picker-neutral" value="#e8eaf0" oninput="syncFromPicker('neutral',this.value)">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="field-group">
+      <div class="field-group-title">Tema</div>
+      <div class="field-row">
+        <div><div class="field-label">Modo</div><div class="field-note">Dark o light base</div></div>
+        <div class="field-control">
+          <select class="field-select" id="color-mode" onchange="updatePreview()">
+            <option value="dark" selected>Dark</option>
+            <option value="light">Light</option>
+          </select>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PANEL: Tipografía -->
+  <div class="editor-panel" id="panel-typography">
+    <div class="panel-title">Tipografía</div>
+    <div class="panel-desc">Fuentes de Google Fonts. Display para títulos, body para texto general.</div>
+    <div class="field-group">
+      <div class="field-group-title">Fuentes</div>
+      <div class="field-row">
+        <div><div class="field-label">Display (H1/H2)</div><div class="field-note">Títulos y headings</div></div>
+        <div class="field-control" style="flex-direction:column;align-items:flex-start;gap:6px">
+          <select class="field-select" id="font-display" onchange="loadFont('display')">
+            <option value="Fraunces">Fraunces</option>
+            <option value="Playfair Display">Playfair Display</option>
+            <option value="DM Serif Display">DM Serif Display</option>
+            <option value="Cormorant Garamond">Cormorant Garamond</option>
+            <option value="Syne">Syne</option>
+            <option value="Bebas Neue">Bebas Neue</option>
+            <option value="Montserrat">Montserrat</option>
+            <option value="Poppins">Poppins</option>
+            <option value="Raleway">Raleway</option>
+          </select>
+          <div class="font-preview" id="preview-display" style="font-family:'Fraunces',serif">
+            Bienvenidos a Kreando
+          </div>
+        </div>
+      </div>
+      <div class="field-row">
+        <div><div class="field-label">Cuerpo</div><div class="field-note">Texto, nav, botones</div></div>
+        <div class="field-control" style="flex-direction:column;align-items:flex-start;gap:6px">
+          <select class="field-select" id="font-body" onchange="loadFont('body')">
+            <option value="Plus Jakarta Sans">Plus Jakarta Sans</option>
+            <option value="DM Sans">DM Sans</option>
+            <option value="Inter">Inter</option>
+            <option value="Lato">Lato</option>
+            <option value="Open Sans">Open Sans</option>
+            <option value="Nunito">Nunito</option>
+            <option value="Work Sans">Work Sans</option>
+          </select>
+          <div class="font-preview" id="preview-body" style="font-family:'Plus Jakarta Sans',sans-serif;font-size:14px">
+            Soluciones digitales para tu negocio
+          </div>
+        </div>
+      </div>
+      <div class="field-row">
+        <div><div class="field-label">Peso display</div><div class="field-note">H1 y H2</div></div>
+        <div class="field-control">
+          <select class="field-select" id="weight-display" onchange="updatePreview()">
+            <option value="300" selected>300 — Light</option>
+            <option value="400">400 — Regular</option>
+            <option value="600">600 — SemiBold</option>
+            <option value="700">700 — Bold</option>
+          </select>
+        </div>
+      </div>
+      <div class="field-row">
+        <div><div class="field-label">Escala</div><div class="field-note">Font-size base del body</div></div>
+        <div class="field-control">
+          <select class="field-select" id="font-scale" onchange="updatePreview()">
+            <option value="compact">Compact — 15px</option>
+            <option value="normal" selected>Normal — 16px</option>
+            <option value="large">Large — 17px</option>
+          </select>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PANEL: Forma & Espacio -->
+  <div class="editor-panel" id="panel-shape">
+    <div class="panel-title">Forma &amp; Espacio</div>
+    <div class="panel-desc">Radio de bordes, estilo de líneas y densidad de espaciado.</div>
+    <div class="field-group">
+      <div class="field-group-title">Bordes</div>
+      <div class="field-row">
+        <div><div class="field-label">Radio</div><div class="field-note">Cards, botones, inputs</div></div>
+        <div class="field-control">
+          <select class="field-select" id="shape-radius" onchange="updatePreview()">
+            <option value="sharp">Sharp — 4px</option>
+            <option value="rounded" selected>Rounded — 12px</option>
+            <option value="pill">Pill — 999px</option>
+          </select>
+        </div>
+      </div>
+      <div class="field-row">
+        <div><div class="field-label">Estilo borde</div><div class="field-note">Cards y contenedores</div></div>
+        <div class="field-control">
+          <select class="field-select" id="shape-border" onchange="updatePreview()">
+            <option value="none">None — sin bordes</option>
+            <option value="subtle" selected>Subtle — 7% opacity</option>
+            <option value="strong">Strong — 15% opacity</option>
+          </select>
+        </div>
+      </div>
+    </div>
+    <div class="field-group">
+      <div class="field-group-title">Espaciado</div>
+      <div class="field-row">
+        <div><div class="field-label">Densidad</div><div class="field-note">Padding de secciones</div></div>
+        <div class="field-control">
+          <select class="field-select" id="spacing-density" onchange="updatePreview()">
+            <option value="compact">Compact — 48px</option>
+            <option value="normal" selected>Normal — 72px</option>
+            <option value="airy">Airy — 96px</option>
+          </select>
+        </div>
+      </div>
+      <div class="field-row">
+        <div><div class="field-label">Contenedor</div><div class="field-note">max-width del layout</div></div>
+        <div class="field-control">
+          <select class="field-select" id="spacing-container" onchange="updatePreview()">
+            <option value="900px">Narrow — 900px</option>
+            <option value="1100px" selected>Normal — 1100px</option>
+            <option value="1300px">Wide — 1300px</option>
+          </select>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PANEL: Efectos -->
+  <div class="editor-panel" id="panel-effects">
+    <div class="panel-title">Efectos visuales</div>
+    <div class="panel-desc">Glassmorphism, hover de cards, animaciones.</div>
+    <div class="field-group">
+      <div class="field-group-title">Efectos</div>
+      <div class="field-row">
+        <div><div class="field-label">Glassmorphism</div><div class="field-note">backdrop-blur en nav</div></div>
+        <div class="field-control">
+          <label class="toggle-wrap">
+            <div class="toggle-track on" id="toggle-glass" onclick="toggleFx(this,'glass')"><div class="toggle-thumb"></div></div>
+            <span id="label-glass">Activo</span>
+          </label>
+        </div>
+      </div>
+      <div class="field-row">
+        <div><div class="field-label">Hero glow</div><div class="field-note">Gradiente radial en hero</div></div>
+        <div class="field-control">
+          <label class="toggle-wrap">
+            <div class="toggle-track on" id="toggle-heroglow" onclick="toggleFx(this,'hero_glow')"><div class="toggle-thumb"></div></div>
+            <span id="label-heroglow">Activo</span>
+          </label>
+        </div>
+      </div>
+      <div class="field-row">
+        <div><div class="field-label">Animaciones</div><div class="field-note">fade-in-up al hacer scroll</div></div>
+        <div class="field-control">
+          <label class="toggle-wrap">
+            <div class="toggle-track on" id="toggle-animations" onclick="toggleFx(this,'animations')"><div class="toggle-thumb"></div></div>
+            <span id="label-animations">Activo</span>
+          </label>
+        </div>
+      </div>
+      <div class="field-row">
+        <div><div class="field-label">Card hover</div><div class="field-note">Efecto al pasar el mouse</div></div>
+        <div class="field-control">
+          <select class="field-select" id="card-hover" onchange="updatePreview()">
+            <option value="lift" selected>Lift — sube 4px + sombra</option>
+            <option value="glow">Glow — borde primary</option>
+            <option value="border">Border — resalta borde</option>
+            <option value="none">None — sin efecto</option>
+          </select>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PANEL: Header variantes -->
+  <div class="editor-panel" id="panel-header">
+    <div class="panel-title">Header</div>
+    <div class="panel-desc">Elige la disposición del logo, nav y CTA. Luego configura el comportamiento.</div>
+    <div class="field-group" style="padding-bottom:0">
+      <div class="field-group-title">Variante de layout</div>
+      <div class="variant-grid">
+        <div class="variant-card selected" data-section="header" data-variant="centered" onclick="selectVariant(this)">
+          <div class="variant-thumb"><div class="vt-bar logo"></div><div style="flex:1;display:flex;justify-content:center;gap:4px"><div class="vt-bar sm"></div><div class="vt-bar sm"></div><div class="vt-bar sm"></div></div><div class="vt-bar pill"></div></div>
+          <div class="variant-name">Centrado</div>
+          <div class="variant-desc">Logo izq · nav centro · CTA der</div>
+        </div>
+        <div class="variant-card" data-section="header" data-variant="left" onclick="selectVariant(this)">
+          <div class="variant-thumb"><div class="vt-bar logo"></div><div class="vt-bar sm"></div><div class="vt-bar sm"></div><div class="vt-bar sm"></div><div style="flex:1"></div><div class="vt-bar pill"></div></div>
+          <div class="variant-name">Izquierda</div>
+          <div class="variant-desc">Logo + nav pegados a la izq</div>
+        </div>
+        <div class="variant-card" data-section="header" data-variant="boxed" onclick="selectVariant(this)">
+          <div class="variant-thumb" style="border-radius:7px;border-width:1.5px"><div class="vt-bar logo"></div><div style="flex:1;display:flex;justify-content:center;gap:3px"><div class="vt-bar sm"></div><div class="vt-bar sm"></div><div class="vt-bar sm"></div></div><div class="vt-bar pill"></div></div>
+          <div class="variant-name">Caja flotante</div>
+          <div class="variant-desc">Nav en contenedor con borde</div>
+        </div>
+        <div class="variant-card" data-section="header" data-variant="stacked" onclick="selectVariant(this)">
+          <div class="variant-thumb" style="flex-direction:column;height:44px;gap:4px;justify-content:center"><div style="display:flex;justify-content:center"><div class="vt-bar logo"></div></div><div style="display:flex;justify-content:center;gap:3px"><div class="vt-bar sm"></div><div class="vt-bar sm"></div><div class="vt-bar sm"></div></div></div>
+          <div class="variant-name">Apilado</div>
+          <div class="variant-desc">Logo arriba · nav abajo</div>
+        </div>
+        <div class="variant-card" data-section="header" data-variant="minimal" onclick="selectVariant(this)">
+          <div class="variant-thumb"><div class="vt-bar logo"></div><div style="flex:1"></div><div class="vt-bar sm"></div></div>
+          <div class="variant-name">Minimal</div>
+          <div class="variant-desc">Solo logo + hamburguesa</div>
+        </div>
+        <div class="variant-card" data-section="header" data-variant="split" onclick="selectVariant(this)">
+          <div class="variant-thumb"><div class="vt-bar sm"></div><div class="vt-bar sm"></div><div style="flex:1;display:flex;justify-content:center"><div class="vt-bar logo"></div></div><div class="vt-bar sm"></div><div class="vt-bar pill"></div></div>
+          <div class="variant-name">Split</div>
+          <div class="variant-desc">Logo centrado · links a los lados</div>
+        </div>
+      </div>
+    </div>
+    <div class="field-group">
+      <div class="field-group-title">Comportamiento</div>
+      <div class="field-row">
+        <div><div class="field-label">Sticky</div><div class="field-note">Fijo al hacer scroll</div></div>
+        <div class="field-control"><label class="toggle-wrap"><div class="toggle-track on" id="toggle-hsticky" onclick="toggleFx(this,'header_sticky')"><div class="toggle-thumb"></div></div><span id="label-hsticky">Activo</span></label></div>
+      </div>
+      <div class="field-row">
+        <div><div class="field-label">Glass scroll</div><div class="field-note">blur al hacer scroll</div></div>
+        <div class="field-control"><label class="toggle-wrap"><div class="toggle-track on" id="toggle-hglass" onclick="toggleFx(this,'header_glass')"><div class="toggle-thumb"></div></div><span id="label-hglass">Activo</span></label></div>
+      </div>
+      <div class="field-row">
+        <div><div class="field-label">Topbar</div><div class="field-note">Banda de tel/email</div></div>
+        <div class="field-control"><label class="toggle-wrap"><div class="toggle-track on" id="toggle-htopbar" onclick="toggleFx(this,'header_topbar')"><div class="toggle-thumb"></div></div><span id="label-htopbar">Activo</span></label></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PANEL: Hero -->
+  <div class="editor-panel" id="panel-hero">
+    <div class="panel-title">Hero section</div>
+    <div class="panel-desc">La primera sección que ve el visitante.</div>
+    <div class="field-group" style="padding-bottom:0">
+      <div class="field-group-title">Variante</div>
+      <div class="variant-grid">
+        <div class="variant-card selected" data-section="hero" data-variant="full" onclick="selectVariant(this)">
+          <div class="variant-thumb" style="flex-direction:column;height:44px;gap:3px;justify-content:center"><div class="vt-bar sm" style="margin:0 auto;width:40%"></div><div class="vt-bar" style="width:75%;margin:0 auto;height:6px"></div><div class="vt-bar" style="width:55%;margin:0 auto;height:5px;opacity:.4"></div></div>
+          <div class="variant-name">Full height</div>
+          <div class="variant-desc">100vh · texto centrado · glow</div>
+        </div>
+        <div class="variant-card" data-section="hero" data-variant="compact" onclick="selectVariant(this)">
+          <div class="variant-thumb" style="flex-direction:column;height:32px;gap:3px;justify-content:center"><div class="vt-bar sm" style="margin:0 auto;width:35%;height:5px"></div><div class="vt-bar" style="width:60%;margin:0 auto;height:5px"></div></div>
+          <div class="variant-name">Compacto</div>
+          <div class="variant-desc">Para páginas internas</div>
+        </div>
+        <div class="variant-card" data-section="hero" data-variant="split" onclick="selectVariant(this)">
+          <div class="variant-thumb"><div class="vt-bar" style="flex:1;height:28px;border-radius:4px"></div><div style="width:4px"></div><div class="vt-bar" style="flex:1;height:28px;border-radius:4px;opacity:.4"></div></div>
+          <div class="variant-name">Split</div>
+          <div class="variant-desc">Texto izq · imagen der</div>
+        </div>
+        <div class="variant-card" data-section="hero" data-variant="video" onclick="selectVariant(this)">
+          <div class="variant-thumb" style="position:relative;overflow:hidden;border-radius:5px"><div style="position:absolute;inset:0;background:rgba(255,255,255,.06)"></div><div style="position:relative;width:100%;text-align:center"><div class="vt-bar" style="width:50%;margin:0 auto;height:5px;background:rgba(255,255,255,.4)"></div></div></div>
+          <div class="variant-name">Video fondo</div>
+          <div class="variant-desc">Overlay oscuro sobre video</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PANEL: Otras secciones -->
+  <div class="editor-panel" id="panel-sections">
+    <div class="panel-title">Secciones de contenido</div>
+    <div class="panel-desc">Activa o desactiva secciones y elige su variante de layout.</div>
+    <div class="field-group">
+      <div class="sections-list">
+        <div class="section-row">
+          <span class="section-drag">⠿</span>
+          <span class="section-name">Servicios</span>
+          <select class="section-variant-select" data-section="services">
+            <option value="grid3">Grid 3 cards</option>
+            <option value="grid2">Grid 2 cards</option>
+            <option value="list">Lista con iconos</option>
+            <option value="tabs">Tabs</option>
+          </select>
+          <div class="toggle-track on section-active-toggle" onclick="toggleSection(this,'services')"><div class="toggle-thumb"></div></div>
+        </div>
+        <div class="section-row">
+          <span class="section-drag">⠿</span>
+          <span class="section-name">Nosotros</span>
+          <select class="section-variant-select" data-section="about">
+            <option value="mvv">MVV 3 cards</option>
+            <option value="text_photo">Texto + foto</option>
+            <option value="timeline">Timeline</option>
+          </select>
+          <div class="toggle-track on section-active-toggle" onclick="toggleSection(this,'about')"><div class="toggle-thumb"></div></div>
+        </div>
+        <div class="section-row">
+          <span class="section-drag">⠿</span>
+          <span class="section-name">Equipo</span>
+          <select class="section-variant-select" data-section="team">
+            <option value="avatars">Grid avatars</option>
+            <option value="list">Lista horizontal</option>
+            <option value="cards_large">Cards grandes</option>
+          </select>
+          <div class="toggle-track on section-active-toggle" onclick="toggleSection(this,'team')"><div class="toggle-thumb"></div></div>
+        </div>
+        <div class="section-row">
+          <span class="section-drag">⠿</span>
+          <span class="section-name">Portfolio</span>
+          <select class="section-variant-select" data-section="portfolio">
+            <option value="grid">Grid masonry</option>
+            <option value="grid_uniform">Grid uniforme</option>
+          </select>
+          <div class="toggle-track section-active-toggle" onclick="toggleSection(this,'portfolio')"><div class="toggle-thumb"></div></div>
+        </div>
+        <div class="section-row">
+          <span class="section-drag">⠿</span>
+          <span class="section-name">Testimonios</span>
+          <select class="section-variant-select" data-section="testimonials">
+            <option value="cards">Cards</option>
+            <option value="quote">Cita grande</option>
+          </select>
+          <div class="toggle-track section-active-toggle" onclick="toggleSection(this,'testimonials')"><div class="toggle-thumb"></div></div>
+        </div>
+        <div class="section-row">
+          <span class="section-drag">⠿</span>
+          <span class="section-name">CTA Strip</span>
+          <select class="section-variant-select" data-section="cta">
+            <option value="flex">Flex horizontal</option>
+            <option value="centered">Centrado</option>
+            <option value="bg_image">Con imagen fondo</option>
+          </select>
+          <div class="toggle-track on section-active-toggle" onclick="toggleSection(this,'cta')"><div class="toggle-thumb"></div></div>
+        </div>
+        <div class="section-row">
+          <span class="section-drag">⠿</span>
+          <span class="section-name">Contacto</span>
+          <select class="section-variant-select" data-section="contact">
+            <option value="form_info">Form + info</option>
+            <option value="form_only">Solo formulario</option>
+            <option value="map_form">Mapa + form</option>
+          </select>
+          <div class="toggle-track on section-active-toggle" onclick="toggleSection(this,'contact')"><div class="toggle-thumb"></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PANEL: Footer -->
+  <div class="editor-panel" id="panel-footer">
+    <div class="panel-title">Footer</div>
+    <div class="panel-desc">Pie de página del site.</div>
+    <div class="field-group" style="padding-bottom:0">
+      <div class="field-group-title">Variante</div>
+      <div class="variant-grid">
+        <div class="variant-card selected" data-section="footer" data-variant="3col" onclick="selectVariant(this)">
+          <div class="variant-thumb"><div class="vt-bar" style="flex:1.5;height:20px;border-radius:4px"></div><div class="vt-bar" style="flex:1;height:20px;border-radius:4px"></div><div class="vt-bar" style="flex:1;height:20px;border-radius:4px"></div></div>
+          <div class="variant-name">3 columnas</div>
+          <div class="variant-desc">Logo + nav + contacto</div>
+        </div>
+        <div class="variant-card" data-section="footer" data-variant="2col" onclick="selectVariant(this)">
+          <div class="variant-thumb"><div class="vt-bar" style="flex:1;height:20px;border-radius:4px"></div><div class="vt-bar" style="flex:1;height:20px;border-radius:4px"></div></div>
+          <div class="variant-name">2 columnas</div>
+          <div class="variant-desc">Nav izq · contacto der</div>
+        </div>
+        <div class="variant-card" data-section="footer" data-variant="1col" onclick="selectVariant(this)">
+          <div class="variant-thumb" style="flex-direction:column;gap:4px;align-items:center;justify-content:center"><div class="vt-bar logo" style="width:32px"></div><div style="display:flex;gap:4px"><div class="vt-bar sm"></div><div class="vt-bar sm"></div><div class="vt-bar sm"></div></div></div>
+          <div class="variant-name">1 columna centrado</div>
+          <div class="variant-desc">Todo centrado · compacto</div>
+        </div>
+        <div class="variant-card" data-section="footer" data-variant="minimal" onclick="selectVariant(this)">
+          <div class="variant-thumb"><div class="vt-bar logo"></div><div style="flex:1"></div><div class="vt-bar sm"></div><div class="vt-bar sm"></div></div>
+          <div class="variant-name">Minimal</div>
+          <div class="variant-desc">Una sola línea</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PANEL: Presets -->
+  <div class="editor-panel" id="panel-presets">
+    <div class="panel-title">Presets</div>
+    <div class="panel-desc">Punto de partida. Aplica un preset y luego personaliza.</div>
+    <div class="field-group" style="padding:0">
+      <div class="presets-grid">
+        <div class="preset-card" onclick="applyPreset('modern_dark')">
+          <div class="preset-swatches"><div class="preset-swatch" style="background:#00d4a0"></div><div class="preset-swatch" style="background:#0a0f1e"></div><div class="preset-swatch" style="background:#0088cc"></div></div>
+          <div class="preset-name">Modern dark</div>
+          <div class="preset-note">Navy + teal. Glassmorphism.</div>
+          <button class="btn-apply-preset">Aplicar →</button>
+        </div>
+        <div class="preset-card" onclick="applyPreset('clean_light')">
+          <div class="preset-swatches"><div class="preset-swatch" style="background:#4f46e5"></div><div class="preset-swatch" style="background:#f8f9fa;border:1px solid #ddd"></div><div class="preset-swatch" style="background:#6366f1"></div></div>
+          <div class="preset-name">Clean light</div>
+          <div class="preset-note">Blanco y carbón. Sharp.</div>
+          <button class="btn-apply-preset">Aplicar →</button>
+        </div>
+        <div class="preset-card" onclick="applyPreset('corporativo_axula')">
+          <div class="preset-swatches"><div class="preset-swatch" style="background:#038C8C"></div><div class="preset-swatch" style="background:#024959"></div><div class="preset-swatch" style="background:#012840"></div></div>
+          <div class="preset-name">Corporativo Axula</div>
+          <div class="preset-note">Tu paleta navy/teal.</div>
+          <button class="btn-apply-preset">Aplicar →</button>
+        </div>
+        <div class="preset-card" onclick="applyPreset('calido_profesional')">
+          <div class="preset-swatches"><div class="preset-swatch" style="background:#c45c26"></div><div class="preset-swatch" style="background:#fff8f0;border:1px solid #ddd"></div><div class="preset-swatch" style="background:#8b3a1a"></div></div>
+          <div class="preset-name">Cálido profesional</div>
+          <div class="preset-note">Naranja tierra + crema.</div>
+          <button class="btn-apply-preset">Aplicar →</button>
+        </div>
+        <div class="preset-card" onclick="applyPreset('minimalista_bw')">
+          <div class="preset-swatches"><div class="preset-swatch" style="background:#111"></div><div class="preset-swatch" style="background:#fafafa;border:1px solid #ddd"></div><div class="preset-swatch" style="background:#888"></div></div>
+          <div class="preset-name">Minimalista B&W</div>
+          <div class="preset-note">Solo negro y blanco.</div>
+          <button class="btn-apply-preset">Aplicar →</button>
+        </div>
+        <div class="preset-card" onclick="applyPreset('vibrante_caribeno')">
+          <div class="preset-swatches"><div class="preset-swatch" style="background:#f72585"></div><div class="preset-swatch" style="background:#7209b7"></div><div class="preset-swatch" style="background:#4cc9f0"></div></div>
+          <div class="preset-name">Vibrante caribeño</div>
+          <div class="preset-note">Fucsia + violeta. Negocios RD.</div>
+          <button class="btn-apply-preset">Aplicar →</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<!-- ══ PREVIEW PANEL ══ -->
+<aside class="preview">
+  <div class="preview-topbar">
+    <span class="preview-label">Vista previa</span>
+    <div class="preview-device-btns">
+      <button class="device-btn active" onclick="setDevice('desktop',this)" title="Desktop">&#9632;</button>
+      <button class="device-btn" onclick="setDevice('mobile',this)" title="Mobile">&#9646;</button>
+    </div>
+  </div>
+  <div class="preview-frame-wrap">
+    <div class="preview-frame" id="preview-frame">
+      <!-- Header mock -->
+      <div class="mock-header" id="mock-hdr">
+        <div class="mock-logo"></div>
+        <div class="mock-nav" id="mock-nav">
+          <div class="mock-nav-dot"></div>
+          <div class="mock-nav-dot"></div>
+          <div class="mock-nav-dot"></div>
+          <div class="mock-nav-dot"></div>
+        </div>
+        <div class="mock-cta" id="mock-cta-btn"></div>
+      </div>
+      <!-- Hero mock -->
+      <div class="mock-hero" id="mock-hero-el">
+        <div class="mock-eyebrow" id="mock-eyebrow"></div>
+        <div class="mock-h1" id="mock-h1-a"></div>
+        <div class="mock-h1-2" id="mock-h1-b"></div>
+        <div class="mock-sub"></div>
+        <div class="mock-sub-2"></div>
+        <div class="mock-btns">
+          <div class="mock-btn" id="mock-btn-p"></div>
+          <div class="mock-btn" id="mock-btn-s"></div>
+        </div>
+      </div>
+      <!-- Services mock -->
+      <div class="mock-section">
+        <div class="mock-section-title"></div>
+        <div class="mock-cards" id="mock-cards">
+          <div class="mock-card"></div>
+          <div class="mock-card"></div>
+          <div class="mock-card"></div>
+        </div>
+      </div>
+      <!-- Footer mock -->
+      <div class="mock-footer" id="mock-footer-el">
+        <div class="mock-footer-col"><div class="mock-footer-line" style="width:70%"></div><div class="mock-footer-line" style="width:90%"></div><div class="mock-footer-line" style="width:55%"></div></div>
+        <div class="mock-footer-col"><div class="mock-footer-line" style="width:50%"></div><div class="mock-footer-line" style="width:70%"></div><div class="mock-footer-line" style="width:60%"></div></div>
+        <div class="mock-footer-col"><div class="mock-footer-line" style="width:60%"></div><div class="mock-footer-line" style="width:80%"></div><div class="mock-footer-line" style="width:45%"></div></div>
+      </div>
+    </div>
+  </div>
+  <!-- CSS output -->
+  <div class="css-output">
+    <div class="css-output-header">
+      <span class="css-output-label">CSS generado</span>
+      <span class="css-chars" id="css-chars">— chars</span>
+    </div>
+    <div class="css-code" id="css-preview-code">/* Haz clic en "Generar CSS" para ver el output */</div>
+  </div>
+</aside>
+
+<!-- Toast container -->
+<div class="toast-wrap" id="toasts"></div>
+
+<script>
+/* ── State ── */
+const state = {
+  site_id: parseInt(document.querySelector('[data-site-id]')?.dataset?.siteId || '1'),
+  tokens: {
+    colors: { primary:'#00d4a0', secondary:'#0a0f1e', accent:'#0088cc', neutral:'#e8eaf0', mode:'dark' },
+    typography: { display:'Fraunces', body:'Plus Jakarta Sans', scale:'normal', weight_display:300 },
+    shape: { radius:'rounded', border_style:'subtle' },
+    spacing: { density:'normal', container_max:'1100px' },
+    effects: { glass:true, hero_glow:true, card_hover:'lift', animations:true }
+  },
+  variants: {
+    header:   { variant:'centered', sticky:true, glass:true, topbar:true, active:true },
+    hero:     { variant:'full', active:true },
+    services: { variant:'grid3', active:true },
+    about:    { variant:'mvv', active:true },
+    team:     { variant:'avatars', active:true },
+    portfolio:{ variant:'grid', active:false },
+    testimonials:{ variant:'cards', active:false },
+    cta:      { variant:'flex', active:true },
+    contact:  { variant:'form_info', active:true },
+    footer:   { variant:'3col', active:true }
+  },
+  fx: { glass:true, hero_glow:true, animations:true, header_sticky:true, header_glass:true, header_topbar:true }
+};
+
+/* ── Panel switching ── */
+function switchPanel(id) {
+  document.querySelectorAll('.editor-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('panel-'+id).classList.add('active');
+  event.currentTarget.classList.add('active');
+}
+
+/* ── Color sync ── */
+function openPicker(key) {
+  document.getElementById('picker-'+key).click();
+}
+function syncFromPicker(key, val) {
+  document.getElementById('swatch-'+key).style.background = val;
+  document.getElementById('hex-'+key).value = val.toUpperCase();
+  state.tokens.colors[key] = val;
+  updatePreview();
+}
+function syncFromHex(key, val) {
+  if (/^#[0-9a-fA-F]{6}$/.test(val)) {
+    document.getElementById('swatch-'+key).style.background = val;
+    document.getElementById('picker-'+key).value = val;
+    state.tokens.colors[key] = val;
+    updatePreview();
+  }
+}
+
+/* ── Toggle effects ── */
+function toggleFx(el, key) {
+  el.classList.toggle('on');
+  const on = el.classList.contains('on');
+  state.fx[key] = on;
+  const labelId = 'label-' + el.id.replace('toggle-','');
+  const labelEl = document.getElementById(labelId);
+  if (labelEl) labelEl.textContent = on ? 'Activo' : 'Inactivo';
+  if (key === 'glass' || key === 'hero_glow' || key === 'animations') {
+    state.tokens.effects[key] = on;
+  }
+  updatePreview();
+}
+
+/* ── Section active toggle ── */
+function toggleSection(el, key) {
+  el.classList.toggle('on');
+  state.variants[key].active = el.classList.contains('on');
+  updatePreview();
+}
+
+/* ── Variant selection ── */
+function selectVariant(card) {
+  const section = card.dataset.section;
+  const variant = card.dataset.variant;
+  card.closest('.variant-grid').querySelectorAll('.variant-card').forEach(c => c.classList.remove('selected'));
+  card.classList.add('selected');
+  state.variants[section] = state.variants[section] || {};
+  state.variants[section].variant = variant;
+  updatePreview();
+}
+
+/* ── Font loader ── */
+function loadFont(type) {
+  const sel = document.getElementById('font-'+type);
+  const font = sel.value;
+  const link = document.createElement('link');
+  link.rel = 'stylesheet';
+  link.href = `https://fonts.googleapis.com/css2?family=${encodeURIComponent(font)}:wght@300;400;600;700&display=swap`;
+  document.head.appendChild(link);
+  const previewEl = document.getElementById('preview-'+type);
+  previewEl.style.fontFamily = `'${font}', ${type === 'display' ? 'serif' : 'sans-serif'}`;
+  state.tokens.typography[type] = font;
+  updatePreview();
+}
+
+/* ── Device toggle ── */
+function setDevice(mode, btn) {
+  document.querySelectorAll('.device-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('preview-frame').classList.toggle('mobile', mode === 'mobile');
+}
+
+/* ── Presets ── */
+const PRESETS = {
+  modern_dark:        { colors:{primary:'#00d4a0',secondary:'#0a0f1e',accent:'#0088cc',neutral:'#e8eaf0',mode:'dark'}, display:'Fraunces', body:'Plus Jakarta Sans', radius:'rounded' },
+  clean_light:        { colors:{primary:'#4f46e5',secondary:'#f8f9fa',accent:'#6366f1',neutral:'#1a1f2e',mode:'light'}, display:'Inter', body:'Inter', radius:'sharp' },
+  corporativo_axula:  { colors:{primary:'#038C8C',secondary:'#024959',accent:'#012840',neutral:'#f0f4f8',mode:'dark'}, display:'Montserrat', body:'Open Sans', radius:'rounded' },
+  calido_profesional: { colors:{primary:'#c45c26',secondary:'#fff8f0',accent:'#8b3a1a',neutral:'#2d2d2d',mode:'light'}, display:'Playfair Display', body:'Lato', radius:'rounded' },
+  minimalista_bw:     { colors:{primary:'#111111',secondary:'#fafafa',accent:'#555555',neutral:'#111111',mode:'light'}, display:'DM Sans', body:'DM Sans', radius:'sharp' },
+  vibrante_caribeno:  { colors:{primary:'#f72585',secondary:'#7209b7',accent:'#4cc9f0',neutral:'#ffffff',mode:'dark'}, display:'Poppins', body:'Poppins', radius:'pill' }
+};
+
+function applyPreset(key) {
+  const p = PRESETS[key];
+  if (!p) return;
+  state.tokens.colors = { ...p.colors };
+  state.tokens.typography.display = p.display;
+  state.tokens.typography.body = p.body;
+  state.tokens.shape.radius = p.radius;
+  ['primary','secondary','accent','neutral'].forEach(c => {
+    document.getElementById('swatch-'+c).style.background = p.colors[c];
+    document.getElementById('hex-'+c).value = p.colors[c].toUpperCase();
+    document.getElementById('picker-'+c).value = p.colors[c];
+  });
+  document.getElementById('font-display').value = p.display;
+  document.getElementById('font-body').value = p.body;
+  document.getElementById('shape-radius').value = p.radius;
+  document.getElementById('preview-display').style.fontFamily = `'${p.display}', serif`;
+  document.getElementById('preview-body').style.fontFamily = `'${p.body}', sans-serif`;
+  updatePreview();
+  toast('Preset aplicado', 'ok');
+}
+
+/* ── Live preview update ── */
+function updatePreview() {
+  const p = state.tokens.colors.primary;
+  const s = state.tokens.colors.secondary;
+  const frame = document.getElementById('preview-frame');
+  frame.style.background = s;
+  document.getElementById('mock-cta-btn').style.background = p;
+  document.getElementById('mock-eyebrow').style.background = hexToRgba(p, 0.2);
+  document.getElementById('mock-h1-a').style.background = hexToRgba('#fff', 0.5);
+  document.getElementById('mock-h1-b').style.background = hexToRgba('#fff', 0.5);
+  document.getElementById('mock-btn-p').style.background = p;
+  document.getElementById('mock-btn-s').style.background = hexToRgba('#fff', 0.08);
+  document.getElementById('mock-btn-s').style.border = `1px solid ${hexToRgba('#fff', 0.1)}`;
+  const heroGlow = state.tokens.effects.hero_glow;
+  document.getElementById('mock-hero-el').style.background = heroGlow
+    ? `radial-gradient(ellipse 70% 60% at 50% -10%, ${hexToRgba(p,0.15)} 0%, transparent 65%)`
+    : 'transparent';
+  const radius = { sharp:'4px', rounded:'8px', pill:'20px' }[state.tokens.shape.radius] || '8px';
+  document.getElementById('mock-cta-btn').style.borderRadius = radius;
+  document.getElementById('mock-btn-p').style.borderRadius = radius;
+  document.getElementById('mock-btn-s').style.borderRadius = radius;
+  document.querySelectorAll('.mock-card').forEach(c => {
+    c.style.borderRadius = radius;
+    c.style.borderColor = hexToRgba('#fff', state.tokens.shape.border_style === 'strong' ? 0.15 : state.tokens.shape.border_style === 'none' ? 0 : 0.07);
+  });
+  const footerCols = state.variants.footer.variant;
+  const footerEl = document.getElementById('mock-footer-el');
+  if (footerCols === 'minimal') {
+    footerEl.style.flexDirection = 'row';
+    footerEl.querySelectorAll('.mock-footer-col:not(:first-child):not(:last-child)').forEach(c => c.style.display = 'none');
+  } else if (footerCols === '1col') {
+    footerEl.style.flexDirection = 'column';
+    footerEl.querySelectorAll('.mock-footer-col').forEach(c => { c.style.display = 'flex'; c.style.alignItems = 'center'; });
+  } else {
+    footerEl.style.flexDirection = 'row';
+    footerEl.querySelectorAll('.mock-footer-col').forEach(c => { c.style.display = 'flex'; c.style.alignItems = 'flex-start'; });
+  }
+}
+
+function hexToRgba(hex, alpha) {
+  const r = parseInt(hex.slice(1,3),16);
+  const g = parseInt(hex.slice(3,5),16);
+  const b = parseInt(hex.slice(5,7),16);
+  return `rgba(${r},${g},${b},${alpha})`;
+}
+
+/* ── Build CSS (llamada al backend) ── */
+async function buildCSS() {
+  const btn = document.getElementById('btn-build');
+  const dot = document.getElementById('status-dot');
+  const stxt = document.getElementById('status-text');
+  btn.disabled = true;
+  dot.className = 'status-dot building';
+  stxt.textContent = 'Generando...';
+  btn.innerHTML = '<svg class="spin" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg> Generando';
+
+  // Recoger estado actual de los selects
+  state.tokens.typography.scale = document.getElementById('font-scale').value;
+  state.tokens.typography.weight_display = parseInt(document.getElementById('weight-display').value);
+  state.tokens.shape.radius = document.getElementById('shape-radius').value;
+  state.tokens.shape.border_style = document.getElementById('shape-border').value;
+  state.tokens.spacing.density = document.getElementById('spacing-density').value;
+  state.tokens.spacing.container_max = document.getElementById('spacing-container').value;
+  state.tokens.effects.card_hover = document.getElementById('card-hover').value;
+  state.tokens.colors.mode = document.getElementById('color-mode').value;
+  document.querySelectorAll('.section-variant-select').forEach(sel => {
+    const sec = sel.dataset.section;
+    if (state.variants[sec]) state.variants[sec].variant = sel.value;
+  });
+
+  try {
+    const res = await fetch(`/api/sites/${state.site_id}/css/rebuild`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ design_tokens: state.tokens, section_variants: state.variants })
+    });
+    const data = await res.json();
+    if (data.ok) {
+      document.getElementById('css-chars').textContent = `${data.css_length.toLocaleString()} chars · v${data.version}`;
+      document.getElementById('css-preview-code').innerHTML =
+        `<span class="kw">/* CSS generado OK — ${data.css_length.toLocaleString()} chars */</span>\n` +
+        `<span class="cm">/* Versión ${data.version} · ${new Date().toLocaleTimeString()} */</span>\n\n` +
+        `<span class="kw">:root</span> {\n` +
+        `  <span class="cm">--color-primary:</span>  <span class="val">${state.tokens.colors.primary}</span>;\n` +
+        `  <span class="cm">--color-secondary:</span> <span class="val">${state.tokens.colors.secondary}</span>;\n` +
+        `  <span class="cm">--color-accent:</span>   <span class="val">${state.tokens.colors.accent}</span>;\n` +
+        `  <span class="cm">--radius:</span>         <span class="val">...</span>;\n` +
+        `}`;
+      dot.className = 'status-dot';
+      stxt.textContent = 'CSS aplicado';
+      toast(`CSS generado · ${data.css_length.toLocaleString()} chars`, 'ok');
+    } else {
+      throw new Error(data.error || 'Error desconocido');
+    }
+  } catch (e) {
+    dot.className = 'status-dot';
+    dot.style.background = 'var(--danger)';
+    stxt.textContent = 'Error';
+    toast('Error: ' + e.message, 'err');
+    console.error(e);
+  }
+
+  btn.disabled = false;
+  btn.innerHTML = '<svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M5 3l14 9-14 9V3z"/></svg> Generar CSS';
+}
+
+/* ── Toast ── */
+function toast(msg, type='ok') {
+  const wrap = document.getElementById('toasts');
+  const t = document.createElement('div');
+  t.className = `toast ${type}`;
+  t.innerHTML = `<span class="toast-dot"></span>${msg}`;
+  wrap.appendChild(t);
+  setTimeout(() => t.remove(), 3000);
+}
+
+/* ── Init ── */
+updatePreview();
+</script>
+</body>
+</html>
