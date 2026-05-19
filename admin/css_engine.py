@@ -1424,7 +1424,6 @@ def generate_responsive(tokens: dict, variants: dict, mobile_tokens: dict = None
   /* Footer */
   .footer-inner {{ grid-template-columns: 1fr !important; gap: 28px; }}
 }}"""
-"""
 
 
 # ── Animaciones ───────────────────────────────────────────────────────────────
