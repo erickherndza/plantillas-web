@@ -1298,8 +1298,9 @@ def rebuild_css(site_id):
 
     data = request.get_json(silent=True) or {}
 
-    design_tokens   = data.get('design_tokens')
+    design_tokens    = data.get('design_tokens')
     section_variants = data.get('section_variants')
+    mobile_tokens    = data.get('mobile_tokens')
 
     if design_tokens is None and section_variants is None:
         return jsonify({'ok': False, 'error': 'Faltan design_tokens o section_variants'}), 400
@@ -1313,6 +1314,10 @@ def rebuild_css(site_id):
     elif section_variants is not None:
         from db import set_config_sitio as _set
         _set(site_id, 'section_variants', _json.dumps(section_variants, ensure_ascii=False))
+
+    if mobile_tokens is not None:
+        from db import set_config_sitio as _set
+        _set(site_id, 'mobile_tokens', _json.dumps(mobile_tokens, ensure_ascii=False))
 
     # Generar CSS
     css = generate_css(site_id)

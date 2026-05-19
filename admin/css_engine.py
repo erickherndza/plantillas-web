@@ -1349,56 +1349,81 @@ def dispatch_section(section: str, variants: dict, tokens: dict) -> str:
 
 # ── Responsive ────────────────────────────────────────────────────────────────
 
-def generate_responsive(tokens: dict, variants: dict) -> str:
-    return """
+def generate_responsive(tokens: dict, variants: dict, mobile_tokens: dict = None) -> str:
+    m = mobile_tokens or {}
+
+    scale        = m.get('font_scale', 85) / 100
+    section_pads = {'compact': '40px', 'normal': '56px', 'spacious': '80px'}
+    section_pad  = section_pads.get(m.get('section_pad', 'compact'), '40px')
+    container_pad = m.get('container_pad', '20px')
+    hero_heights = {'auto': 'auto', 'medium': '60vh', 'full': '90vh'}
+    hero_height  = hero_heights.get(m.get('hero_height', 'auto'), 'auto')
+    hide_cta     = m.get('hide_header_cta', True)
+    hide_hero_img = m.get('hide_hero_img', False)
+
+    hide_cta_rule     = '\n  .site-header .header-contact { display: none; }' if hide_cta else ''
+    hide_hero_img_rule = '\n  .hero-media, .hero-image { display: none; }' if hide_hero_img else ''
+
+    return f"""
 /* ── Responsive (max-width: 768px) ── */
-@media (max-width: 768px) {
+@media (max-width: 768px) {{
+
+  /* Variables móvil */
+  :root {{
+    --section-pad: {section_pad};
+    --container-pad: {container_pad};
+  }}
+
+  /* Contenedor */
+  .container {{ padding-inline: {container_pad}; }}
 
   /* Header */
-  .site-header .container {
+  .site-header .container {{
     display: flex;
     justify-content: space-between;
     align-items: center;
-  }
-  .site-header .navbar {
+  }}
+  .site-header .navbar {{
     display: none;
     position: fixed;
     inset: 0;
     background: var(--color-bg);
     z-index: 150;
     padding: 80px 24px 40px;
-  }
-  .site-header .navbar.is-open { display: block; }
-  .nav-list {
+  }}
+  .site-header .navbar.is-open {{ display: block; }}
+  .nav-list {{
     flex-direction: column;
     gap: 16px;
-    font-size: 1.1rem;
-  }
-  .site-header .header-contact { display: none; }
-  .nav-toggle { display: flex; z-index: 200; }
+    font-size: {round(1.1 * scale, 3)}rem;
+  }}
+  .nav-toggle {{ display: flex; z-index: 200; }}{hide_cta_rule}
 
   /* Hero */
   .hero-content,
   .about-grid,
-  .contact-grid { grid-template-columns: 1fr !important; }
-  .hero-section { min-height: auto; padding-block: 56px; }
+  .contact-grid {{ grid-template-columns: 1fr !important; }}
+  .hero-section {{ min-height: {hero_height}; padding-block: {section_pad}; }}{hide_hero_img_rule}
+
+  /* Tipografía escalada */
+  h1 {{ font-size: calc(var(--fs-h1, 3rem) * {scale}); }}
+  h2 {{ font-size: calc(var(--fs-h2, 2rem) * {scale}); }}
+  h3 {{ font-size: calc(var(--fs-h3, 1.4rem) * {scale}); }}
+  p, li, .body-text {{ font-size: calc(var(--fs-body, 1rem) * {scale}); }}
 
   /* Grids → 1 columna */
   .services-grid,
   .mvv-grid,
   .team-grid,
   .portfolio-grid,
-  .testimonials-grid { grid-template-columns: 1fr; }
+  .testimonials-grid {{ grid-template-columns: 1fr; }}
 
   /* CTA */
-  .cta-inner { flex-direction: column; text-align: center; padding: 32px 24px; }
+  .cta-inner {{ flex-direction: column; text-align: center; padding: 32px {container_pad}; }}
 
   /* Footer */
-  .footer-inner { grid-template-columns: 1fr !important; gap: 28px; }
-
-  /* Sección padding reducido */
-  :root { --section-pad: 48px; }
-}
+  .footer-inner {{ grid-template-columns: 1fr !important; gap: 28px; }}
+}}"""
 """
 
 
@@ -1449,6 +1474,7 @@ def generate_css(site_id: int) -> str:
     # Leer tokens con defaults del preset modern_dark
     raw_tokens   = config.get('design_tokens', '{}')
     raw_variants = config.get('section_variants', '{}')
+    raw_mobile   = config.get('mobile_tokens', '{}')
 
     try:
         tokens = json.loads(raw_tokens)
@@ -1459,6 +1485,11 @@ def generate_css(site_id: int) -> str:
         variants = json.loads(raw_variants)
     except (json.JSONDecodeError, TypeError):
         variants = {}
+
+    try:
+        mobile = json.loads(raw_mobile)
+    except (json.JSONDecodeError, TypeError):
+        mobile = {}
 
     # Aplicar defaults si faltan claves
     tokens = _apply_token_defaults(tokens)
@@ -1477,7 +1508,7 @@ def generate_css(site_id: int) -> str:
         if css:
             parts.append(css)
 
-    parts.append(generate_responsive(tokens, variants))
+    parts.append(generate_responsive(tokens, variants, mobile))
     parts.append(generate_animations(tokens))
 
     css_output = "\n".join(parts)

@@ -512,6 +512,60 @@ input[type="color"] {
 }
 .preview-frame.mobile { max-width: 375px; }
 
+/* Mobile mode banner */
+.mobile-mode-banner {
+  display: none;
+  align-items: center;
+  gap: 8px;
+  background: rgba(255,160,50,.08);
+  border: 1px solid rgba(255,160,50,.25);
+  border-radius: 8px;
+  padding: 8px 14px;
+  margin-bottom: 20px;
+  font-size: 12px;
+  color: #ffb347;
+}
+.mobile-mode-banner svg { flex-shrink: 0; }
+body.editing-mobile .mobile-mode-banner { display: flex; }
+
+/* Mobile toggle switch */
+.toggle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--line);
+}
+.toggle-row:last-child { border-bottom: none; }
+.toggle-label { font-size: 13px; color: var(--text); }
+.toggle-note  { font-size: 11px; color: var(--muted); margin-top: 2px; }
+.toggle-switch {
+  position: relative;
+  width: 36px; height: 20px;
+  flex-shrink: 0;
+}
+.toggle-switch input { opacity:0; width:0; height:0; }
+.toggle-slider {
+  position: absolute;
+  inset: 0;
+  background: var(--bg3);
+  border: 1px solid var(--line2);
+  border-radius: 20px;
+  cursor: pointer;
+  transition: .2s;
+}
+.toggle-slider::before {
+  content:'';
+  position: absolute;
+  width: 13px; height: 13px;
+  left: 3px; top: 3px;
+  background: var(--muted);
+  border-radius: 50%;
+  transition: .2s;
+}
+.toggle-switch input:checked + .toggle-slider { background: rgba(0,212,160,.15); border-color: #00d4a0; }
+.toggle-switch input:checked + .toggle-slider::before { transform: translateX(16px); background:#00d4a0; }
+
 /* Preview mockup content */
 .mock-header {
   height: 48px;
@@ -687,6 +741,12 @@ input[type="color"] {
     <div class="sidebar-label">Inicio rápido</div>
     <button class="nav-item" onclick="switchPanel('presets')">
       <span class="nav-icon">⚡</span> Presets
+    </button>
+  </div>
+  <div class="sidebar-section">
+    <div class="sidebar-label">Responsive</div>
+    <button class="nav-item" id="nav-mobile" onclick="switchPanel('mobile')">
+      <span class="nav-icon">📱</span> Móvil
     </button>
   </div>
 </nav>
@@ -1165,6 +1225,94 @@ input[type="color"] {
     </div>
   </div>
 
+  <!-- PANEL: Mobile -->
+  <div class="editor-panel" id="panel-mobile">
+    <div class="mobile-mode-banner">
+      <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12" y2="18.01"/></svg>
+      Editando ajustes para pantallas &lt;768px
+    </div>
+    <div class="panel-title">Ajustes Móvil</div>
+    <div class="panel-desc">Controla cómo se ve el sitio en pantallas pequeñas. El CSS generado incluirá media queries con estos valores.</div>
+
+    <div class="field-group">
+      <div class="field-group-title">Tipografía móvil</div>
+      <div class="field-row">
+        <div><div class="field-label">Escala de fuentes</div><div class="field-note">% del tamaño desktop</div></div>
+        <div class="field-control">
+          <select class="field-select" id="mob-font-scale" onchange="updateMobile()">
+            <option value="75">75% — muy compacto</option>
+            <option value="80">80% — compacto</option>
+            <option value="85" selected>85% — recomendado</option>
+            <option value="90">90% — casi igual</option>
+            <option value="100">100% — igual que desktop</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="field-group">
+      <div class="field-group-title">Espaciado</div>
+      <div class="field-row">
+        <div><div class="field-label">Padding de secciones</div><div class="field-note">Espacio vertical entre secciones</div></div>
+        <div class="field-control">
+          <select class="field-select" id="mob-section-pad" onchange="updateMobile()">
+            <option value="compact" selected>Compacto (40px)</option>
+            <option value="normal">Normal (56px)</option>
+            <option value="spacious">Amplio (80px)</option>
+          </select>
+        </div>
+      </div>
+      <div class="field-row">
+        <div><div class="field-label">Padding contenedor</div><div class="field-note">Márgenes laterales</div></div>
+        <div class="field-control">
+          <select class="field-select" id="mob-container-pad" onchange="updateMobile()">
+            <option value="16px">Ajustado (16px)</option>
+            <option value="20px" selected>Normal (20px)</option>
+            <option value="28px">Amplio (28px)</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="field-group">
+      <div class="field-group-title">Hero en móvil</div>
+      <div class="field-row">
+        <div><div class="field-label">Altura mínima</div><div class="field-note">Cuánto ocupa el hero</div></div>
+        <div class="field-control">
+          <select class="field-select" id="mob-hero-height" onchange="updateMobile()">
+            <option value="auto" selected>Auto (contenido)</option>
+            <option value="medium">Mediano (60vh)</option>
+            <option value="full">Pantalla completa (90vh)</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="field-group">
+      <div class="field-group-title">Visibilidad de elementos</div>
+      <div class="toggle-row">
+        <div>
+          <div class="toggle-label">Ocultar botón CTA del header</div>
+          <div class="toggle-note">Más limpio en pantallas pequeñas</div>
+        </div>
+        <label class="toggle-switch">
+          <input type="checkbox" id="mob-hide-cta" checked onchange="updateMobile()">
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+      <div class="toggle-row">
+        <div>
+          <div class="toggle-label">Ocultar imagen hero en móvil</div>
+          <div class="toggle-note">Solo muestra texto en el hero</div>
+        </div>
+        <label class="toggle-switch">
+          <input type="checkbox" id="mob-hide-hero-img" onchange="updateMobile()">
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+    </div>
+  </div>
+
 </main>
 
 <!-- ══ PREVIEW PANEL ══ -->
@@ -1254,7 +1402,15 @@ const state = {
     contact:  { variant:'form_info', active:true },
     footer:   { variant:'3col', active:true }
   },
-  fx: { glass:true, hero_glow:true, animations:true, header_sticky:true, header_glass:true, header_topbar:true }
+  fx: { glass:true, hero_glow:true, animations:true, header_sticky:true, header_glass:true, header_topbar:true },
+  mobile: {
+    font_scale: 85,
+    section_pad: 'compact',
+    container_pad: '20px',
+    hero_height: 'auto',
+    hide_header_cta: true,
+    hide_hero_img: false
+  }
 };
 
 /* ── Panel switching ── */
@@ -1335,6 +1491,17 @@ function setDevice(mode, btn) {
   document.querySelectorAll('.device-btn').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
   document.getElementById('preview-frame').classList.toggle('mobile', mode === 'mobile');
+  document.body.classList.toggle('editing-mobile', mode === 'mobile');
+  if (mode === 'mobile') switchPanel('mobile');
+}
+
+function updateMobile() {
+  state.mobile.font_scale    = parseInt(document.getElementById('mob-font-scale').value);
+  state.mobile.section_pad   = document.getElementById('mob-section-pad').value;
+  state.mobile.container_pad = document.getElementById('mob-container-pad').value;
+  state.mobile.hero_height   = document.getElementById('mob-hero-height').value;
+  state.mobile.hide_header_cta = document.getElementById('mob-hide-cta').checked;
+  state.mobile.hide_hero_img   = document.getElementById('mob-hide-hero-img').checked;
 }
 
 /* ── Presets ── */
@@ -1442,7 +1609,7 @@ async function buildCSS() {
     const res = await fetch(`/api/sites/${state.site_id}/css/rebuild`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ design_tokens: state.tokens, section_variants: state.variants })
+      body: JSON.stringify({ design_tokens: state.tokens, section_variants: state.variants, mobile_tokens: state.mobile })
     });
     const data = await res.json();
     if (data.ok) {
