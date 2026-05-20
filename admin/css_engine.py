@@ -1360,27 +1360,34 @@ def generate_responsive(tokens: dict, variants: dict, mobile_tokens: dict = None
     hero_height   = hero_heights.get(m.get('hero_height', 'auto'), 'auto')
     hide_cta      = m.get('hide_header_cta', True)
     hide_hero_img = m.get('hide_hero_img', False)
-    menu_style    = m.get('menu_style', 'overlay')   # overlay | slide | dropdown
+    menu_style    = m.get('menu_style', 'overlay')
     menu_speed    = m.get('menu_speed', '0.25s')
 
-    hide_cta_rule      = '\n  .site-header .header-contact, .lb-nav-cta { display: none !important; }' if hide_cta else ''
-    hide_hero_img_rule = '\n  .hero-media, .hero-image, .hero-bg-img { display: none; }' if hide_hero_img else ''
-
-    # Posicion y comportamiento del menú segun estilo elegido
+    # Posicion del panel de menu abierto segun estilo
+    # Familia lb-nav: el JS toglea .open en .lb-nav-links (los links, no el header)
+    # Familia navbar: el JS toglea .open/.nav--open en .navbar (el contenedor del nav)
     if menu_style == 'slide':
-        nav_closed = f'transform: translateX(100%); opacity: 0; pointer-events: none;'
-        nav_open   = f'transform: translateX(0);    opacity: 1; pointer-events: auto;'
-        nav_pos    = f'position: fixed; top: 0; right: 0; bottom: 0; width: min(320px, 85vw); padding: 80px 28px 40px;'
+        open_pos = (
+            'position: fixed; top: 0; right: 0; bottom: 0;'
+            ' width: min(320px, 85vw); padding: 80px 28px 40px;'
+        )
     elif menu_style == 'dropdown':
-        nav_closed = f'transform: translateY(-8px); opacity: 0; pointer-events: none;'
-        nav_open   = f'transform: translateY(0);    opacity: 1; pointer-events: auto;'
-        nav_pos    = f'position: absolute; top: 100%; left: 0; right: 0; padding: 20px 24px 28px;'
-    else:  # overlay (default)
-        nav_closed = f'transform: translateX(100%); opacity: 0; pointer-events: none;'
-        nav_open   = f'transform: translateX(0);    opacity: 1; pointer-events: auto;'
-        nav_pos    = f'position: fixed; inset: 0; padding: 80px 28px 40px;'
+        open_pos = (
+            'position: absolute; top: 62px; left: 0; right: 0;'
+            ' padding: 16px 24px 24px;'
+        )
+    else:  # overlay
+        open_pos = 'position: fixed; inset: 0; padding: 80px 28px 40px;'
+
+    hide_cta_rule      = '\n  .header-contact, .lb-nav-cta { display: none !important; }' if hide_cta else ''
+    hide_hero_img_rule = '\n  .hero-media, .hero-image, .hero-bg-img { display: none; }' if hide_hero_img else ''
+    font_size          = round(1.1 * scale, 3)
 
     return f"""
+/* ── Hamburguesa: oculto en desktop ── */
+.nav-toggle,
+.lb-nav-toggle {{ display: none; }}
+
 /* ── Responsive (max-width: 768px) ── */
 @media (max-width: 768px) {{
 
@@ -1389,77 +1396,70 @@ def generate_responsive(tokens: dict, variants: dict, mobile_tokens: dict = None
     --section-pad: {section_pad};
     --container-pad: {container_pad};
   }}
-
-  /* Contenedor */
   .container {{ padding-inline: {container_pad}; }}
 
-  /* ── Header base ── */
-  .site-header {{ position: relative; }}
-  .site-header .container,
-  .lb-nav-wrap {{
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-  }}
-
-  /* ── Menú hamburguesa — familia .navbar (doctores, empresa, arquitectura) ── */
-  .navbar {{
-    {nav_pos}
-    background: var(--color-bg, #0e1117);
-    z-index: 999;
-    display: flex !important;
-    flex-direction: column;
-    align-items: flex-start;
-    justify-content: flex-start;
-    {nav_closed}
-    transition: transform {menu_speed} ease, opacity {menu_speed} ease;
-  }}
-  .navbar.open,
-  .navbar.nav--open {{
-    {nav_open}
-  }}
-
-  /* ── Menú hamburguesa — familia .lb-nav (abogados, salon, restaurante) ── */
-  .lb-nav {{
-    {nav_pos}
-    background: var(--color-bg, #0e1117);
-    z-index: 999;
-    display: flex !important;
-    flex-direction: column;
-    align-items: flex-start;
-    justify-content: flex-start;
-    {nav_closed}
-    transition: transform {menu_speed} ease, opacity {menu_speed} ease;
-  }}
-  .lb-nav.open {{
-    {nav_open}
-  }}
-
-  /* Links verticales en ambas familias */
-  .nav-list,
-  .lb-nav-links {{
-    flex-direction: column !important;
-    gap: 20px;
-    font-size: {round(1.1 * scale, 3)}rem;
-    width: 100%;
-  }}
-
-  /* Mostrar boton hamburguesa, ocultar en desktop (se maneja fuera del @media) */
+  /* ── Boton hamburguesa ── */
   .nav-toggle,
   .lb-nav-toggle {{
     display: flex !important;
     align-items: center;
     justify-content: center;
-    z-index: 1000;
-    position: relative;
     background: none;
-    border: 1px solid rgba(255,255,255,.15);
+    border: 1px solid rgba(255,255,255,.2);
     border-radius: 6px;
     width: 38px; height: 38px;
     cursor: pointer;
     color: inherit;
-    font-size: 18px;
+    font-size: 20px;
+    z-index: 1001;
+    flex-shrink: 0;
   }}{hide_cta_rule}
+
+  /* ── Familia lb-nav (abogados, salon, restaurante) ──
+     El JS toglea .open en #navLinks (.lb-nav-links), no en .lb-nav.
+     .lb-nav sigue siendo el header sticky — no lo tocamos.       ── */
+  .lb-nav-links {{
+    display: none;
+    flex-direction: column !important;
+    gap: 20px;
+    width: 100%;
+    font-size: {font_size}rem;
+    background: var(--c-nav, var(--c-primary));
+    z-index: 1000;
+  }}
+  .lb-nav-links.open {{
+    display: flex !important;
+    {open_pos}
+    align-items: flex-start;
+    justify-content: flex-start;
+    animation: menuFadeIn {menu_speed} ease;
+  }}
+
+  /* ── Familia navbar (doctores, empresa, arquitectura) ──
+     El JS toglea .open o .nav--open en .navbar.             ── */
+  .navbar {{
+    display: none;
+    flex-direction: column !important;
+    gap: 20px;
+    width: 100%;
+    font-size: {font_size}rem;
+    background: var(--color-bg, #0e1117);
+    z-index: 1000;
+  }}
+  .navbar.open,
+  .navbar.nav--open {{
+    display: flex !important;
+    {open_pos}
+    align-items: flex-start;
+    justify-content: flex-start;
+    animation: menuFadeIn {menu_speed} ease;
+  }}
+  .nav-list {{
+    flex-direction: column !important;
+    gap: 20px;
+    font-size: {font_size}rem;
+    width: 100%;
+  }}
 
   /* ── Hero ── */
   .hero-content,
@@ -1487,9 +1487,10 @@ def generate_responsive(tokens: dict, variants: dict, mobile_tokens: dict = None
   .footer-inner {{ grid-template-columns: 1fr !important; gap: 28px; }}
 }}
 
-/* Boton hamburguesa oculto en desktop */
-.nav-toggle,
-.lb-nav-toggle {{ display: none; }}"""
+@keyframes menuFadeIn {{
+  from {{ opacity: 0; transform: translateY(-6px); }}
+  to   {{ opacity: 1; transform: translateY(0); }}
+}}"""
 
 
 # ── Animaciones ───────────────────────────────────────────────────────────────
