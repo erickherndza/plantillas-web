@@ -206,7 +206,7 @@
   <div class="container">
     <div class="lb-section-header fade-up">
       <p class="lb-section-eyebrow">Experiencias</p>
-      <h2 class="lb-section-title">Lo que dicen nuestras clientas</h2>
+      <h2 class="lb-section-title">{{ config.get('testimonios_titulo','Lo que dicen nuestras clientas') }}</h2>
     </div>
     <div class="lb-testi-grid">
       {% for t in secciones.testimonios %}
@@ -226,7 +226,7 @@
 <section class="salon-cita-section" id="cita">
   <div class="container">
     <div class="salon-cita-inner">
-      <h2>Agenda tu cita</h2>
+      <h2>{{ config.get('citas_titulo','Agenda tu cita') }}</h2>
       <p>Reserva tu espacio y déjate mimar por nuestros especialistas.</p>
       {% if config.get('contacto_maps_embed') or config.get('contacto_mapa_lat') %}
       <div style="height:200px;border-radius:16px;overflow:hidden;margin-bottom:20px;">

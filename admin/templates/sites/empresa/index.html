@@ -177,7 +177,7 @@
   <div class="container">
     <div class="lb-section-header fade-up">
       <p class="lb-section-eyebrow">Lo que dicen</p>
-      <h2 class="lb-section-title">Testimonios</h2>
+      <h2 class="lb-section-title">{{ config.get('testimonios_titulo','Testimonios') }}</h2>
     </div>
     <div class="lb-testi-grid">
       {% for t in secciones.testimonios %}
@@ -195,7 +195,7 @@
 
 <!-- CTA -->
 <div class="lb-cta">
-  <h2>¿Listo para trabajar juntos?</h2>
+  <h2>{{ config.get('cta_titulo','¿Listo para trabajar juntos?') }}</h2>
   <p>Cuéntanos tu proyecto y te respondemos en menos de 24 horas.</p>
   <a href="#contacto" class="lb-cta-btn">{{ config.get('hero_cta_texto','Contáctanos') }}</a>
 </div>

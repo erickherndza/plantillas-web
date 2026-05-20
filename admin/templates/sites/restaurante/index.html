@@ -200,7 +200,7 @@
   <div class="container">
     <div class="lb-section-header fade-up">
       <p class="lb-section-eyebrow">Reseñas</p>
-      <h2 class="lb-section-title">Lo que dicen nuestros clientes</h2>
+      <h2 class="lb-section-title">{{ config.get('testimonios_titulo','Lo que dicen nuestros clientes') }}</h2>
     </div>
     <div class="lb-testi-grid">
       {% for t in secciones.testimonios %}
@@ -218,7 +218,7 @@
 
 <!-- RESERVAR MESA -->
 <section class="rest-reserva" id="reservar">
-  <h2>Reserva tu mesa</h2>
+  <h2>{{ config.get('contacto_titulo','Reserva tu mesa') }}</h2>
   <p>Garantiza tu lugar para una experiencia gastronómica única.</p>
   {% if config.get('contacto_maps_embed') or config.get('contacto_mapa_lat') %}
   <div style="max-width:600px;margin:0 auto 24px;height:220px;border-radius:12px;overflow:hidden;">

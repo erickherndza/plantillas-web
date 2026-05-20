@@ -119,7 +119,7 @@
 <section class="about-section" id="nosotros">
   <div class="container">
     <div class="section-header fade-in-up">
-      <h2 class="section-title">Quiénes somos</h2>
+      <h2 class="section-title">{{ config.get('nosotros_titulo','Quiénes somos') }}</h2>
       <p class="section-subtitle">{{ config.get('nosotros_descripcion', 'Somos una empresa comprometida con la excelencia.') }}</p>
     </div>
     <div class="mvv-grid">
@@ -165,7 +165,7 @@
 <section class="services-section" id="servicios">
   <div class="container">
     <div class="section-header fade-in-up">
-      <h2 class="section-title">Nuestros servicios</h2>
+      <h2 class="section-title">{{ config.get('servicios_titulo','Nuestros servicios') }}</h2>
       <p class="section-subtitle">{{ config.get('servicios_descripcion', 'Ofrecemos soluciones adaptadas a tus necesidades.') }}</p>
     </div>
     <div class="services-grid">
@@ -190,7 +190,7 @@
 <section class="portfolio-section" id="proyectos">
   <div class="container">
     <div class="section-header fade-in-up">
-      <h2 class="section-title">Nuestros proyectos</h2>
+      <h2 class="section-title">{{ config.get('proyectos_titulo','Nuestros proyectos') }}</h2>
       <p class="section-subtitle">{{ config.get('proyectos_descripcion', 'Una muestra de nuestros trabajos más destacados.') }}</p>
     </div>
     <div class="portfolio-grid">
@@ -217,7 +217,7 @@
 <section class="team-section" id="equipo">
   <div class="container">
     <div class="section-header fade-in-up">
-      <h2 class="section-title">Nuestro equipo</h2>
+      <h2 class="section-title">{{ config.get('equipo_titulo','Nuestro equipo') }}</h2>
       <p class="section-subtitle">{{ config.get('equipo_descripcion', 'Profesionales comprometidos con tu éxito.') }}</p>
     </div>
     <div class="team-grid">
@@ -238,7 +238,7 @@
 <section class="contact-section" id="contacto">
   <div class="container">
     <div class="section-header fade-in-up">
-      <h2 class="section-title">Contáctanos</h2>
+      <h2 class="section-title">{{ config.get('contacto_titulo','Contáctanos') }}</h2>
       <p class="section-subtitle">{{ config.get('contacto_descripcion', '¿Quieres saber más? Escríbenos y te responderemos pronto.') }}</p>
     </div>
     <div class="contact-grid">

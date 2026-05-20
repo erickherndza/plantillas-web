@@ -103,7 +103,7 @@
 <section class="about-section" id="nosotros">
   <div class="container">
     <div class="section-header fade-in-up">
-      <h2 class="section-title">Quiénes somos</h2>
+      <h2 class="section-title">{{ config.get('nosotros_titulo','Quiénes somos') }}</h2>
       <p class="section-subtitle">{{ config.get('nosotros_descripcion','Somos un centro médico comprometido con tu bienestar.') }}</p>
     </div>
     <div class="mvv-grid">
@@ -131,7 +131,7 @@
 <section class="services-section" id="especialidades">
   <div class="container">
     <div class="section-header fade-in-up">
-      <h2 class="section-title">Nuestras especialidades</h2>
+      <h2 class="section-title">{{ config.get('servicios_titulo','Nuestras especialidades') }}</h2>
       <p class="section-subtitle">{{ config.get('servicios_descripcion','Contamos con las especialidades médicas que necesitas.') }}</p>
     </div>
     <div class="services-grid">
@@ -157,7 +157,7 @@
 <section class="team-section" id="medicos">
   <div class="container">
     <div class="section-header fade-in-up">
-      <h2 class="section-title">Nuestro equipo médico</h2>
+      <h2 class="section-title">{{ config.get('equipo_titulo','Nuestro equipo médico') }}</h2>
       <p class="section-subtitle">{{ config.get('equipo_descripcion','Especialistas certificados comprometidos con tu salud.') }}</p>
     </div>
     <div class="team-grid">
@@ -199,7 +199,7 @@
 <section class="testimonios-section" id="testimonios">
   <div class="container">
     <div class="section-header fade-in-up">
-      <h2 class="section-title">Lo que dicen nuestros pacientes</h2>
+      <h2 class="section-title">{{ config.get('testimonios_titulo','Lo que dicen nuestros pacientes') }}</h2>
       <p class="section-subtitle" style="color:rgba(255,255,255,.75)">La satisfacción de nuestros pacientes es nuestra mayor recompensa.</p>
     </div>
     <div class="testimonios-grid">
@@ -225,7 +225,7 @@
 <section class="citas-section" id="citas">
   <div class="container">
     <div class="section-header fade-in-up">
-      <h2 class="section-title">Agenda tu cita</h2>
+      <h2 class="section-title">{{ config.get('citas_titulo','Agenda tu cita') }}</h2>
       <p class="section-subtitle">Selecciona especialista, fecha y hora. Las citas son por orden de llegada.</p>
     </div>
 
@@ -341,7 +341,7 @@
 <section class="contact-section" id="contacto">
   <div class="container">
     <div class="section-header fade-in-up">
-      <h2 class="section-title">Encuéntranos</h2>
+      <h2 class="section-title">{{ config.get('contacto_titulo','Encuéntranos') }}</h2>
       <p class="section-subtitle">{{ config.get('contacto_descripcion','Estamos aquí para atenderte.') }}</p>
     </div>
     <div class="contact-grid">

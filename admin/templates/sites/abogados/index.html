@@ -259,7 +259,7 @@
   <div class="container">
     <div class="lb-section-header fade-up">
       <p class="lb-section-eyebrow">Clientes satisfechos</p>
-      <h2 class="lb-section-title">Testimonios</h2>
+      <h2 class="lb-section-title">{{ config.get('testimonios_titulo','Testimonios') }}</h2>
     </div>
     <div class="lb-testi-grid">
       {% for t in secciones.testimonios %}
@@ -280,7 +280,7 @@
   <div class="container">
     <div class="abo-contact-grid">
       <div class="abo-contact-info fade-up">
-        <h2>Solicite una consulta</h2>
+        <h2>{{ config.get('contacto_titulo','Solicite una consulta') }}</h2>
         <p>Cuéntenos su caso. La primera consulta es gratuita y completamente confidencial.</p>
         <div class="abo-contact-items">
           {% if config.get('contacto_telefono') %}
