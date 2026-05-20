@@ -110,6 +110,22 @@ input, select, textarea { font-family: var(--sans); }
 }
 .btn-build:hover { opacity: .85; }
 .btn-build:disabled { opacity: .4; cursor: not-allowed; }
+.btn-nav {
+  background: none;
+  color: var(--muted);
+  border: 1px solid var(--line);
+  padding: 7px 14px;
+  border-radius: var(--r);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  text-decoration: none;
+  transition: border-color .15s, color .15s;
+}
+.btn-nav:hover { border-color: var(--line2); color: var(--text); }
 
 /* ── Sidebar ── */
 .sidebar {
@@ -699,6 +715,14 @@ body.editing-mobile .mobile-mode-banner { display: flex; }
     <span class="status-dot" id="status-dot"></span>
     <span id="status-text">Listo</span>
   </div>
+  <a class="btn-nav" href="/editar/{{ site_id }}">
+    <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+    Editor
+  </a>
+  <a class="btn-nav" href="/s/{{ sitio.slug }}" target="_blank">
+    <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 0 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+    Ver sitio
+  </a>
   <button class="btn-build" id="btn-build" onclick="buildCSS()">
     <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M5 3l14 9-14 9V3z"/></svg>
     Generar CSS
