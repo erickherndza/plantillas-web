@@ -879,8 +879,19 @@
                     <button type="button" class="btn-remove-item">✕</button>
                   </div>
                   <div class="form-group">
-                    <label>Imagen de fondo</label>
-                    <input type="text" name="rep__hero-slides__{{ idx }}__imagen" value="{{ slide.get('imagen','') }}" placeholder="https://...">
+                    <label>Imagen de fondo <span class="field-optional">(URL o sube una)</span></label>
+                    <div class="img-bg-field">
+                      <input type="text" name="rep__hero-slides__{{ idx }}__imagen"
+                             class="img-bg-url-input rep-img-url"
+                             value="{{ slide.get('imagen','') }}" placeholder="https://...">
+                      <div class="img-bg-actions">
+                        <label class="btn-upload-label btn-upload-sm">
+                          Subir imagen
+                          <input type="file" accept="image/*" style="position:absolute;opacity:0;top:0;left:0;width:100%;height:100%;cursor:pointer;"
+                                 class="rep-img-file" data-sitio="{{ sitio.id }}">
+                        </label>
+                      </div>
+                    </div>
                   </div>
                   <div class="form-group">
                     <label>Título</label>
@@ -1191,8 +1202,18 @@
           <button type="button" class="btn-remove-item" title="Eliminar">✕</button>
         </div>
         <div class="form-group">
-          <label>Imagen de fondo (URL)</label>
-          <input type="text" name="rep__hero-slides__${idx}__imagen" placeholder="https://...">
+          <label>Imagen de fondo <span class="field-optional">(URL o sube una)</span></label>
+          <div class="img-bg-field">
+            <input type="text" name="rep__hero-slides__${idx}__imagen"
+                   class="img-bg-url-input rep-img-url" placeholder="https://...">
+            <div class="img-bg-actions">
+              <label class="btn-upload-label btn-upload-sm">
+                Subir imagen
+                <input type="file" accept="image/*" style="position:absolute;opacity:0;top:0;left:0;width:100%;height:100%;cursor:pointer;"
+                       class="rep-img-file" data-sitio="${sid}">
+              </label>
+            </div>
+          </div>
         </div>
         <div class="form-group">
           <label>Título</label>
