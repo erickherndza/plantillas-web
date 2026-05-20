@@ -1159,6 +1159,62 @@
               </label>
             </div>
           </div>
+        </div>`,
+
+      menu: (idx, sid) => `
+        <div class="repeater-item-header">
+          <span class="repeater-item-num">${idx + 1}</span>
+          <button type="button" class="btn-remove-item" title="Eliminar">✕</button>
+        </div>
+        <div class="form-group">
+          <label>Texto del ítem</label>
+          <input type="text" name="rep__menu__${idx}__label" placeholder="Ej: Inicio">
+        </div>
+        <div class="form-group">
+          <label>Enlace (href)</label>
+          <input type="text" name="rep__menu__${idx}__href" placeholder="Ej: #inicio o https://...">
+        </div>
+        <div class="form-group" style="display:flex;align-items:center;gap:12px;">
+          <label style="margin:0;display:flex;align-items:center;gap:8px;">
+            <input type="checkbox" name="rep__menu__${idx}__externo" value="true">
+            Abrir en nueva pestaña
+          </label>
+        </div>
+        <div class="form-group">
+          <label>Submenú <span class="field-optional">(opcional — uno por línea: Texto|#enlace)</span></label>
+          <textarea name="rep__menu__${idx}__hijos_raw" rows="2" placeholder="Ej: Consultoría|#cons&#10;Soporte|#sop"></textarea>
+        </div>`,
+
+      'hero-slides': (idx, sid) => `
+        <div class="repeater-item-header">
+          <span class="repeater-item-num">Slide ${idx + 1}</span>
+          <button type="button" class="btn-remove-item" title="Eliminar">✕</button>
+        </div>
+        <div class="form-group">
+          <label>Imagen de fondo (URL)</label>
+          <input type="text" name="rep__hero-slides__${idx}__imagen" placeholder="https://...">
+        </div>
+        <div class="form-group">
+          <label>Título</label>
+          <input type="text" name="rep__hero-slides__${idx}__titulo" placeholder="Título del slide">
+        </div>
+        <div class="form-group">
+          <label>Subtítulo</label>
+          <input type="text" name="rep__hero-slides__${idx}__subtitulo" placeholder="Texto bajo el título">
+        </div>
+        <div class="form-group">
+          <label>Botón 1</label>
+          <div style="display:flex;gap:8px;">
+            <input type="text" name="rep__hero-slides__${idx}__cta1_texto" placeholder="Texto" style="flex:1">
+            <input type="text" name="rep__hero-slides__${idx}__cta1_href" placeholder="#enlace" style="flex:1">
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Botón 2 <span class="field-optional">(opcional)</span></label>
+          <div style="display:flex;gap:8px;">
+            <input type="text" name="rep__hero-slides__${idx}__cta2_texto" placeholder="Texto" style="flex:1">
+            <input type="text" name="rep__hero-slides__${idx}__cta2_href" placeholder="#enlace" style="flex:1">
+          </div>
         </div>`
     };
 

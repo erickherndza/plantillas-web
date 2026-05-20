@@ -12,7 +12,7 @@ Almacenamiento en configuracion_sitio (clave/valor):
 import json
 from db import get_db, set_config_sitio, get_config_sitio
 
-# ── Helpers ───────────────────────────────────────────────────────────────────
+# -- Helpers -------------------------------------------------------------------
 
 def card_hover_css(tokens: dict) -> str:
     ch = tokens['effects']['card_hover']
@@ -60,7 +60,7 @@ def _gf_url(*families: str) -> str:
     return f"https://fonts.googleapis.com/css2?{'&'.join('family=' + p for p in parts)}&display=swap"
 
 
-# ── Generadores base ──────────────────────────────────────────────────────────
+# -- Generadores base ----------------------------------------------------------
 
 def generate_root(tokens: dict) -> str:
     c  = tokens['colors']
@@ -113,7 +113,7 @@ def generate_base(tokens: dict) -> str:
     font_size   = _font_size(tokens)
 
     return f"""
-/* ── Reset & Base ── */
+/* -- Reset & Base -- */
 *, *::before, *::after {{ box-sizing: border-box; margin: 0; padding: 0; }}
 
 html {{ scroll-behavior: smooth; }}
@@ -181,7 +181,7 @@ img {{ max-width: 100%; height: auto; display: block; }}
 
 def generate_breadcrumb(tokens: dict) -> str:
     return """
-/* ── Breadcrumb ── */
+/* -- Breadcrumb -- */
 .breadcrumb {{
   display: flex;
   flex-wrap: wrap;
@@ -211,7 +211,7 @@ def generate_buttons(tokens: dict) -> str:
     hover_primary = card_hover_css(tokens) if tokens['effects']['card_hover'] == 'lift' else "transform:translateY(-2px);box-shadow:var(--shadow-md);"
 
     return f"""
-/* ── Botones ── */
+/* -- Botones -- */
 .btn-primary,
 .btn-secondary,
 .btn-outline {{
@@ -262,7 +262,7 @@ def generate_buttons(tokens: dict) -> str:
 """
 
 
-# ── Header variantes ──────────────────────────────────────────────────────────
+# -- Header variantes ----------------------------------------------------------
 
 def _header_base(cfg: dict, tokens: dict) -> str:
     """Estilos compartidos entre todas las variantes de header."""
@@ -448,7 +448,7 @@ def header_split(cfg: dict, tokens: dict) -> str:
 """
 
 
-# ── Hero variantes ────────────────────────────────────────────────────────────
+# -- Hero variantes ------------------------------------------------------------
 
 def _hero_base(tokens: dict) -> str:
     return """
@@ -582,7 +582,7 @@ def hero_video(cfg: dict, tokens: dict) -> str:
 """
 
 
-# ── Servicios variantes ───────────────────────────────────────────────────────
+# -- Servicios variantes -------------------------------------------------------
 
 def _card_base(tokens: dict) -> str:
     hover = card_hover_css(tokens)
@@ -709,7 +709,7 @@ def services_tabs(cfg: dict, tokens: dict) -> str:
 """
 
 
-# ── Nosotros variantes ────────────────────────────────────────────────────────
+# -- Nosotros variantes --------------------------------------------------------
 
 def about_mvv(cfg: dict, tokens: dict) -> str:
     return f"""
@@ -795,7 +795,7 @@ def about_timeline(cfg: dict, tokens: dict) -> str:
 """
 
 
-# ── Equipo variantes ──────────────────────────────────────────────────────────
+# -- Equipo variantes ----------------------------------------------------------
 
 def team_avatars(cfg: dict, tokens: dict) -> str:
     return f"""
@@ -876,7 +876,7 @@ def team_cards_large(cfg: dict, tokens: dict) -> str:
 """
 
 
-# ── Portfolio variantes ───────────────────────────────────────────────────────
+# -- Portfolio variantes -------------------------------------------------------
 
 def portfolio_grid(cfg: dict, tokens: dict) -> str:
     return f"""
@@ -921,7 +921,7 @@ def portfolio_masonry(cfg: dict, tokens: dict) -> str:
     )
 
 
-# ── Testimonials variantes ────────────────────────────────────────────────────
+# -- Testimonials variantes ----------------------------------------------------
 
 def testimonials_cards(cfg: dict, tokens: dict) -> str:
     return f"""
@@ -957,7 +957,7 @@ def testimonials_slider(cfg: dict, tokens: dict) -> str:
     return testimonials_cards(cfg, tokens).replace('/* Testimonials: cards */', '/* Testimonials: slider */')
 
 
-# ── CTA variantes ─────────────────────────────────────────────────────────────
+# -- CTA variantes -------------------------------------------------------------
 
 def cta_flex(cfg: dict, tokens: dict) -> str:
     return """
@@ -1033,7 +1033,7 @@ def cta_bg_image(cfg: dict, tokens: dict) -> str:
 """
 
 
-# ── Contacto variantes ────────────────────────────────────────────────────────
+# -- Contacto variantes --------------------------------------------------------
 
 def _form_base() -> str:
     return """
@@ -1141,7 +1141,7 @@ def contact_map_form(cfg: dict, tokens: dict) -> str:
 """
 
 
-# ── Footer variantes ──────────────────────────────────────────────────────────
+# -- Footer variantes ----------------------------------------------------------
 
 def _footer_base(tokens: dict) -> str:
     is_dark = _is_dark(tokens)
@@ -1261,7 +1261,7 @@ def footer_minimal(cfg: dict, tokens: dict) -> str:
 """
 
 
-# ── Dispatcher ────────────────────────────────────────────────────────────────
+# -- Dispatcher ----------------------------------------------------------------
 
 # Mapeo section → variante → función
 _SECTION_MAP = {
@@ -1347,7 +1347,7 @@ def dispatch_section(section: str, variants: dict, tokens: dict) -> str:
     return fn(cfg, tokens)
 
 
-# ── Responsive ────────────────────────────────────────────────────────────────
+# -- Responsive ----------------------------------------------------------------
 
 def generate_responsive(tokens: dict, variants: dict, mobile_tokens: dict = None) -> str:
     m = mobile_tokens or {}
@@ -1384,11 +1384,11 @@ def generate_responsive(tokens: dict, variants: dict, mobile_tokens: dict = None
     font_size          = round(1.1 * scale, 3)
 
     return f"""
-/* ── Hamburguesa: oculto en desktop ── */
+/* -- Hamburguesa: oculto en desktop -- */
 .nav-toggle,
 .lb-nav-toggle {{ display: none; }}
 
-/* ── Responsive (max-width: 768px) ── */
+/* -- Responsive (max-width: 768px) -- */
 @media (max-width: 768px) {{
 
   /* Variables movil */
@@ -1398,7 +1398,7 @@ def generate_responsive(tokens: dict, variants: dict, mobile_tokens: dict = None
   }}
   .container {{ padding-inline: {container_pad}; }}
 
-  /* ── Boton hamburguesa ── */
+  /* -- Boton hamburguesa -- */
   .nav-toggle,
   .lb-nav-toggle {{
     display: flex !important;
@@ -1415,9 +1415,9 @@ def generate_responsive(tokens: dict, variants: dict, mobile_tokens: dict = None
     flex-shrink: 0;
   }}{hide_cta_rule}
 
-  /* ── Familia lb-nav (abogados, salon, restaurante) ──
+  /* -- Familia lb-nav (abogados, salon, restaurante) --
      El JS toglea .open en #navLinks (.lb-nav-links), no en .lb-nav.
-     .lb-nav sigue siendo el header sticky — no lo tocamos.       ── */
+     .lb-nav sigue siendo el header sticky — no lo tocamos.       -- */
   .lb-nav-links {{
     display: none;
     flex-direction: column !important;
@@ -1435,8 +1435,8 @@ def generate_responsive(tokens: dict, variants: dict, mobile_tokens: dict = None
     animation: menuFadeIn {menu_speed} ease;
   }}
 
-  /* ── Familia navbar (doctores, empresa, arquitectura) ──
-     El JS toglea .open o .nav--open en .navbar.             ── */
+  /* -- Familia navbar (doctores, empresa, arquitectura) --
+     El JS toglea .open o .nav--open en .navbar.             -- */
   .navbar {{
     display: none;
     flex-direction: column !important;
@@ -1461,29 +1461,29 @@ def generate_responsive(tokens: dict, variants: dict, mobile_tokens: dict = None
     width: 100%;
   }}
 
-  /* ── Hero ── */
+  /* -- Hero -- */
   .hero-content,
   .about-grid,
   .contact-grid {{ grid-template-columns: 1fr !important; }}
   .hero-section {{ min-height: {hero_height}; padding-block: {section_pad}; }}{hide_hero_img_rule}
 
-  /* ── Tipografia escalada ── */
+  /* -- Tipografia escalada -- */
   h1 {{ font-size: calc(var(--fs-h1, 3rem) * {scale}); }}
   h2 {{ font-size: calc(var(--fs-h2, 2rem) * {scale}); }}
   h3 {{ font-size: calc(var(--fs-h3, 1.4rem) * {scale}); }}
   p, li, .body-text {{ font-size: calc(var(--fs-body, 1rem) * {scale}); }}
 
-  /* ── Grids a 1 columna ── */
+  /* -- Grids a 1 columna -- */
   .services-grid,
   .mvv-grid,
   .team-grid,
   .portfolio-grid,
   .testimonials-grid {{ grid-template-columns: 1fr; }}
 
-  /* ── CTA ── */
+  /* -- CTA -- */
   .cta-inner {{ flex-direction: column; text-align: center; padding: 32px {container_pad}; }}
 
-  /* ── Footer ── */
+  /* -- Footer -- */
   .footer-inner {{ grid-template-columns: 1fr !important; gap: 28px; }}
 }}
 
@@ -1493,14 +1493,14 @@ def generate_responsive(tokens: dict, variants: dict, mobile_tokens: dict = None
 }}"""
 
 
-# ── Animaciones ───────────────────────────────────────────────────────────────
+# -- Animaciones ---------------------------------------------------------------
 
 def generate_animations(tokens: dict) -> str:
     if not tokens['effects']['animations']:
         return ""
 
     return """
-/* ── Animaciones ── */
+/* -- Animaciones -- */
 @keyframes fadeInUp {
   from { opacity: 0; transform: translateY(24px); }
   to   { opacity: 1; transform: translateY(0); }
@@ -1519,7 +1519,7 @@ def generate_animations(tokens: dict) -> str:
 """
 
 
-# ── CSS order: todos los bloques de sección ───────────────────────────────────
+# -- CSS order: todos los bloques de sección -----------------------------------
 
 _SECTION_ORDER = [
     'header', 'hero', 'services', 'about', 'team',
@@ -1527,7 +1527,7 @@ _SECTION_ORDER = [
 ]
 
 
-# ── Punto de entrada principal ────────────────────────────────────────────────
+# -- Punto de entrada principal ------------------------------------------------
 
 def generate_css(site_id: int) -> str:
     """
@@ -1650,7 +1650,7 @@ def _apply_variant_defaults(variants: dict) -> dict:
     return variants
 
 
-# ── Helpers públicos para la ruta Flask ──────────────────────────────────────
+# -- Helpers públicos para la ruta Flask --------------------------------------
 
 def save_tokens(site_id: int, design_tokens: dict, section_variants: dict):
     """Guarda los JSONs en BD sin regenerar CSS."""
