@@ -1313,6 +1313,30 @@ body.editing-mobile .mobile-mode-banner { display: flex; }
     </div>
 
     <div class="field-group">
+      <div class="field-group-title">Menú hamburguesa</div>
+      <div class="field-row">
+        <div><div class="field-label">Estilo de apertura</div><div class="field-note">Cómo aparece el menú al tocar ☰</div></div>
+        <div class="field-control">
+          <select class="field-select" id="mob-menu-style" onchange="updateMobile()">
+            <option value="overlay" selected>Overlay — pantalla completa</option>
+            <option value="slide">Slide — panel lateral derecho</option>
+            <option value="dropdown">Dropdown — cae desde el header</option>
+          </select>
+        </div>
+      </div>
+      <div class="field-row">
+        <div><div class="field-label">Velocidad de animación</div><div class="field-note">Duración de la transición</div></div>
+        <div class="field-control">
+          <select class="field-select" id="mob-menu-speed" onchange="updateMobile()">
+            <option value="0.15s">Rápida (0.15s)</option>
+            <option value="0.25s" selected>Normal (0.25s)</option>
+            <option value="0.4s">Suave (0.4s)</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="field-group">
       <div class="field-group-title">Visibilidad de elementos</div>
       <div class="toggle-row">
         <div>
@@ -1432,6 +1456,8 @@ const state = {
     section_pad: 'compact',
     container_pad: '20px',
     hero_height: 'auto',
+    menu_style: 'overlay',
+    menu_speed: '0.25s',
     hide_header_cta: true,
     hide_hero_img: false
   }
@@ -1520,10 +1546,12 @@ function setDevice(mode, btn) {
 }
 
 function updateMobile() {
-  state.mobile.font_scale    = parseInt(document.getElementById('mob-font-scale').value);
-  state.mobile.section_pad   = document.getElementById('mob-section-pad').value;
-  state.mobile.container_pad = document.getElementById('mob-container-pad').value;
-  state.mobile.hero_height   = document.getElementById('mob-hero-height').value;
+  state.mobile.font_scale      = parseInt(document.getElementById('mob-font-scale').value);
+  state.mobile.section_pad     = document.getElementById('mob-section-pad').value;
+  state.mobile.container_pad   = document.getElementById('mob-container-pad').value;
+  state.mobile.hero_height     = document.getElementById('mob-hero-height').value;
+  state.mobile.menu_style      = document.getElementById('mob-menu-style').value;
+  state.mobile.menu_speed      = document.getElementById('mob-menu-speed').value;
   state.mobile.hide_header_cta = document.getElementById('mob-hide-cta').checked;
   state.mobile.hide_hero_img   = document.getElementById('mob-hide-hero-img').checked;
 }

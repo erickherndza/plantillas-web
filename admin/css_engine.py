@@ -1352,23 +1352,39 @@ def dispatch_section(section: str, variants: dict, tokens: dict) -> str:
 def generate_responsive(tokens: dict, variants: dict, mobile_tokens: dict = None) -> str:
     m = mobile_tokens or {}
 
-    scale        = m.get('font_scale', 85) / 100
-    section_pads = {'compact': '40px', 'normal': '56px', 'spacious': '80px'}
-    section_pad  = section_pads.get(m.get('section_pad', 'compact'), '40px')
+    scale         = m.get('font_scale', 85) / 100
+    section_pads  = {'compact': '40px', 'normal': '56px', 'spacious': '80px'}
+    section_pad   = section_pads.get(m.get('section_pad', 'compact'), '40px')
     container_pad = m.get('container_pad', '20px')
-    hero_heights = {'auto': 'auto', 'medium': '60vh', 'full': '90vh'}
-    hero_height  = hero_heights.get(m.get('hero_height', 'auto'), 'auto')
-    hide_cta     = m.get('hide_header_cta', True)
+    hero_heights  = {'auto': 'auto', 'medium': '60vh', 'full': '90vh'}
+    hero_height   = hero_heights.get(m.get('hero_height', 'auto'), 'auto')
+    hide_cta      = m.get('hide_header_cta', True)
     hide_hero_img = m.get('hide_hero_img', False)
+    menu_style    = m.get('menu_style', 'overlay')   # overlay | slide | dropdown
+    menu_speed    = m.get('menu_speed', '0.25s')
 
-    hide_cta_rule     = '\n  .site-header .header-contact { display: none; }' if hide_cta else ''
-    hide_hero_img_rule = '\n  .hero-media, .hero-image { display: none; }' if hide_hero_img else ''
+    hide_cta_rule      = '\n  .site-header .header-contact, .lb-nav-cta { display: none !important; }' if hide_cta else ''
+    hide_hero_img_rule = '\n  .hero-media, .hero-image, .hero-bg-img { display: none; }' if hide_hero_img else ''
+
+    # Posicion y comportamiento del menú segun estilo elegido
+    if menu_style == 'slide':
+        nav_closed = f'transform: translateX(100%); opacity: 0; pointer-events: none;'
+        nav_open   = f'transform: translateX(0);    opacity: 1; pointer-events: auto;'
+        nav_pos    = f'position: fixed; top: 0; right: 0; bottom: 0; width: min(320px, 85vw); padding: 80px 28px 40px;'
+    elif menu_style == 'dropdown':
+        nav_closed = f'transform: translateY(-8px); opacity: 0; pointer-events: none;'
+        nav_open   = f'transform: translateY(0);    opacity: 1; pointer-events: auto;'
+        nav_pos    = f'position: absolute; top: 100%; left: 0; right: 0; padding: 20px 24px 28px;'
+    else:  # overlay (default)
+        nav_closed = f'transform: translateX(100%); opacity: 0; pointer-events: none;'
+        nav_open   = f'transform: translateX(0);    opacity: 1; pointer-events: auto;'
+        nav_pos    = f'position: fixed; inset: 0; padding: 80px 28px 40px;'
 
     return f"""
 /* ── Responsive (max-width: 768px) ── */
 @media (max-width: 768px) {{
 
-  /* Variables móvil */
+  /* Variables movil */
   :root {{
     --section-pad: {section_pad};
     --container-pad: {container_pad};
@@ -1377,53 +1393,103 @@ def generate_responsive(tokens: dict, variants: dict, mobile_tokens: dict = None
   /* Contenedor */
   .container {{ padding-inline: {container_pad}; }}
 
-  /* Header */
-  .site-header .container {{
+  /* ── Header base ── */
+  .site-header {{ position: relative; }}
+  .site-header .container,
+  .lb-nav-wrap {{
     display: flex;
     justify-content: space-between;
     align-items: center;
   }}
-  .site-header .navbar {{
-    display: none;
-    position: fixed;
-    inset: 0;
-    background: var(--color-bg);
-    z-index: 150;
-    padding: 80px 24px 40px;
-  }}
-  .site-header .navbar.is-open {{ display: block; }}
-  .nav-list {{
-    flex-direction: column;
-    gap: 16px;
-    font-size: {round(1.1 * scale, 3)}rem;
-  }}
-  .nav-toggle {{ display: flex; z-index: 200; }}{hide_cta_rule}
 
-  /* Hero */
+  /* ── Menú hamburguesa — familia .navbar (doctores, empresa, arquitectura) ── */
+  .navbar {{
+    {nav_pos}
+    background: var(--color-bg, #0e1117);
+    z-index: 999;
+    display: flex !important;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: flex-start;
+    {nav_closed}
+    transition: transform {menu_speed} ease, opacity {menu_speed} ease;
+  }}
+  .navbar.open,
+  .navbar.nav--open {{
+    {nav_open}
+  }}
+
+  /* ── Menú hamburguesa — familia .lb-nav (abogados, salon, restaurante) ── */
+  .lb-nav {{
+    {nav_pos}
+    background: var(--color-bg, #0e1117);
+    z-index: 999;
+    display: flex !important;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: flex-start;
+    {nav_closed}
+    transition: transform {menu_speed} ease, opacity {menu_speed} ease;
+  }}
+  .lb-nav.open {{
+    {nav_open}
+  }}
+
+  /* Links verticales en ambas familias */
+  .nav-list,
+  .lb-nav-links {{
+    flex-direction: column !important;
+    gap: 20px;
+    font-size: {round(1.1 * scale, 3)}rem;
+    width: 100%;
+  }}
+
+  /* Mostrar boton hamburguesa, ocultar en desktop (se maneja fuera del @media) */
+  .nav-toggle,
+  .lb-nav-toggle {{
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    position: relative;
+    background: none;
+    border: 1px solid rgba(255,255,255,.15);
+    border-radius: 6px;
+    width: 38px; height: 38px;
+    cursor: pointer;
+    color: inherit;
+    font-size: 18px;
+  }}{hide_cta_rule}
+
+  /* ── Hero ── */
   .hero-content,
   .about-grid,
   .contact-grid {{ grid-template-columns: 1fr !important; }}
   .hero-section {{ min-height: {hero_height}; padding-block: {section_pad}; }}{hide_hero_img_rule}
 
-  /* Tipografía escalada */
+  /* ── Tipografia escalada ── */
   h1 {{ font-size: calc(var(--fs-h1, 3rem) * {scale}); }}
   h2 {{ font-size: calc(var(--fs-h2, 2rem) * {scale}); }}
   h3 {{ font-size: calc(var(--fs-h3, 1.4rem) * {scale}); }}
   p, li, .body-text {{ font-size: calc(var(--fs-body, 1rem) * {scale}); }}
 
-  /* Grids → 1 columna */
+  /* ── Grids a 1 columna ── */
   .services-grid,
   .mvv-grid,
   .team-grid,
   .portfolio-grid,
   .testimonials-grid {{ grid-template-columns: 1fr; }}
 
-  /* CTA */
+  /* ── CTA ── */
   .cta-inner {{ flex-direction: column; text-align: center; padding: 32px {container_pad}; }}
 
-  /* Footer */
+  /* ── Footer ── */
   .footer-inner {{ grid-template-columns: 1fr !important; gap: 28px; }}
-}}"""
+}}
+
+/* Boton hamburguesa oculto en desktop */
+.nav-toggle,
+.lb-nav-toggle {{ display: none; }}"""
 
 
 # ── Animaciones ───────────────────────────────────────────────────────────────
