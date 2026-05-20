@@ -193,3 +193,15 @@ section{padding:clamp(56px,9vw,88px) 0}
 .footer-contact-col p,.footer-contact-col a{font-size:13px;margin-bottom:6px;display:block}
 .footer-bottom{border-top:1px solid rgba(255,255,255,.1);padding:20px 0;text-align:center;font-size:12px;color:rgba(255,255,255,.4)}
 @media(max-width:768px){.footer-inner{grid-template-columns:1fr}}
+
+/* Submenu for navbar family */
+.nav-list li.has-sub { position: relative; }
+.nav-list .lb-submenu {
+  display: none; position: absolute; top: 100%; left: 0;
+  background: var(--c-primary); min-width: 180px;
+  padding: 8px 0; z-index: 1000; flex-direction: column;
+  box-shadow: 0 6px 16px rgba(0,0,0,.2); border-radius: 0 0 8px 8px;
+}
+.nav-list li.has-sub:hover .lb-submenu { display: flex; }
+.nav-list .lb-submenu a { display: block; padding: 10px 18px; font-size: 13px; color: rgba(255,255,255,.85); }
+.nav-list .lb-submenu a:hover { background: rgba(255,255,255,.1); }

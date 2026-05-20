@@ -84,18 +84,87 @@
     </div>
     <button class="lb-nav-toggle" id="navToggle">☰</button>
     <ul class="lb-nav-links" id="navLinks">
+      {% set _menu = config.get('menu_items') %}
+      {% if _menu %}
+        {% set _items = _menu | from_json %}
+        {% for item in _items %}
+        <li class="{{ 'has-sub' if item.get('hijos') }}">
+          <a href="{{ item.get('href','#') }}"{{ ' target="_blank"' if item.get('externo') }}>{{ item.get('label','') }}</a>
+          {% if item.get('hijos') %}
+          <ul class="lb-submenu">
+            {% for hijo in item.hijos %}
+            <li><a href="{{ hijo.get('href','#') }}">{{ hijo.get('label','') }}</a></li>
+            {% endfor %}
+          </ul>
+          {% endif %}
+        </li>
+        {% endfor %}
+      {% else %}
       <li><a href="#inicio">{{ config.get('menu_inicio','Inicio') }}</a></li>
       <li><a href="#servicios">{{ config.get('menu_servicios','Servicios') }}</a></li>
       <li><a href="#nosotros">{{ config.get('menu_nosotros','Nosotros') }}</a></li>
       {% if secciones.equipo %}<li><a href="#equipo">{{ config.get('menu_equipo','Estilistas') }}</a></li>{% endif %}
       <li><a href="#cita">Agendar cita</a></li>
+      {% endif %}
     </ul>
     <a href="#cita" class="lb-nav-cta">Agendar cita</a>
   </div>
 </nav>
 
 <!-- HERO -->
-<section class="lb-hero" id="inicio">
+<section class="lb-hero hs-hero" id="inicio" data-speed="{{ config.get('hero_slider_speed','5000') }}">
+  {% set _slides_raw = config.get('hero_slides') %}
+  {% if _slides_raw %}
+    {% set _slides = _slides_raw | from_json %}
+    {% if _slides | length > 1 %}
+    <div class="hs-track" id="hs-track">
+      {% for slide in _slides %}
+      <div class="hs-slide">
+        {% if slide.get('imagen') %}
+          <img class="lb-hero-bg" src="{{ slide.imagen }}" alt="">
+        {% endif %}
+        <div class="lb-hero-overlay"></div>
+        <div class="container">
+          <div class="lb-hero-content">
+            {% if slide.get('eyebrow') %}<p class="lb-hero-eyebrow">{{ slide.eyebrow }}</p>{% endif %}
+            <h1 class="lb-hero-title">{{ slide.get('titulo', config.get('hero_titulo', sitio.nombre)) }}</h1>
+            <p class="lb-hero-sub">{{ slide.get('subtitulo', config.get('hero_subtitulo','Belleza y bienestar en un solo lugar.')) }}</p>
+            <div class="lb-hero-btns">
+              {% if slide.get('cta1_texto') %}
+              <a class="lb-btn-primary" href="{{ slide.get('cta1_href','#cita') }}">{{ slide.cta1_texto }}</a>
+              {% endif %}
+              {% if slide.get('cta2_texto') %}
+              <a class="lb-btn-outline" href="{{ slide.get('cta2_href','#servicios') }}">{{ slide.cta2_texto }}</a>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    <button class="hs-prev" id="hs-prev">&#8249;</button>
+    <button class="hs-next" id="hs-next">&#8250;</button>
+    <div class="hs-dots" id="hs-dots">
+      {% for slide in _slides %}<button class="hs-dot {{ 'active' if loop.first }}" data-idx="{{ loop.index0 }}"></button>{% endfor %}
+    </div>
+    {% else %}
+    {% set slide = _slides[0] %}
+    {% if slide.get('imagen') %}<img class="lb-hero-bg" src="{{ slide.imagen }}" alt="Salón">{% endif %}
+    <div class="lb-hero-overlay"></div>
+    <div class="container">
+      <div class="lb-hero-content fade-up">
+        {% if slide.get('eyebrow') %}<p class="lb-hero-eyebrow">{{ slide.eyebrow }}</p>{% endif %}
+        <h1 class="lb-hero-title">{{ slide.get('titulo', config.get('hero_titulo', sitio.nombre)) }}</h1>
+        <p class="lb-hero-sub">{{ slide.get('subtitulo', config.get('hero_subtitulo','Belleza y bienestar en un solo lugar.')) }}</p>
+        <div class="lb-hero-btns">
+          <a class="lb-btn-primary" href="{{ slide.get('cta1_href', config.get('hero_cta_href','#cita')) }}">{{ slide.get('cta1_texto', config.get('hero_cta_texto','Agendar cita')) }}</a>
+          <a class="lb-btn-outline" href="{{ slide.get('cta2_href', config.get('hero_cta2_href','#servicios')) }}">{{ slide.get('cta2_texto', config.get('hero_cta2_texto','Ver servicios')) }}</a>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+  {% else %}
+  <!-- Static hero fallback -->
   {% if config.get('hero_imagen') %}
     <img class="lb-hero-bg" src="{{ config.get('hero_imagen') }}" alt="Salón">
   {% endif %}
@@ -115,18 +184,22 @@
       </div>
     </div>
   </div>
+  {% endif %}
 </section>
 
+<div class="sections-wrapper">
+
 <!-- SERVICIOS -->
+{% if config.get('seccion_servicios_visible','1') != '0' %}
 {% if secciones.servicios %}
-<section class="lb-section" id="servicios">
+<section class="lb-section" id="servicios" style="order:{{ config.get('seccion_servicios_orden','1') }};{% if config.get('seccion_servicios_bg') %}background:{{ config.get('seccion_servicios_bg') }};{% endif %}">
   <div class="container">
     <div class="lb-section-header fade-up">
       <p class="lb-section-eyebrow">Nuestras especialidades</p>
       <h2 class="lb-section-title">{{ config.get('menu_servicios','Servicios') }}</h2>
       <p class="lb-section-sub">{{ config.get('servicios_descripcion','Tratamientos de belleza diseñados para ti.') }}</p>
     </div>
-    <div class="salon-service-grid">
+    <div class="salon-service-grid" style="{{ 'grid-template-columns:repeat(' + config.get('seccion_servicios_cols','') + ',1fr)' if config.get('seccion_servicios_cols') else '' }}">
       {% for item in secciones.servicios %}
       <div class="salon-service-card fade-up">
         <div class="salon-service-icon">{{ item.get('icono','✨') }}</div>
@@ -139,9 +212,11 @@
   </div>
 </section>
 {% endif %}
+{% endif %}
 
 <!-- NOSOTROS -->
-<section class="lb-section alt" id="nosotros">
+{% if config.get('seccion_nosotros_visible','1') != '0' %}
+<section class="lb-section alt" id="nosotros" style="order:{{ config.get('seccion_nosotros_orden','2') }};{% if config.get('seccion_nosotros_bg') %}background:{{ config.get('seccion_nosotros_bg') }};{% endif %}">
   <div class="container">
     <div class="lb-about-grid">
       <div class="lb-about-img fade-up">
@@ -173,10 +248,12 @@
     </div>
   </div>
 </section>
+{% endif %}
 
 <!-- EQUIPO / ESTILISTAS -->
+{% if config.get('seccion_equipo_visible','1') != '0' %}
 {% if secciones.equipo %}
-<section class="lb-section" id="equipo">
+<section class="lb-section" id="equipo" style="order:{{ config.get('seccion_equipo_orden','3') }};{% if config.get('seccion_equipo_bg') %}background:{{ config.get('seccion_equipo_bg') }};{% endif %}">
   <div class="container">
     <div class="lb-section-header fade-up">
       <p class="lb-section-eyebrow">Nuestro talento</p>
@@ -199,10 +276,12 @@
   </div>
 </section>
 {% endif %}
+{% endif %}
 
 <!-- TESTIMONIOS -->
+{% if config.get('seccion_testimonios_visible','1') != '0' %}
 {% if secciones.testimonios %}
-<section class="lb-section alt">
+<section class="lb-section alt" style="order:{{ config.get('seccion_testimonios_orden','4') }};{% if config.get('seccion_testimonios_bg') %}background:{{ config.get('seccion_testimonios_bg') }};{% endif %}">
   <div class="container">
     <div class="lb-section-header fade-up">
       <p class="lb-section-eyebrow">Experiencias</p>
@@ -221,9 +300,11 @@
   </div>
 </section>
 {% endif %}
+{% endif %}
 
 <!-- AGENDAR CITA -->
-<section class="salon-cita-section" id="cita">
+{% if config.get('seccion_citas_visible','1') != '0' %}
+<section class="salon-cita-section" id="cita" style="order:{{ config.get('seccion_citas_orden','5') }};">
   <div class="container">
     <div class="salon-cita-inner">
       <h2>{{ config.get('citas_titulo','Agenda tu cita') }}</h2>
@@ -247,6 +328,9 @@
     </div>
   </div>
 </section>
+{% endif %}
+
+</div><!-- /sections-wrapper -->
 
 <!-- FOOTER -->
 <footer class="lb-footer">
@@ -270,6 +354,15 @@
   </div>
 </footer>
 
+<!-- Lightbox -->
+<div id="lb-lightbox" class="lb-lightbox">
+  <button class="lb-lbox-close">×</button>
+  <button class="lb-lbox-prev">&#8249;</button>
+  <img class="lb-lbox-img" src="" alt="">
+  <button class="lb-lbox-next">&#8250;</button>
+</div>
+
+<script src="{{ url_for('static', filename='sites/site-widgets.js') }}"></script>
 <script>
   document.getElementById('navToggle').onclick = () =>
     document.getElementById('navLinks').classList.toggle('open');

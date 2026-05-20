@@ -61,6 +61,9 @@
                   data-section="{{ _id }}">{{ _label }}</button>
           {% set _first.done = true %}
         {% endfor %}
+        <button type="button" class="section-nav-item" data-section="secciones">Secciones</button>
+        <button type="button" class="section-nav-item section-nav-repeater" data-section="menu">Menú</button>
+        <button type="button" class="section-nav-item section-nav-repeater" data-section="hero-slides">Hero slides</button>
         <button type="button" class="section-nav-item" data-section="css">CSS avanzado</button>
       </nav>
       <div class="sidebar-info">
@@ -453,6 +456,15 @@
                    placeholder="Ej: Nuestros servicios / Especialidades / Áreas de práctica">
             <p class="field-hint">Nombre que aparece como encabezado de esta sección en el sitio.</p>
           </div>
+          <div class="form-group">
+            <label>Columnas de servicios <span class="field-optional">(opcional)</span></label>
+            <select name="cfg__seccion_servicios_cols">
+              <option value="" {{ 'selected' if not config.get('seccion_servicios_cols') }}>Auto (por defecto)</option>
+              <option value="2" {{ 'selected' if config.get('seccion_servicios_cols') == '2' }}>2 columnas</option>
+              <option value="3" {{ 'selected' if config.get('seccion_servicios_cols') == '3' }}>3 columnas</option>
+              <option value="4" {{ 'selected' if config.get('seccion_servicios_cols') == '4' }}>4 columnas</option>
+            </select>
+          </div>
           <div class="repeater-container" id="rep-servicios">
             <div class="repeater-list" id="rep-servicios-list">
               {% for item in secciones.servicios %}
@@ -508,6 +520,13 @@
                    value="{{ config.get('proyectos_titulo', '') }}"
                    placeholder="Ej: Nuestros proyectos / Portafolio / Trabajos realizados">
             <p class="field-hint">Nombre que aparece como encabezado de esta sección en el sitio.</p>
+          </div>
+          <div class="form-group">
+            <label>Layout de proyectos</label>
+            <select name="cfg__proyectos_layout">
+              <option value="grid" {{ 'selected' if config.get('proyectos_layout','grid') == 'grid' }}>Grid (cuadrícula)</option>
+              <option value="carousel" {{ 'selected' if config.get('proyectos_layout') == 'carousel' }}>Carrusel</option>
+            </select>
           </div>
           <div class="repeater-container" id="rep-proyectos">
             <div class="repeater-list" id="rep-proyectos-list">
@@ -736,6 +755,160 @@
             <label>Descripción en el pie de página</label>
             <textarea name="cfg__footer_descripcion" rows="2"
                       placeholder="Ej: Comprometidos con la excelencia y satisfacción de nuestros clientes.">{{ config.get('footer_descripcion', '') }}</textarea>
+          </div>
+        </div>
+
+        <!-- ══ SECCIONES (Phase 1) ════════════════════════════════════════════ -->
+        <div class="form-section hidden" id="section-secciones">
+          <div class="section-header">
+            <h2 class="section-title">Control de secciones</h2>
+            <p class="section-desc">Muestra u oculta secciones y elige el orden en que aparecen</p>
+          </div>
+          {% set _secs = [
+            ('nosotros',   'Nosotros / Quiénes somos', '1'),
+            ('servicios',  'Servicios / Especialidades', '2'),
+            ('proyectos',  'Proyectos / Portafolio', '3'),
+            ('equipo',     'Equipo / Especialistas', '4'),
+            ('testimonios','Testimonios / Reseñas', '5'),
+            ('citas',      'Citas / Reservas / CTA', '6'),
+            ('contacto',   'Contacto', '7'),
+          ] %}
+          {% for key, label, default_order in _secs %}
+          <div style="display:flex;align-items:center;gap:16px;padding:14px 0;border-bottom:1px solid var(--admin-border);">
+            <label class="toggle-switch" title="Mostrar sección">
+              <input type="checkbox" name="cfg__seccion_{{ key }}_visible" value="1"
+                     {{ 'checked' if config.get('seccion_' + key + '_visible', '1') != '0' }}>
+              <span class="toggle-track"></span>
+            </label>
+            <div style="flex:1;">
+              <strong style="font-size:14px;">{{ label }}</strong>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <label style="font-size:12px;color:var(--admin-muted);">Orden</label>
+              <input type="number" name="cfg__seccion_{{ key }}_orden"
+                     value="{{ config.get('seccion_' + key + '_orden', default_order) }}"
+                     min="1" max="10" style="width:56px;padding:6px;border:1px solid var(--admin-border);border-radius:6px;font-size:13px;text-align:center;">
+            </div>
+            <div>
+              <input type="color" name="cfg__seccion_{{ key }}_bg"
+                     value="{{ config.get('seccion_' + key + '_bg', '#ffffff') }}"
+                     title="Color de fondo" style="width:36px;height:36px;border:none;cursor:pointer;border-radius:6px;">
+            </div>
+          </div>
+          {% endfor %}
+          <p class="field-hint" style="margin-top:16px;">El color de fondo blanco (#ffffff) mantiene el estilo original de la plantilla. Cambia el número de Orden para reordenar las secciones.</p>
+        </div>
+
+        <!-- ══ MENÚ (Phase 2) ═════════════════════════════════════════════════ -->
+        <div class="form-section hidden" id="section-menu">
+          <div class="section-header">
+            <h2 class="section-title">Menú de navegación</h2>
+            <p class="section-desc">Agrega, elimina y reordena los ítems del menú. Puedes agregar submenús.</p>
+          </div>
+          <p class="field-hint" style="margin-bottom:16px;">Si dejas el menú vacío, se usa el menú predeterminado de la plantilla.</p>
+          <div class="repeater-container">
+            <div class="repeater-list" id="rep-menu-list">
+              {% set _menu_raw = config.get('menu_items','') %}
+              {% if _menu_raw %}
+                {% set _menu_items = _menu_raw | from_json %}
+                {% for item in _menu_items %}
+                {% set idx = loop.index0 %}
+                <div class="repeater-item" data-rep="menu">
+                  <div class="repeater-item-header">
+                    <span class="repeater-item-num">{{ loop.index }}</span>
+                    <button type="button" class="btn-remove-item">✕</button>
+                  </div>
+                  <div class="form-group">
+                    <label>Texto del ítem</label>
+                    <input type="text" name="rep__menu__{{ idx }}__label" value="{{ item.get('label','') }}" placeholder="Ej: Inicio">
+                  </div>
+                  <div class="form-group">
+                    <label>Enlace (href)</label>
+                    <input type="text" name="rep__menu__{{ idx }}__href" value="{{ item.get('href','') }}" placeholder="Ej: #inicio o https://...">
+                  </div>
+                  <div class="form-group" style="display:flex;align-items:center;gap:12px;">
+                    <label style="margin:0;display:flex;align-items:center;gap:8px;">
+                      <input type="checkbox" name="rep__menu__{{ idx }}__externo" value="true" {{ 'checked' if item.get('externo') }}>
+                      Abrir en nueva pestaña
+                    </label>
+                  </div>
+                  {% if item.get('hijos') %}
+                  <div class="form-group">
+                    <label>Submenú (uno por línea: Texto|#enlace)</label>
+                    <textarea name="rep__menu__{{ idx }}__hijos_raw" rows="3" placeholder="Servicios 1|#sec1&#10;Servicios 2|#sec2">{% for h in item.hijos %}{{ h.get('label','') }}|{{ h.get('href','') }}
+{% endfor %}</textarea>
+                  </div>
+                  {% else %}
+                  <div class="form-group">
+                    <label>Submenú <span class="field-optional">(opcional — uno por línea: Texto|#enlace)</span></label>
+                    <textarea name="rep__menu__{{ idx }}__hijos_raw" rows="2" placeholder="Ej: Consultoría|#cons&#10;Soporte|#sop"></textarea>
+                  </div>
+                  {% endif %}
+                </div>
+                {% endfor %}
+              {% endif %}
+            </div>
+            <button type="button" class="btn-add-item" data-add="menu">+ Agregar ítem</button>
+          </div>
+        </div>
+
+        <!-- ══ HERO SLIDES (Phase 3) ══════════════════════════════════════════ -->
+        <div class="form-section hidden" id="section-hero-slides">
+          <div class="section-header">
+            <h2 class="section-title">Hero — Slides</h2>
+            <p class="section-desc">Si agregas más de 1 slide se activa el slider automáticamente.</p>
+          </div>
+          <div class="form-group">
+            <label>Velocidad del autoplay</label>
+            <select name="cfg__hero_slider_speed">
+              {% for val, lbl in [('4000','4 segundos'),('5000','5 segundos'),('7000','7 segundos'),('0','Sin autoplay')] %}
+                <option value="{{ val }}" {{ 'selected' if config.get('hero_slider_speed','5000') == val }}>{{ lbl }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="repeater-container">
+            <div class="repeater-list" id="rep-hero-slides-list">
+              {% set _slides_raw = config.get('hero_slides','') %}
+              {% if _slides_raw %}
+                {% set _slides = _slides_raw | from_json %}
+                {% for slide in _slides %}
+                {% set idx = loop.index0 %}
+                <div class="repeater-item" data-rep="hero-slides">
+                  <div class="repeater-item-header">
+                    <span class="repeater-item-num">Slide {{ loop.index }}</span>
+                    <button type="button" class="btn-remove-item">✕</button>
+                  </div>
+                  <div class="form-group">
+                    <label>Imagen de fondo</label>
+                    <input type="text" name="rep__hero-slides__{{ idx }}__imagen" value="{{ slide.get('imagen','') }}" placeholder="https://...">
+                  </div>
+                  <div class="form-group">
+                    <label>Título</label>
+                    <input type="text" name="rep__hero-slides__{{ idx }}__titulo" value="{{ slide.get('titulo','') }}" placeholder="Título del slide">
+                  </div>
+                  <div class="form-group">
+                    <label>Subtítulo</label>
+                    <input type="text" name="rep__hero-slides__{{ idx }}__subtitulo" value="{{ slide.get('subtitulo','') }}">
+                  </div>
+                  <div class="form-group">
+                    <label>Botón 1</label>
+                    <div style="display:flex;gap:8px;">
+                      <input type="text" name="rep__hero-slides__{{ idx }}__cta1_texto" value="{{ slide.get('cta1_texto','') }}" placeholder="Texto" style="flex:1">
+                      <input type="text" name="rep__hero-slides__{{ idx }}__cta1_href" value="{{ slide.get('cta1_href','') }}" placeholder="#enlace" style="flex:1">
+                    </div>
+                  </div>
+                  <div class="form-group">
+                    <label>Botón 2 <span class="field-optional">(opcional)</span></label>
+                    <div style="display:flex;gap:8px;">
+                      <input type="text" name="rep__hero-slides__{{ idx }}__cta2_texto" value="{{ slide.get('cta2_texto','') }}" placeholder="Texto" style="flex:1">
+                      <input type="text" name="rep__hero-slides__{{ idx }}__cta2_href" value="{{ slide.get('cta2_href','') }}" placeholder="#enlace" style="flex:1">
+                    </div>
+                  </div>
+                </div>
+                {% endfor %}
+              {% endif %}
+            </div>
+            <button type="button" class="btn-add-item" data-add="hero-slides">+ Agregar slide</button>
           </div>
         </div>
 

@@ -53,6 +53,8 @@ if not _secret:
     logging.warning('SECRET_KEY no configurada — usando clave temporal. Crea un archivo .env')
 
 app.secret_key = _secret
+import json as _json
+app.jinja_env.filters['from_json'] = _json.loads
 app.config['MAX_CONTENT_LENGTH'] = 5 * 1024 * 1024  # 5 MB máximo por imagen
 
 # ── Configuración SMTP (variables de entorno en PythonAnywhere) ───────────────
@@ -1077,12 +1079,60 @@ def editar_sitio(sitio_id):
 
     if request.method == 'POST':
         # ── Campos de configuración (cfg__clave) ─────────────────────────────
-        config_nuevo = {}
+        form_data = {}
         for key, val in request.form.items():
             if key.startswith('cfg__'):
-                config_nuevo[key[5:]] = val.strip()
-        if config_nuevo:
-            set_config_sitio_bulk(sitio_id, config_nuevo)
+                form_data[key[5:]] = val.strip()
+
+        # ── Procesar visibilidad de secciones (checkboxes desmarcados no envían) ──
+        for _sec in ['nosotros','servicios','proyectos','equipo','testimonios','citas','contacto']:
+            key = f'seccion_{_sec}_visible'
+            if key not in form_data:
+                form_data[key] = '0'
+
+        # ── Procesar menú personalizado ────────────────────────────────────────
+        menu_items = []
+        menu_idx = 0
+        while True:
+            label = request.form.get(f'rep__menu__{menu_idx}__label', None)
+            if label is None:
+                break
+            href    = request.form.get(f'rep__menu__{menu_idx}__href', '#')
+            externo = request.form.get(f'rep__menu__{menu_idx}__externo', '') == 'true'
+            hijos_raw = request.form.get(f'rep__menu__{menu_idx}__hijos_raw', '')
+            hijos = []
+            for line in hijos_raw.strip().splitlines():
+                if '|' in line:
+                    parts = line.split('|', 1)
+                    hijos.append({'label': parts[0].strip(), 'href': parts[1].strip()})
+            if label.strip():
+                menu_items.append({'label': label.strip(), 'href': href.strip(), 'externo': externo, 'hijos': hijos})
+            menu_idx += 1
+        if menu_items:
+            form_data['menu_items'] = json.dumps(menu_items, ensure_ascii=False)
+
+        # ── Procesar hero slides ───────────────────────────────────────────────
+        hero_slides = []
+        slide_idx = 0
+        while True:
+            titulo = request.form.get(f'rep__hero-slides__{slide_idx}__titulo', None)
+            if titulo is None:
+                break
+            hero_slides.append({
+                'titulo':      titulo,
+                'subtitulo':   request.form.get(f'rep__hero-slides__{slide_idx}__subtitulo', ''),
+                'imagen':      request.form.get(f'rep__hero-slides__{slide_idx}__imagen', ''),
+                'cta1_texto':  request.form.get(f'rep__hero-slides__{slide_idx}__cta1_texto', ''),
+                'cta1_href':   request.form.get(f'rep__hero-slides__{slide_idx}__cta1_href', ''),
+                'cta2_texto':  request.form.get(f'rep__hero-slides__{slide_idx}__cta2_texto', ''),
+                'cta2_href':   request.form.get(f'rep__hero-slides__{slide_idx}__cta2_href', ''),
+            })
+            slide_idx += 1
+        if hero_slides:
+            form_data['hero_slides'] = json.dumps(hero_slides, ensure_ascii=False)
+
+        if form_data:
+            set_config_sitio_bulk(sitio_id, form_data)
 
         # ── Repeaters (rep__seccion__idx__campo) ──────────────────────────────
         secciones_nuevas = {}
@@ -1091,6 +1141,9 @@ def editar_sitio(sitio_id):
                 parts = key.split('__')
                 if len(parts) == 4:
                     _, seccion, idx_str, campo = parts
+                    # Skip the special repeaters handled above
+                    if seccion in ('menu', 'hero-slides'):
+                        continue
                     try:
                         idx = int(idx_str)
                     except ValueError:

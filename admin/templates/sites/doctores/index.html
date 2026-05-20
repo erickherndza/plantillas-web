@@ -51,19 +51,90 @@
 <nav class="navbar" id="navbar">
   <div class="container">
     <ul class="nav-list" id="nav-list">
+      {% set _menu = config.get('menu_items') %}
+      {% if _menu %}
+        {% set _items = _menu | from_json %}
+        {% for item in _items %}
+        <li class="{{ 'has-sub' if item.get('hijos') }}">
+          <a href="{{ item.get('href','#') }}"{{ ' target="_blank"' if item.get('externo') }}>{{ item.get('label','') }}</a>
+          {% if item.get('hijos') %}
+          <ul class="lb-submenu">
+            {% for hijo in item.hijos %}
+            <li><a href="{{ hijo.get('href','#') }}">{{ hijo.get('label','') }}</a></li>
+            {% endfor %}
+          </ul>
+          {% endif %}
+        </li>
+        {% endfor %}
+      {% else %}
       <li><a href="#inicio">{{ config.get('menu_inicio','Inicio') }}</a></li>
       <li><a href="#nosotros">{{ config.get('menu_nosotros','Nosotros') }}</a></li>
       <li><a href="#especialidades">{{ config.get('menu_servicios','Especialidades') }}</a></li>
       <li><a href="#medicos">{{ config.get('menu_equipo','Especialistas') }}</a></li>
       <li><a href="#citas">Agenda tu cita</a></li>
       <li><a href="#contacto">{{ config.get('menu_contacto','Contacto') }}</a></li>
+      {% endif %}
     </ul>
     <button class="nav-toggle" id="nav-toggle" aria-label="Menú">☰</button>
   </div>
 </nav>
 
 <!-- HERO -->
-<section class="hero-section" id="inicio">
+<section class="hero-section hs-hero" id="inicio" data-speed="{{ config.get('hero_slider_speed','5000') }}">
+  {% set _slides_raw = config.get('hero_slides') %}
+  {% if _slides_raw %}
+    {% set _slides = _slides_raw | from_json %}
+    {% if _slides | length > 1 %}
+    <!-- Multi-slide slider -->
+    <div class="hs-track" id="hs-track">
+      {% for slide in _slides %}
+      <div class="hs-slide">
+        {% if slide.get('imagen') %}
+          <div class="hero-bg" style="background-image:url('{{ slide.imagen }}')"></div>
+        {% endif %}
+        <div class="hero-overlay"></div>
+        <div class="container">
+          <div class="hero-content fade-in-up">
+            {% if slide.get('eyebrow') %}<p class="hero-eyebrow">{{ slide.eyebrow }}</p>{% endif %}
+            <h1 class="hero-title">{{ slide.get('titulo', config.get('hero_titulo', sitio.nombre)) }}</h1>
+            <p class="hero-subtitle">{{ slide.get('subtitulo', config.get('hero_subtitulo','Cuidamos tu salud con profesionalismo y dedicación.')) }}</p>
+            <div class="hero-actions">
+              {% if slide.get('cta1_texto') %}
+              <a class="btn-primary" href="{{ slide.get('cta1_href','#citas') }}">{{ slide.cta1_texto }}</a>
+              {% endif %}
+              {% if slide.get('cta2_texto') %}
+              <a class="btn-secondary" href="{{ slide.get('cta2_href','#especialidades') }}">{{ slide.cta2_texto }}</a>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    <button class="hs-prev" id="hs-prev">&#8249;</button>
+    <button class="hs-next" id="hs-next">&#8250;</button>
+    <div class="hs-dots" id="hs-dots">
+      {% for slide in _slides %}<button class="hs-dot {{ 'active' if loop.first }}" data-idx="{{ loop.index0 }}"></button>{% endfor %}
+    </div>
+    {% else %}
+    <!-- Single slide -->
+    {% set slide = _slides[0] %}
+    {% if slide.get('imagen') %}<div class="hero-bg" style="background-image:url('{{ slide.imagen }}')"></div>{% endif %}
+    <div class="hero-overlay"></div>
+    <div class="container">
+      <div class="hero-content fade-in-up">
+        {% if slide.get('eyebrow') %}<p class="hero-eyebrow">{{ slide.eyebrow }}</p>{% endif %}
+        <h1 class="hero-title">{{ slide.get('titulo', config.get('hero_titulo', sitio.nombre)) }}</h1>
+        <p class="hero-subtitle">{{ slide.get('subtitulo', config.get('hero_subtitulo','Cuidamos tu salud con profesionalismo y dedicación.')) }}</p>
+        <div class="hero-actions">
+          <a class="btn-primary" href="{{ slide.get('cta1_href', config.get('hero_cta_href','#citas')) }}">{{ slide.get('cta1_texto', config.get('hero_cta_texto','Agendar cita')) }}</a>
+          <a class="btn-secondary" href="{{ slide.get('cta2_href', config.get('hero_cta2_href','#especialidades')) }}">{{ slide.get('cta2_texto', config.get('hero_cta2_texto','Ver especialidades')) }}</a>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+  {% else %}
+  <!-- Static hero fallback -->
   <div class="hero-bg" style="background-image:url('{{ config.get('hero_imagen','') }}')"></div>
   <div class="hero-overlay"></div>
   <div class="container">
@@ -97,10 +168,14 @@
       </div>
     </div>
   </div>
+  {% endif %}
 </section>
 
+<div class="sections-wrapper">
+
 <!-- NOSOTROS -->
-<section class="about-section" id="nosotros">
+{% if config.get('seccion_nosotros_visible','1') != '0' %}
+<section class="about-section" id="nosotros" style="order:{{ config.get('seccion_nosotros_orden','1') }};{% if config.get('seccion_nosotros_bg') %}background:{{ config.get('seccion_nosotros_bg') }};{% endif %}">
   <div class="container">
     <div class="section-header fade-in-up">
       <h2 class="section-title">{{ config.get('nosotros_titulo','Quiénes somos') }}</h2>
@@ -125,16 +200,18 @@
     </div>
   </div>
 </section>
+{% endif %}
 
 <!-- ESPECIALIDADES -->
+{% if config.get('seccion_servicios_visible','1') != '0' %}
 {% if secciones.servicios %}
-<section class="services-section" id="especialidades">
+<section class="services-section" id="especialidades" style="order:{{ config.get('seccion_servicios_orden','2') }};{% if config.get('seccion_servicios_bg') %}background:{{ config.get('seccion_servicios_bg') }};{% endif %}">
   <div class="container">
     <div class="section-header fade-in-up">
       <h2 class="section-title">{{ config.get('servicios_titulo','Nuestras especialidades') }}</h2>
       <p class="section-subtitle">{{ config.get('servicios_descripcion','Contamos con las especialidades médicas que necesitas.') }}</p>
     </div>
-    <div class="services-grid">
+    <div class="services-grid" style="{{ 'grid-template-columns:repeat(' + config.get('seccion_servicios_cols','') + ',1fr)' if config.get('seccion_servicios_cols') else '' }}">
       {% for item in secciones.servicios %}
       <div class="service-card fade-in-up">
         <div class="service-icon-wrap">
@@ -151,10 +228,12 @@
   </div>
 </section>
 {% endif %}
+{% endif %}
 
 <!-- MÉDICOS / ESPECIALISTAS -->
+{% if config.get('seccion_equipo_visible','1') != '0' %}
 {% if secciones.equipo %}
-<section class="team-section" id="medicos">
+<section class="team-section" id="medicos" style="order:{{ config.get('seccion_equipo_orden','3') }};{% if config.get('seccion_equipo_bg') %}background:{{ config.get('seccion_equipo_bg') }};{% endif %}">
   <div class="container">
     <div class="section-header fade-in-up">
       <h2 class="section-title">{{ config.get('equipo_titulo','Nuestro equipo médico') }}</h2>
@@ -193,10 +272,12 @@
   </div>
 </section>
 {% endif %}
+{% endif %}
 
 <!-- TESTIMONIOS -->
+{% if config.get('seccion_testimonios_visible','1') != '0' %}
 {% if secciones.testimonios %}
-<section class="testimonios-section" id="testimonios">
+<section class="testimonios-section" id="testimonios" style="order:{{ config.get('seccion_testimonios_orden','4') }};{% if config.get('seccion_testimonios_bg') %}background:{{ config.get('seccion_testimonios_bg') }};{% endif %}">
   <div class="container">
     <div class="section-header fade-in-up">
       <h2 class="section-title">{{ config.get('testimonios_titulo','Lo que dicen nuestros pacientes') }}</h2>
@@ -220,9 +301,11 @@
   </div>
 </section>
 {% endif %}
+{% endif %}
 
 <!-- AGENDA TU CITA -->
-<section class="citas-section" id="citas">
+{% if config.get('seccion_citas_visible','1') != '0' %}
+<section class="citas-section" id="citas" style="order:{{ config.get('seccion_citas_orden','5') }};{% if config.get('seccion_citas_bg') %}background:{{ config.get('seccion_citas_bg') }};{% endif %}">
   <div class="container">
     <div class="section-header fade-in-up">
       <h2 class="section-title">{{ config.get('citas_titulo','Agenda tu cita') }}</h2>
@@ -336,9 +419,11 @@
     </div>
   </div>
 </section>
+{% endif %}
 
 <!-- CONTACTO -->
-<section class="contact-section" id="contacto">
+{% if config.get('seccion_contacto_visible','1') != '0' %}
+<section class="contact-section" id="contacto" style="order:{{ config.get('seccion_contacto_orden','6') }};{% if config.get('seccion_contacto_bg') %}background:{{ config.get('seccion_contacto_bg') }};{% endif %}">
   <div class="container">
     <div class="section-header fade-in-up">
       <h2 class="section-title">{{ config.get('contacto_titulo','Encuéntranos') }}</h2>
@@ -385,6 +470,9 @@
     </div>
   </div>
 </section>
+{% endif %}
+
+</div><!-- /sections-wrapper -->
 
 <!-- FOOTER -->
 <footer class="site-footer">
@@ -418,6 +506,15 @@
   </div>
 </footer>
 
+<!-- Lightbox -->
+<div id="lb-lightbox" class="lb-lightbox">
+  <button class="lb-lbox-close">×</button>
+  <button class="lb-lbox-prev">&#8249;</button>
+  <img class="lb-lbox-img" src="" alt="">
+  <button class="lb-lbox-next">&#8250;</button>
+</div>
+
+<script src="{{ url_for('static', filename='sites/site-widgets.js') }}"></script>
 <script>
 const SLUG = '{{ sitio.slug }}';
 const HORAS = ['08:00','08:30','09:00','09:30','10:00','10:30','11:00','11:30',
