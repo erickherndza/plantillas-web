@@ -3,6 +3,9 @@ from flask import (
     url_for, session, flash, jsonify, send_from_directory, abort
 )
 import json, os, uuid, logging, time, threading
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 from werkzeug.security import generate_password_hash, check_password_hash
 
 from db import (
@@ -51,6 +54,58 @@ if not _secret:
 
 app.secret_key = _secret
 app.config['MAX_CONTENT_LENGTH'] = 5 * 1024 * 1024  # 5 MB máximo por imagen
+
+# ── Configuración SMTP (variables de entorno en PythonAnywhere) ───────────────
+MAIL_SERVER   = os.environ.get('MAIL_SERVER',   'smtp.gmail.com')
+MAIL_PORT     = int(os.environ.get('MAIL_PORT', '587'))
+MAIL_USER     = os.environ.get('MAIL_USER',     '')   # tu correo Gmail
+MAIL_PASSWORD = os.environ.get('MAIL_PASSWORD', '')   # contraseña de aplicación
+MAIL_FROM     = os.environ.get('MAIL_FROM',     MAIL_USER)
+
+def _enviar_email_notificacion(destinatario: str, sitio_nombre: str,
+                                nombre: str, email_c: str,
+                                telefono: str, mensaje: str):
+    """Envía notificación de nuevo mensaje al dueño del sitio. Falla silenciosamente."""
+    if not MAIL_USER or not MAIL_PASSWORD or not destinatario:
+        return
+    try:
+        msg = MIMEMultipart('alternative')
+        msg['Subject'] = f'📬 Nuevo mensaje en {sitio_nombre}'
+        msg['From']    = f'Plantillas Web <{MAIL_FROM}>'
+        msg['To']      = destinatario
+
+        html = f"""
+        <div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;">
+          <div style="background:#1e40af;padding:24px;border-radius:8px 8px 0 0;">
+            <h2 style="color:#fff;margin:0;font-size:18px;">
+              📬 Nuevo mensaje en <strong>{sitio_nombre}</strong>
+            </h2>
+          </div>
+          <div style="border:1px solid #e2e8f0;border-top:none;padding:24px;border-radius:0 0 8px 8px;">
+            <table style="width:100%;border-collapse:collapse;font-size:14px;">
+              <tr><td style="padding:8px 0;color:#64748b;width:110px;vertical-align:top"><strong>Nombre</strong></td>
+                  <td style="padding:8px 0;color:#1e293b">{nombre}</td></tr>
+              <tr><td style="padding:8px 0;color:#64748b;vertical-align:top"><strong>Email</strong></td>
+                  <td style="padding:8px 0"><a href="mailto:{email_c}" style="color:#1e40af">{email_c}</a></td></tr>
+              {'<tr><td style="padding:8px 0;color:#64748b;vertical-align:top"><strong>Teléfono</strong></td><td style="padding:8px 0;color:#1e293b">' + telefono + '</td></tr>' if telefono else ''}
+              <tr><td style="padding:8px 0;color:#64748b;vertical-align:top"><strong>Mensaje</strong></td>
+                  <td style="padding:8px 0;color:#1e293b;white-space:pre-wrap">{mensaje}</td></tr>
+            </table>
+            <hr style="border:none;border-top:1px solid #e2e8f0;margin:20px 0;">
+            <p style="font-size:12px;color:#94a3b8;margin:0;">
+              Puedes responder directamente a este correo o ver todos los mensajes en tu panel.
+            </p>
+          </div>
+        </div>"""
+
+        msg.attach(MIMEText(html, 'html'))
+        with smtplib.SMTP(MAIL_SERVER, MAIL_PORT, timeout=10) as s:
+            s.ehlo()
+            s.starttls()
+            s.login(MAIL_USER, MAIL_PASSWORD)
+            s.sendmail(MAIL_FROM, destinatario, msg.as_string())
+    except Exception as e:
+        logging.warning(f'[mail] Error enviando notificación a {destinatario}: {e}')
 
 BASE        = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SCHEMA_PATH = os.path.join(BASE, 'shared', 'site-schema.json')
@@ -741,10 +796,16 @@ def salir():
 @usuario_requerido
 def mi_panel():
     sitios = obtener_sitios_usuario(session['uid'])
+    # Conteo de mensajes no leídos por sitio
+    mensajes_nuevos = {}
+    for s in sitios:
+        nuevos = listar_mensajes_sitio(s['id'], solo_no_leidos=True)
+        mensajes_nuevos[s['id']] = len(nuevos)
     return render_template('mi_panel.html',
         nombre=session['u_nombre'],
         email=session['u_email'],
-        sitios=sitios
+        sitios=sitios,
+        mensajes_nuevos=mensajes_nuevos
     )
 
 
@@ -1167,6 +1228,14 @@ def enviar_contacto(slug):
     if not nombre or not email_c or not mensaje:
         return jsonify({'ok': False, 'error': 'Nombre, email y mensaje son obligatorios.'}), 400
     guardar_mensaje_contacto(sitio['id'], nombre, email_c, telefono, mensaje)
+    # Notificar al dueño del sitio por email (en hilo para no bloquear la respuesta)
+    dueno = obtener_usuario_por_id(sitio['usuario_id'])
+    if dueno:
+        threading.Thread(
+            target=_enviar_email_notificacion,
+            args=(dueno['email'], sitio['nombre'], nombre, email_c, telefono, mensaje),
+            daemon=True
+        ).start()
     return jsonify({'ok': True, 'msg': '¡Mensaje recibido! Te contactaremos pronto.'})
 
 
@@ -1244,6 +1313,28 @@ def cambiar_estado_cita(sitio_id):
     if cita_id and estado in ('pendiente', 'confirmada', 'cancelada'):
         actualizar_estado_cita(cita_id, estado)
     return redirect(url_for('mis_citas', sitio_id=sitio_id))
+
+
+@app.route('/mis-mensajes/<int:sitio_id>')
+@usuario_requerido
+def mis_mensajes(sitio_id):
+    sitio = obtener_sitio_por_id(sitio_id)
+    if not sitio or sitio['usuario_id'] != session['uid']:
+        abort(403)
+    mensajes = listar_mensajes_sitio(sitio_id)
+    return render_template('mis_mensajes.html',
+        sitio=sitio, mensajes=mensajes, nombre=session['u_nombre'])
+
+@app.route('/mis-mensajes/<int:sitio_id>/marcar-leido', methods=['POST'])
+@usuario_requerido
+def marcar_leido(sitio_id):
+    sitio = obtener_sitio_por_id(sitio_id)
+    if not sitio or sitio['usuario_id'] != session['uid']:
+        abort(403)
+    mensaje_id = request.form.get('mensaje_id', type=int)
+    if mensaje_id:
+        marcar_mensaje_leido(mensaje_id)
+    return redirect(url_for('mis_mensajes', sitio_id=sitio_id))
 
 
 @app.route('/eliminar-sitio/<int:sitio_id>', methods=['POST'])

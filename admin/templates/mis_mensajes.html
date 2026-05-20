@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mensajes · {{ sitio.nombre }}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='admin.css') }}">
+  <style>
+    .msg-card {
+      background: var(--admin-surface);
+      border: 1px solid var(--admin-border);
+      border-radius: 10px;
+      padding: 20px 24px;
+      margin-bottom: 12px;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 12px;
+      transition: box-shadow .2s;
+    }
+    .msg-card:hover { box-shadow: 0 2px 12px rgba(0,0,0,.08); }
+    .msg-card.no-leido {
+      border-left: 4px solid var(--admin-primary);
+      background: #eff6ff;
+    }
+    .msg-header { display: flex; flex-wrap: wrap; gap: 10px; align-items: baseline; margin-bottom: 8px; }
+    .msg-nombre { font-weight: 700; color: var(--admin-text); font-size: 15px; }
+    .msg-email  { color: var(--admin-primary); font-size: 13px; }
+    .msg-tel    { color: var(--admin-muted); font-size: 13px; }
+    .msg-fecha  { color: var(--admin-muted); font-size: 12px; margin-left: auto; white-space: nowrap; }
+    .msg-texto  { color: var(--admin-text); font-size: 14px; line-height: 1.65; white-space: pre-wrap; }
+    .badge-nuevo {
+      display: inline-block; background: var(--admin-primary); color: #fff;
+      font-size: 10px; font-weight: 800; padding: 2px 8px; border-radius: 999px;
+      text-transform: uppercase; letter-spacing: .5px; vertical-align: middle;
+    }
+    .btn-marcar {
+      background: none; border: 1px solid var(--admin-border); color: var(--admin-muted);
+      font-size: 12px; padding: 6px 14px; border-radius: 6px; cursor: pointer;
+      transition: all .2s; white-space: nowrap; height: fit-content;
+    }
+    .btn-marcar:hover { background: var(--admin-primary); color: #fff; border-color: var(--admin-primary); }
+    .reply-btn {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: none; border: none; color: var(--admin-primary);
+      font-size: 13px; cursor: pointer; padding: 4px 0; font-weight: 600;
+      text-decoration: none;
+    }
+    .reply-btn:hover { text-decoration: underline; }
+    .empty-state {
+      text-align: center; padding: 64px 24px; color: var(--admin-muted);
+    }
+    .empty-state .empty-icon { font-size: 48px; margin-bottom: 16px; }
+    .stats-row {
+      display: flex; gap: 16px; margin-bottom: 28px; flex-wrap: wrap;
+    }
+    .stat-chip {
+      background: var(--admin-surface); border: 1px solid var(--admin-border);
+      border-radius: 8px; padding: 12px 20px; font-size: 13px;
+    }
+    .stat-chip strong { font-size: 22px; display: block; color: var(--admin-text); }
+    .stat-chip.nuevos strong { color: var(--admin-primary); }
+  </style>
+</head>
+<body>
+
+  <nav class="admin-navbar">
+    <div class="navbar-brand">
+      <span class="logo-mark sm">PW</span>
+      <span class="navbar-title">{{ sitio.nombre }}</span>
+    </div>
+    <div class="navbar-actions">
+      <a href="{{ url_for('editar_sitio', sitio_id=sitio.id) }}" class="btn-back-nav">&larr; Editor</a>
+      <a href="{{ url_for('mi_panel') }}" class="btn-back-nav">Mi panel</a>
+      <a href="{{ url_for('salir') }}" class="btn-logout">Cerrar sesión</a>
+    </div>
+  </nav>
+
+  <main class="admin-main">
+
+    <div class="page-header" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px">
+      <div>
+        <h1 class="page-title">Mensajes recibidos</h1>
+        <p class="page-subtitle">{{ sitio.nombre }}</p>
+      </div>
+      <a href="/s/{{ sitio.slug }}" target="_blank" class="btn-editar" style="padding:10px 20px">
+        Ver sitio ↗
+      </a>
+    </div>
+
+    {% set no_leidos = mensajes | selectattr('leido', 'equalto', 0) | list | length %}
+    <div class="stats-row">
+      <div class="stat-chip">
+        <strong>{{ mensajes | length }}</strong>
+        Total mensajes
+      </div>
+      <div class="stat-chip nuevos">
+        <strong>{{ no_leidos }}</strong>
+        Sin leer
+      </div>
+    </div>
+
+    {% if mensajes %}
+      {% for msg in mensajes %}
+      <div class="msg-card {{ 'no-leido' if not msg.leido }}">
+        <div>
+          <div class="msg-header">
+            <span class="msg-nombre">{{ msg.nombre }}</span>
+            {% if not msg.leido %}<span class="badge-nuevo">Nuevo</span>{% endif %}
+            <span class="msg-fecha">{{ msg.created_at[:16].replace('T',' ') }}</span>
+          </div>
+          <div style="display:flex;gap:16px;margin-bottom:10px;flex-wrap:wrap;">
+            <a href="mailto:{{ msg.email }}" class="msg-email">✉ {{ msg.email }}</a>
+            {% if msg.telefono %}
+              <a href="tel:{{ msg.telefono }}" class="msg-tel">📞 {{ msg.telefono }}</a>
+            {% endif %}
+          </div>
+          <p class="msg-texto">{{ msg.mensaje }}</p>
+          <div style="margin-top:12px;">
+            <a href="mailto:{{ msg.email }}?subject=Re: Tu mensaje en {{ sitio.nombre }}"
+               class="reply-btn">↩ Responder</a>
+          </div>
+        </div>
+        <div>
+          {% if not msg.leido %}
+          <form method="POST" action="{{ url_for('marcar_leido', sitio_id=sitio.id) }}">
+            <input type="hidden" name="mensaje_id" value="{{ msg.id }}">
+            <button type="submit" class="btn-marcar">✓ Marcar leído</button>
+          </form>
+          {% else %}
+            <span style="font-size:12px;color:var(--admin-muted);">✓ Leído</span>
+          {% endif %}
+        </div>
+      </div>
+      {% endfor %}
+    {% else %}
+      <div class="empty-state">
+        <div class="empty-icon">📭</div>
+        <h3 style="color:var(--admin-text);margin-bottom:8px;">Sin mensajes todavía</h3>
+        <p>Cuando alguien complete el formulario de contacto en tu sitio, aparecerá aquí.</p>
+      </div>
+    {% endif %}
+
+  </main>
+
+</body>
+</html>

@@ -65,6 +65,18 @@
               <a href="{{ url_for('ver_sitio', slug=sitio.slug) }}" target="_blank" class="btn-preview">
                 Ver sitio
               </a>
+              <a href="{{ url_for('mis_mensajes', sitio_id=sitio.id) }}" class="btn-preview"
+                 style="background:#0f766e;color:#fff;border-color:#0f766e;position:relative;">
+                📬 Mensajes
+                {% if mensajes_nuevos.get(sitio.id, 0) > 0 %}
+                  <span style="position:absolute;top:-6px;right:-6px;background:#ef4444;color:#fff;
+                               font-size:10px;font-weight:800;min-width:18px;height:18px;
+                               border-radius:999px;display:flex;align-items:center;justify-content:center;
+                               padding:0 4px;line-height:1;">
+                    {{ mensajes_nuevos.get(sitio.id) }}
+                  </span>
+                {% endif %}
+              </a>
               {% if sitio.plantilla_clave == 'doctores' %}
               <a href="{{ url_for('mis_citas', sitio_id=sitio.id) }}" class="btn-preview"
                  style="background:var(--admin-accent);color:#fff;border-color:var(--admin-accent)">

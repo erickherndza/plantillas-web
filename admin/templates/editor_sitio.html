@@ -16,6 +16,10 @@
       <span class="navbar-title">{{ sitio.nombre }}</span>
     </div>
     <div class="navbar-actions">
+      <a href="{{ url_for('mis_mensajes', sitio_id=sitio.id) }}" class="btn-css-builder"
+         style="background:#0f766e;border-color:#0f766e;">
+        📬 Mensajes
+      </a>
       <a href="{{ url_for('css_builder', site_id=sitio.id) }}" class="btn-css-builder">
         Diseño &amp; Colores
       </a>
