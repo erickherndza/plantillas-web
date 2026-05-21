@@ -12,6 +12,7 @@
   {% set _fb = config.get('fuente_cuerpo',  'Montserrat') %}
   <link href="https://fonts.googleapis.com/css2?family={{ _ft|replace(' ','+') }}:wght@400;600;700;800&family={{ _fb|replace(' ','+') }}:wght@400;500;600&display=swap" rel="stylesheet"/>
   <link href="{{ url_for('static', filename='sites/empresa/style.css') }}" rel="stylesheet"/>
+  <link href="{{ url_for('static', filename='sites/landing-base.css') }}" rel="stylesheet"/>
 
   {% set _esquinas_map = {'cuadrado':'0px','suave':'4px','redondeado':'12px','muy-redondeado':'24px'} %}
   {% set _sombra_map = {'sin-sombra':'none','sutil':'0 1px 4px rgba(0,0,0,.08)','media':'0 4px 16px rgba(0,0,0,.14)','marcada':'0 8px 32px rgba(0,0,0,.22)'} %}
@@ -128,5 +129,6 @@
 </footer>
 
 <script defer src="{{ url_for('static', filename='sites/empresa/script.js') }}"></script>
+<script defer src="{{ url_for('static', filename='sites/site-widgets.js') }}"></script>
 </body>
 </html>

@@ -5,26 +5,62 @@
 {% block content %}
 
 <!-- ── Hero ───────────────────────────────────────────────────────────────── -->
-<section class="hero-section" id="inicio">
+<section class="hero-section hs-hero" id="inicio" data-speed="{{ config.get('hero_slider_speed','5000') }}">
+  {% set _slides_raw = config.get('hero_slides') %}
+  {% if _slides_raw %}
+    {% set _slides = _slides_raw | from_json %}
+    {% if _slides | length >= 1 %}
+    <div class="hs-track" id="hs-track">
+      {% for slide in _slides %}
+      <div class="hs-slide">
+        {% if slide.get('imagen') %}
+          <div class="hero-bg" style="background-image:url('{{ slide.imagen }}')"></div>
+        {% endif %}
+        <div class="hero-overlay"></div>
+        <div class="container">
+          <div class="hero-content fade-in-up">
+            {% if slide.get('eyebrow') %}<p class="hero-eyebrow">{{ slide.eyebrow }}</p>{% endif %}
+            <h1 class="hero-title">{{ slide.get('titulo', config.get('hero_titulo', sitio.nombre)) }}</h1>
+            <p class="hero-subtitle">{{ slide.get('subtitulo', config.get('hero_subtitulo','Bienvenidos a nuestra página web')) }}</p>
+            <div class="hero-actions">
+              {% if slide.get('cta1_texto') %}
+              <a class="btn-primary" href="{{ slide.get('cta1_href', '/s/' + sitio.slug + '/contacto/') }}">{{ slide.cta1_texto }}</a>
+              {% else %}
+              <a class="btn-primary" href="{{ config.get('hero_cta_href', '/s/' + sitio.slug + '/contacto/') }}">{{ config.get('hero_cta_texto','Contáctanos') }}</a>
+              {% endif %}
+              {% if slide.get('cta2_texto') %}
+              <a class="btn-secondary" href="{{ slide.get('cta2_href', '/s/' + sitio.slug + '/servicios/') }}">{{ slide.cta2_texto }}</a>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% if _slides | length > 1 %}
+    <button class="hs-prev" id="hs-prev">&#8249;</button>
+    <button class="hs-next" id="hs-next">&#8250;</button>
+    <div class="hs-dots" id="hs-dots">
+      {% for slide in _slides %}<button class="hs-dot {{ 'active' if loop.first }}" data-idx="{{ loop.index0 }}"></button>{% endfor %}
+    </div>
+    {% endif %}
+    {% endif %}
+  {% else %}
+  <!-- Hero estático sin slides -->
   <div class="hero-bg" style="background-image:url('{{ config.get('hero_imagen','') }}')"></div>
   <div class="hero-overlay"></div>
   <div class="container">
     <div class="hero-content fade-in-up">
-      {% if config.get('hero_eyebrow') %}
-        <p class="hero-eyebrow">{{ config.get('hero_eyebrow') }}</p>
-      {% endif %}
+      {% if config.get('hero_eyebrow') %}<p class="hero-eyebrow">{{ config.get('hero_eyebrow') }}</p>{% endif %}
       <h1 class="hero-title">{{ config.get('hero_titulo', sitio.nombre) }}</h1>
       <p class="hero-subtitle">{{ config.get('hero_subtitulo', 'Bienvenidos a nuestra página web') }}</p>
       <div class="hero-actions">
-        <a class="btn-primary" href="{{ config.get('hero_cta_href', '/s/' + sitio.slug + '/contacto/') }}">
-          {{ config.get('hero_cta_texto', 'Contáctanos') }}
-        </a>
-        <a class="btn-secondary" href="{{ config.get('hero_cta2_href', '/s/' + sitio.slug + '/servicios/') }}">
-          {{ config.get('hero_cta2_texto', 'Ver servicios') }}
-        </a>
+        <a class="btn-primary" href="{{ config.get('hero_cta_href', '/s/' + sitio.slug + '/contacto/') }}">{{ config.get('hero_cta_texto','Contáctanos') }}</a>
+        <a class="btn-secondary" href="{{ config.get('hero_cta2_href', '/s/' + sitio.slug + '/servicios/') }}">{{ config.get('hero_cta2_texto','Ver servicios') }}</a>
       </div>
     </div>
   </div>
+  {% endif %}
 </section>
 
 <!-- ── Highlights ─────────────────────────────────────────────────────────── -->
