@@ -51,6 +51,7 @@
           'servicios':  ('rep-servicios', 'Servicios', 'section-nav-repeater'),
           'proyectos':  ('rep-proyectos', 'Proyectos', 'section-nav-repeater'),
           'equipo':     ('rep-equipo',    'Equipo',    'section-nav-repeater'),
+          'galeria':    ('rep-galeria',   'Galería',   'section-nav-repeater'),
           'contacto':   ('contacto',   'Contacto',    ''),
         } %}
         {% set _first = namespace(done=false) %}
@@ -623,6 +624,54 @@
           </div>
         </div>
 
+        <!-- ══ GALERÍA (repeater) ══════════════════════════════════════════ -->
+        <div class="form-section hidden" id="section-rep-galeria">
+          <div class="section-header">
+            <h2 class="section-title">Galería de fotos</h2>
+            <p class="section-desc">Carrusel de imágenes — ideal para mostrar tu trabajo, espacio o productos</p>
+          </div>
+          <div class="form-group">
+            <label>Título de la sección</label>
+            <input type="text" name="cfg__galeria_titulo"
+                   value="{{ config.get('galeria_titulo', '') }}"
+                   placeholder="Ej: Nuestra galería / Nuestro trabajo / Portafolio">
+          </div>
+          <div class="repeater-container" id="rep-galeria">
+            <div class="repeater-list" id="rep-galeria-list">
+              {% for item in secciones.galeria %}
+                {% set idx = loop.index0 %}
+                <div class="repeater-item" data-rep="galeria">
+                  <div class="repeater-item-header">
+                    <span class="repeater-item-num">{{ loop.index }}</span>
+                    <button type="button" class="btn-remove-item" title="Eliminar">✕</button>
+                  </div>
+                  <div class="form-group">
+                    <label>Imagen <span class="field-optional">(URL o sube una)</span></label>
+                    <div class="img-bg-field">
+                      <input type="text" name="rep__galeria__{{ idx }}__imagen"
+                             class="img-bg-url-input rep-img-url"
+                             value="{{ item.get('imagen', '') }}" placeholder="https://...">
+                      <div class="img-bg-actions">
+                        <label class="btn-upload-label btn-upload-sm">
+                          Subir imagen
+                          <input type="file" accept="image/*" style="position:absolute;opacity:0;top:0;left:0;width:100%;height:100%;cursor:pointer;"
+                                 class="rep-img-file" data-sitio="{{ sitio.id }}">
+                        </label>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="form-group">
+                    <label>Pie de foto <span class="field-optional">(opcional)</span></label>
+                    <input type="text" name="rep__galeria__{{ idx }}__caption"
+                           value="{{ item.get('caption', '') }}" placeholder="Ej: Sala principal">
+                  </div>
+                </div>
+              {% endfor %}
+            </div>
+            <button type="button" class="btn-add-item" data-add="galeria">+ Agregar foto</button>
+          </div>
+        </div>
+
         <!-- ══ CONTACTO ══════════════════════════════════════════════════ -->
         <div class="form-section hidden" id="section-contacto">
           <div class="section-header">
@@ -1170,6 +1219,30 @@
               </label>
             </div>
           </div>
+        </div>`,
+
+      galeria: (idx, sid) => `
+        <div class="repeater-item-header">
+          <span class="repeater-item-num">${idx + 1}</span>
+          <button type="button" class="btn-remove-item" title="Eliminar">✕</button>
+        </div>
+        <div class="form-group">
+          <label>Imagen <span class="field-optional">(URL o sube una)</span></label>
+          <div class="img-bg-field">
+            <input type="text" name="rep__galeria__${idx}__imagen"
+                   class="img-bg-url-input rep-img-url" placeholder="https://...">
+            <div class="img-bg-actions">
+              <label class="btn-upload-label btn-upload-sm">
+                Subir imagen
+                <input type="file" accept="image/*" style="position:absolute;opacity:0;top:0;left:0;width:100%;height:100%;cursor:pointer;"
+                       class="rep-img-file" data-sitio="${sid}">
+              </label>
+            </div>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Pie de foto <span class="field-optional">(opcional)</span></label>
+          <input type="text" name="rep__galeria__${idx}__caption" placeholder="Ej: Sala principal">
         </div>`,
 
       menu: (idx, sid) => `

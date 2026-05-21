@@ -91,3 +91,58 @@
     if (e.key === 'ArrowRight') show(cur + 1);
   });
 })();
+
+/* ── Galería Carrusel ─────────────────────────────────────────────────────── */
+(function(){
+  const wrap  = document.querySelector('.gal-carousel-wrap');
+  if (!wrap) return;
+  const track  = wrap.querySelector('.gal-track');
+  const slides = Array.from(track.querySelectorAll('.gal-slide'));
+  if (!slides.length) return;
+
+  const dotsWrap = document.querySelector('.gal-dots');
+  let cur = 0, slideW = 0, visible = 1;
+
+  function calc(){
+    slideW  = slides[0].offsetWidth + 24; // width + margin*2
+    visible = Math.max(1, Math.floor(wrap.offsetWidth / slideW));
+  }
+
+  function goTo(idx){
+    const max = Math.max(0, slides.length - visible);
+    cur = Math.min(Math.max(idx, 0), max);
+    track.style.transform = `translateX(-${cur * slideW}px)`;
+    if (dotsWrap) dotsWrap.querySelectorAll('.gal-dot').forEach((d,i)=>
+      d.classList.toggle('active', i===cur));
+  }
+
+  // dots
+  if (dotsWrap){
+    slides.forEach((_,i)=>{
+      const d = document.createElement('span');
+      d.className = 'gal-dot' + (i===0?' active':'');
+      d.addEventListener('click',()=>goTo(i));
+      dotsWrap.appendChild(d);
+    });
+  }
+
+  // buttons
+  const prev = document.getElementById('gal-prev');
+  const next = document.getElementById('gal-next');
+  if (prev) prev.addEventListener('click', ()=>goTo(cur-1));
+  if (next) next.addEventListener('click', ()=>goTo(cur+1));
+
+  // touch
+  let tx=0;
+  track.addEventListener('touchstart', e=>{ tx=e.touches[0].clientX; },{passive:true});
+  track.addEventListener('touchend',   e=>{ const dx=e.changedTouches[0].clientX-tx; if(Math.abs(dx)>40) goTo(cur+(dx<0?1:-1)); },{passive:true});
+
+  // autoplay
+  let timer = setInterval(()=>goTo(cur+1 > slides.length-visible ? 0 : cur+1), 4000);
+  wrap.addEventListener('mouseenter',()=>clearInterval(timer));
+  wrap.addEventListener('mouseleave',()=>{ timer=setInterval(()=>goTo(cur+1>slides.length-visible?0:cur+1),4000); });
+
+  calc();
+  goTo(0);
+  window.addEventListener('resize', ()=>{ calc(); goTo(cur); });
+})();

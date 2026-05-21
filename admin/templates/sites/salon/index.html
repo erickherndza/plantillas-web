@@ -330,6 +330,29 @@
 </section>
 {% endif %}
 
+{% if secciones.galeria %}
+{% if config.get('seccion_galeria_visible','1') != '0' %}
+<section class="lb-section galeria-section" id="galeria" style="order:{{ config.get('seccion_galeria_orden','6') }};">
+  <div class="lb-container">
+    <h2 class="lb-section-title section-title">{{ config.get('galeria_titulo', 'Nuestra galería') }}</h2>
+    <div class="gal-carousel-wrap">
+      <button class="gal-nav-btn" id="gal-prev">&#8249;</button>
+      <div class="gal-track">
+        {% for foto in secciones.galeria %}
+        <div class="gal-slide">
+          <img src="{{ foto.imagen }}" alt="{{ foto.get('caption','') }}">
+          {% if foto.get('caption') %}<div class="gal-caption">{{ foto.caption }}</div>{% endif %}
+        </div>
+        {% endfor %}
+      </div>
+      <button class="gal-nav-btn" id="gal-next">&#8250;</button>
+    </div>
+    <div class="gal-dots"></div>
+  </div>
+</section>
+{% endif %}
+{% endif %}
+
 </div><!-- /sections-wrapper -->
 
 <!-- FOOTER -->

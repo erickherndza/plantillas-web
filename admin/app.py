@@ -1162,6 +1162,7 @@ def editar_sitio(sitio_id):
         'servicios': get_secciones_contenido(sitio_id, 'servicios'),
         'proyectos': get_secciones_contenido(sitio_id, 'proyectos'),
         'equipo':    get_secciones_contenido(sitio_id, 'equipo'),
+        'galeria':   get_secciones_contenido(sitio_id, 'galeria'),
     }
     # Secciones habilitadas según el schema de la plantilla
     plantilla = obtener_plantilla_por_id(sitio['plantilla_id'])
@@ -1224,6 +1225,7 @@ def _contexto_sitio(sitio):
             'servicios':   get_secciones_contenido(sid, 'servicios'),
             'proyectos':   get_secciones_contenido(sid, 'proyectos'),
             'equipo':      get_secciones_contenido(sid, 'equipo'),
+            'galeria':     get_secciones_contenido(sid, 'galeria'),
             'testimonios': get_secciones_contenido(sid, 'testimonios'),
         },
     }
