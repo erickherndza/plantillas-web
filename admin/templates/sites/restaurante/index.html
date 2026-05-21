@@ -108,7 +108,7 @@
   {% set _slides_raw = config.get('hero_slides') %}
   {% if _slides_raw %}
     {% set _slides = _slides_raw | from_json %}
-    {% if _slides | length > 1 %}
+    {% if _slides | length >= 1 %}
     <div class="hs-track" id="hs-track">
       {% for slide in _slides %}
       <div class="hs-slide">
