@@ -17,6 +17,9 @@ admin/.env
 admin/plantillas.db
 admin/plantillas.db-shm
 admin/plantillas.db-wal
+admin/sites.db
+admin/*.db-shm
+admin/*.db-wal
 
 # Uploads de usuarios
 admin/static/uploads/
