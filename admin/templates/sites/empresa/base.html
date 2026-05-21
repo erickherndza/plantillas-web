@@ -38,7 +38,7 @@
       --shadow-lg:   {{ _sombra }};
     }
     .navbar { background: {{ config.get('color_navbar_bg', config.get('color_primario', '#0bb180')) }}; }
-    .hero-section { min-height: {{ _hero_h }}; }
+    .hero-section { min-height: {{ _hero_h }}; height: {{ _hero_h }}; }
     .hero-content { text-align: {{ _hero_align }}; }
     {% if _hero_align == 'left' %}.hero-actions { justify-content: flex-start; }{% endif %}
     .btn-primary, .btn-secondary, button[type=submit] { border-radius: {{ _btn_r }}; }
