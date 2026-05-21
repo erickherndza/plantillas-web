@@ -407,6 +407,32 @@
               </select>
               <p class="field-hint">Aplica a todos los botones del sitio.</p>
             </div>
+
+            <div class="form-group">
+              <label>Espaciado vertical del hero</label>
+              <select name="cfg__hero_padding">
+                {% for val, lbl in [('pequeno','Compacto (40px)'),('medio','Normal (80px)'),('grande','Amplio (120px)'),('extra','Extra (160px)')] %}
+                  <option value="{{ val }}" {{ 'selected' if config.get('hero_padding','medio') == val }}>{{ lbl }}</option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label>Oscurecimiento del fondo &nbsp;<strong id="hero-overlay-val">{{ config.get('hero_overlay_opacidad','60') }}%</strong></label>
+              <input type="range" name="cfg__hero_overlay_opacidad" min="0" max="90" step="5"
+                     value="{{ config.get('hero_overlay_opacidad','60') }}"
+                     oninput="document.getElementById('hero-overlay-val').textContent=this.value+'%'"
+                     style="width:100%">
+              <p class="field-hint">0 = sin oscurecimiento · 90 = muy oscuro</p>
+            </div>
+
+            <div class="form-group">
+              <label>Opacidad del texto &nbsp;<strong id="hero-texto-val">{{ config.get('hero_texto_opacidad','100') }}%</strong></label>
+              <input type="range" name="cfg__hero_texto_opacidad" min="30" max="100" step="5"
+                     value="{{ config.get('hero_texto_opacidad','100') }}"
+                     oninput="document.getElementById('hero-texto-val').textContent=this.value+'%'"
+                     style="width:100%">
+            </div>
           </div>
         </div>
 

@@ -38,8 +38,13 @@
       --shadow-lg:   {{ _sombra }};
     }
     .navbar { background: {{ config.get('color_navbar_bg', config.get('color_primario', '#0bb180')) }}; }
-    .hero-section { min-height: {{ _hero_h }}; height: {{ _hero_h }}; }
-    .hero-content { text-align: {{ _hero_align }}; }
+    {% set _pad_map = {'pequeno':'40px','medio':'80px','grande':'120px','extra':'160px'} %}
+    {% set _hero_pad = _pad_map.get(config.get('hero_padding','medio'),'80px') %}
+    {% set _overlay_op = (config.get('hero_overlay_opacidad','60')|int) / 100 %}
+    {% set _texto_op   = (config.get('hero_texto_opacidad','100')|int) / 100 %}
+    .hero-section { min-height: {{ _hero_h }}; height: {{ _hero_h }}; padding-block: {{ _hero_pad }}; }
+    .hero-overlay { opacity: {{ _overlay_op }}; }
+    .hero-content { text-align: {{ _hero_align }}; opacity: {{ _texto_op }}; }
     {% if _hero_align == 'left' %}.hero-actions { justify-content: flex-start; }{% endif %}
     .btn-primary, .btn-secondary, button[type=submit] { border-radius: {{ _btn_r }}; }
     {% set _icono = config.get('estilo_icono','circulo') %}
