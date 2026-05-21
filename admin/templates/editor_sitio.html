@@ -990,20 +990,18 @@
           </div>
         </div>
 
+        <!-- Botón guardar dentro del form para compatibilidad total -->
+        <div class="editor-save-bar">
+          <p class="footer-note">Los cambios se aplican de inmediato en <strong>/s/{{ sitio.slug }}/</strong></p>
+          <button type="submit" class="btn-guardar" id="btn-guardar">
+            <span class="btn-text">Guardar cambios</span>
+            <span class="btn-loading hidden"><span class="spinner"></span> Guardando...</span>
+          </button>
+        </div>
+
       </form>
     </main>
   </div>
-
-  <!-- ── Footer del editor ──────────────────────────────────────────────── -->
-  <footer class="editor-footer">
-    <div class="editor-footer-inner">
-      <p class="footer-note">Los cambios se aplican de inmediato en <strong>/s/{{ sitio.slug }}/</strong></p>
-      <button type="submit" form="editor-form" class="btn-guardar" id="btn-guardar">
-        <span class="btn-text">Guardar cambios</span>
-        <span class="btn-loading hidden"><span class="spinner"></span> Guardando...</span>
-      </button>
-    </div>
-  </footer>
 
   <script>
   (() => {

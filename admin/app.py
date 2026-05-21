@@ -1115,13 +1115,14 @@ def editar_sitio(sitio_id):
         hero_slides = []
         slide_idx = 0
         while True:
-            titulo = request.form.get(f'rep__hero-slides__{slide_idx}__titulo', None)
-            if titulo is None:
+            # Usa 'imagen' como centinela — si no está el campo, no hay más slides
+            imagen = request.form.get(f'rep__hero-slides__{slide_idx}__imagen', None)
+            if imagen is None:
                 break
             hero_slides.append({
-                'titulo':      titulo,
+                'titulo':      request.form.get(f'rep__hero-slides__{slide_idx}__titulo', ''),
                 'subtitulo':   request.form.get(f'rep__hero-slides__{slide_idx}__subtitulo', ''),
-                'imagen':      request.form.get(f'rep__hero-slides__{slide_idx}__imagen', ''),
+                'imagen':      imagen.strip(),
                 'cta1_texto':  request.form.get(f'rep__hero-slides__{slide_idx}__cta1_texto', ''),
                 'cta1_href':   request.form.get(f'rep__hero-slides__{slide_idx}__cta1_href', ''),
                 'cta2_texto':  request.form.get(f'rep__hero-slides__{slide_idx}__cta2_texto', ''),
@@ -1155,6 +1156,7 @@ def editar_sitio(sitio_id):
             set_secciones_contenido(sitio_id, seccion, items)
 
         flash('Cambios guardados. Tu sitio está actualizado.', 'success')
+        log.info('[editar_sitio] guardado OK sitio_id=%s keys=%s', sitio_id, list(form_data.keys()))
         return redirect(url_for('editar_sitio', sitio_id=sitio_id))
 
     config   = get_config_sitio(sitio_id)
@@ -1170,7 +1172,7 @@ def editar_sitio(sitio_id):
         schema = json.loads(plantilla['campos_schema'] or '{}') if plantilla else {}
     except Exception:
         schema = {}
-    _todas = ['apariencia', 'marca', 'hero', 'nosotros', 'servicios', 'proyectos', 'equipo', 'contacto']
+    _todas = ['apariencia', 'marca', 'hero', 'nosotros', 'servicios', 'proyectos', 'equipo', 'galeria', 'contacto']
     secciones_editor = schema.get('secciones', _todas)
 
     return render_template('editor_sitio.html',
@@ -1180,6 +1182,23 @@ def editar_sitio(sitio_id):
         nombre=session['u_nombre'],
         secciones_editor=secciones_editor,
     )
+
+
+@app.route('/debug-sitio/<int:sitio_id>')
+@usuario_requerido
+def debug_sitio(sitio_id):
+    """Diagnóstico: muestra config y secciones guardadas en la BD."""
+    sitio = obtener_sitio_por_id(sitio_id)
+    if not sitio or sitio['usuario_id'] != session['uid']:
+        abort(403)
+    config = get_config_sitio(sitio_id)
+    secciones = {
+        'menu_items': config.get('menu_items', 'NO GUARDADO'),
+        'hero_slides': config.get('hero_slides', 'NO GUARDADO'),
+        'galeria_items': get_secciones_contenido(sitio_id, 'galeria'),
+        'todos_los_config': config,
+    }
+    return jsonify(secciones)
 
 
 @app.route('/upload-sitio/<int:sitio_id>', methods=['POST'])
