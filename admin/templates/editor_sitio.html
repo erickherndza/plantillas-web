@@ -1137,7 +1137,7 @@
       items.forEach((item, i) => {
         item.querySelector('.repeater-item-num').textContent = i + 1;
         item.querySelectorAll('[name]').forEach(field => {
-          field.name = field.name.replace(/rep__\w+__\d+__/, `rep__${seccion}__${i}__`);
+          field.name = field.name.replace(/rep__[\w-]+__\d+__/, `rep__${seccion}__${i}__`);
         });
       });
     }
