@@ -82,6 +82,40 @@ img { max-width: 100%; display: block; }
 }
 .btn-login:hover { filter: brightness(1.1); }
 
+.btn-google {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  padding: 11px 16px;
+  border: 1.5px solid var(--admin-border);
+  border-radius: 8px;
+  background: #fff;
+  color: #3c4043;
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background .15s, box-shadow .15s;
+  margin-bottom: 4px;
+}
+.btn-google:hover { background: #f8f8f8; box-shadow: 0 1px 6px rgba(0,0,0,.12); }
+
+.login-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 16px 0;
+  color: var(--admin-text-muted);
+  font-size: 12px;
+}
+.login-divider::before, .login-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--admin-border);
+}
+
 .login-footer {
   text-align: center;
   font-size: 11px;

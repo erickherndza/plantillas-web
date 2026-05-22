@@ -26,6 +26,9 @@ from db import (
     verificar_disponibilidad, crear_cita, horas_ocupadas,
     listar_citas_sitio, actualizar_estado_cita,
     eliminar_sitio,
+    crear_reset_token, obtener_usuario_por_reset_token,
+    invalidar_reset_token, actualizar_password_usuario,
+    crear_o_vincular_google,
 )
 from parser import (
     extraer_valores, aplicar_cambios,
@@ -63,6 +66,47 @@ MAIL_PORT     = int(os.environ.get('MAIL_PORT', '587'))
 MAIL_USER     = os.environ.get('MAIL_USER',     '')   # tu correo Gmail
 MAIL_PASSWORD = os.environ.get('MAIL_PASSWORD', '')   # contraseña de aplicación
 MAIL_FROM     = os.environ.get('MAIL_FROM',     MAIL_USER)
+
+# ── Configuración Google OAuth ────────────────────────────────────────────────
+GOOGLE_CLIENT_ID     = os.environ.get('GOOGLE_CLIENT_ID', '')
+GOOGLE_CLIENT_SECRET = os.environ.get('GOOGLE_CLIENT_SECRET', '')
+GOOGLE_AUTH_URL      = 'https://accounts.google.com/o/oauth2/v2/auth'
+GOOGLE_TOKEN_URL     = 'https://oauth2.googleapis.com/token'
+GOOGLE_USERINFO_URL  = 'https://www.googleapis.com/oauth2/v3/userinfo'
+
+
+def _enviar_email_reset(destinatario: str, nombre: str, reset_url: str):
+    """Envía email con enlace para resetear contraseña. Falla silenciosamente."""
+    if not MAIL_USER or not MAIL_PASSWORD:
+        return
+    try:
+        msg = MIMEMultipart('alternative')
+        msg['Subject'] = 'Restablecer contraseña — Plantillas Web RD'
+        msg['From']    = f'Plantillas Web RD <{MAIL_FROM}>'
+        msg['To']      = destinatario
+        html = f"""
+        <div style="font-family:Arial,sans-serif;max-width:480px;margin:0 auto">
+          <h2 style="color:#0bb180">Restablecer contraseña</h2>
+          <p>Hola <strong>{nombre}</strong>,</p>
+          <p>Recibimos una solicitud para restablecer la contraseña de tu cuenta.</p>
+          <p style="margin:24px 0">
+            <a href="{reset_url}"
+               style="background:#0bb180;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:bold">
+              Crear nueva contraseña
+            </a>
+          </p>
+          <p style="color:#666;font-size:13px">Este enlace expira en <strong>24 horas</strong>.<br>
+          Si no solicitaste esto, ignora este correo.</p>
+        </div>"""
+        msg.attach(MIMEText(html, 'html'))
+        with smtplib.SMTP(MAIL_SERVER, MAIL_PORT, timeout=10) as s:
+            s.ehlo()
+            s.starttls()
+            s.login(MAIL_USER, MAIL_PASSWORD)
+            s.sendmail(MAIL_FROM, destinatario, msg.as_string())
+    except Exception as e:
+        logging.warning(f'[mail] Error enviando reset a {destinatario}: {e}')
+
 
 def _enviar_email_notificacion(destinatario: str, sitio_nombre: str,
                                 nombre: str, email_c: str,
@@ -790,6 +834,112 @@ def salir():
     session.pop('u_nombre', None)
     flash('Sesión cerrada.', 'info')
     return redirect(url_for('entrar'))
+
+
+# ── Olvidé mi contraseña ─────────────────────────────────────────────────────
+
+@app.route('/olvide-contrasena', methods=['GET', 'POST'])
+def olvide_contrasena():
+    if 'uid' in session:
+        return redirect(url_for('mi_panel'))
+    if request.method == 'POST':
+        email = request.form.get('email', '').strip().lower()
+        usuario = obtener_usuario_por_email(email)
+        # Siempre mostrar el mismo mensaje para no revelar si el email existe
+        flash('Si ese email está registrado, recibirás un enlace en unos minutos.', 'info')
+        if usuario:
+            token = crear_reset_token(usuario['id'])
+            reset_url = url_for('reset_password', token=token, _external=True)
+            _enviar_email_reset(email, usuario['nombre'] or email.split('@')[0], reset_url)
+        return redirect(url_for('olvide_contrasena'))
+    return render_template('olvide_contrasena.html')
+
+
+@app.route('/reset/<token>', methods=['GET', 'POST'])
+def reset_password(token):
+    usuario = obtener_usuario_por_reset_token(token)
+    if not usuario:
+        flash('El enlace no es válido o ya expiró. Solicita uno nuevo.', 'error')
+        return redirect(url_for('olvide_contrasena'))
+    if request.method == 'POST':
+        nueva = request.form.get('password', '').strip()
+        confirmar = request.form.get('confirm', '').strip()
+        if len(nueva) < 8:
+            flash('La contraseña debe tener al menos 8 caracteres.', 'error')
+        elif nueva != confirmar:
+            flash('Las contraseñas no coinciden.', 'error')
+        else:
+            actualizar_password_usuario(usuario['id'], generate_password_hash(nueva))
+            invalidar_reset_token(token)
+            flash('Contraseña actualizada. Ya puedes iniciar sesión.', 'success')
+            return redirect(url_for('entrar'))
+    return render_template('reset_password.html', token=token)
+
+
+# ── Google OAuth ──────────────────────────────────────────────────────────────
+
+@app.route('/auth/google')
+def auth_google():
+    if not GOOGLE_CLIENT_ID:
+        flash('Login con Google no está configurado aún.', 'error')
+        return redirect(url_for('entrar'))
+    import urllib.parse
+    callback = url_for('auth_google_callback', _external=True)
+    params = urllib.parse.urlencode({
+        'client_id':     GOOGLE_CLIENT_ID,
+        'redirect_uri':  callback,
+        'response_type': 'code',
+        'scope':         'openid email profile',
+        'access_type':   'online',
+    })
+    return redirect(f'{GOOGLE_AUTH_URL}?{params}')
+
+
+@app.route('/auth/google/callback')
+def auth_google_callback():
+    import urllib.parse, urllib.request
+    code = request.args.get('code')
+    if not code:
+        flash('No se pudo autenticar con Google.', 'error')
+        return redirect(url_for('entrar'))
+    try:
+        callback = url_for('auth_google_callback', _external=True)
+        # Intercambiar code por token
+        data = urllib.parse.urlencode({
+            'code':          code,
+            'client_id':     GOOGLE_CLIENT_ID,
+            'client_secret': GOOGLE_CLIENT_SECRET,
+            'redirect_uri':  callback,
+            'grant_type':    'authorization_code',
+        }).encode()
+        req = urllib.request.Request(GOOGLE_TOKEN_URL, data=data,
+                                     headers={'Content-Type': 'application/x-www-form-urlencoded'})
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            token_data = _json.loads(resp.read())
+        access_token = token_data.get('access_token')
+        if not access_token:
+            raise ValueError('Sin access_token')
+        # Obtener info del usuario
+        req2 = urllib.request.Request(
+            GOOGLE_USERINFO_URL,
+            headers={'Authorization': f'Bearer {access_token}'}
+        )
+        with urllib.request.urlopen(req2, timeout=10) as resp2:
+            info = _json.loads(resp2.read())
+        google_id = info.get('sub')
+        email     = info.get('email', '').lower().strip()
+        nombre    = info.get('name', email.split('@')[0])
+        if not google_id or not email:
+            raise ValueError('Datos incompletos de Google')
+        usuario = crear_o_vincular_google(email, nombre, google_id)
+        session['uid']      = usuario['id']
+        session['u_email']  = usuario['email']
+        session['u_nombre'] = usuario.get('nombre') or nombre
+        return redirect(url_for('mi_panel'))
+    except Exception as e:
+        logging.warning(f'[google-oauth] Error: {e}')
+        flash('Error al autenticar con Google. Intenta de nuevo.', 'error')
+        return redirect(url_for('entrar'))
 
 
 # ── Panel del usuario ─────────────────────────────────────────────────────────

@@ -13,6 +13,8 @@ Tablas (CMS multi-usuario):
 
 import sqlite3
 import os
+import secrets
+from datetime import datetime, timedelta
 
 DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'plantillas.db')
 
@@ -123,6 +125,15 @@ def init_db():
             estado          TEXT    DEFAULT 'pendiente',
             created_at      TEXT    DEFAULT (datetime('now'))
         );
+
+        CREATE TABLE IF NOT EXISTS reset_tokens (
+            id         INTEGER PRIMARY KEY AUTOINCREMENT,
+            usuario_id INTEGER NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
+            token      TEXT    UNIQUE NOT NULL,
+            expires_at TEXT    NOT NULL,
+            used       INTEGER DEFAULT 0,
+            created_at TEXT    DEFAULT (datetime('now'))
+        );
     """)
 
     # Migración: columna campos_schema en plantillas (idempotente)
@@ -135,6 +146,13 @@ def init_db():
     # Migración: columna formato en sitios (idempotente)
     try:
         conn.execute("ALTER TABLE sitios ADD COLUMN formato TEXT DEFAULT 'web5'")
+        conn.commit()
+    except Exception:
+        pass  # ya existe
+
+    # Migración: columna google_id en usuarios (idempotente)
+    try:
+        conn.execute("ALTER TABLE usuarios ADD COLUMN google_id TEXT DEFAULT NULL")
         conn.commit()
     except Exception:
         pass  # ya existe
@@ -617,3 +635,106 @@ def actualizar_estado_cita(cita_id: int, estado: str):
     conn.execute("UPDATE citas SET estado=? WHERE id=?", (estado, cita_id))
     conn.commit()
     conn.close()
+
+
+# ── Reset de contraseña ───────────────────────────────────────────────────────
+
+def crear_reset_token(usuario_id: int) -> str:
+    """Genera un token de reset, invalida los anteriores y lo guarda. Retorna el token."""
+    token = secrets.token_urlsafe(32)
+    expires = (datetime.utcnow() + timedelta(hours=24)).strftime('%Y-%m-%d %H:%M:%S')
+    conn = get_db()
+    # Invalidar tokens anteriores del mismo usuario
+    conn.execute("UPDATE reset_tokens SET used=1 WHERE usuario_id=?", (usuario_id,))
+    conn.execute(
+        "INSERT INTO reset_tokens (usuario_id, token, expires_at) VALUES (?, ?, ?)",
+        (usuario_id, token, expires)
+    )
+    conn.commit()
+    conn.close()
+    return token
+
+
+def obtener_usuario_por_reset_token(token: str):
+    """Devuelve el usuario si el token es válido, no expiró y no fue usado."""
+    conn = get_db()
+    row = conn.execute("""
+        SELECT u.* FROM usuarios u
+        JOIN reset_tokens r ON r.usuario_id = u.id
+        WHERE r.token = ?
+          AND r.used = 0
+          AND r.expires_at > datetime('now')
+          AND u.activo = 1
+    """, (token,)).fetchone()
+    conn.close()
+    return row
+
+
+def invalidar_reset_token(token: str):
+    conn = get_db()
+    conn.execute("UPDATE reset_tokens SET used=1 WHERE token=?", (token,))
+    conn.commit()
+    conn.close()
+
+
+def actualizar_password_usuario(uid: int, password_hash: str):
+    conn = get_db()
+    conn.execute("UPDATE usuarios SET password=? WHERE id=?", (password_hash, uid))
+    conn.commit()
+    conn.close()
+
+
+# ── Google OAuth ──────────────────────────────────────────────────────────────
+
+def obtener_usuario_por_google_id(google_id: str):
+    conn = get_db()
+    row = conn.execute(
+        "SELECT * FROM usuarios WHERE google_id=? AND activo=1", (google_id,)
+    ).fetchone()
+    conn.close()
+    return row
+
+
+def vincular_google_id(uid: int, google_id: str):
+    conn = get_db()
+    conn.execute("UPDATE usuarios SET google_id=? WHERE id=?", (google_id, uid))
+    conn.commit()
+    conn.close()
+
+
+def crear_o_vincular_google(email: str, nombre: str, google_id: str) -> dict:
+    """
+    Si existe un usuario con ese google_id -> retorna el usuario.
+    Si existe con ese email -> vincula google_id y retorna.
+    Si no existe -> crea cuenta sin contraseña y retorna.
+    """
+    conn = get_db()
+    # Buscar por google_id primero
+    row = conn.execute(
+        "SELECT * FROM usuarios WHERE google_id=? AND activo=1", (google_id,)
+    ).fetchone()
+    if row:
+        conn.close()
+        return dict(row)
+
+    # Buscar por email
+    row = conn.execute(
+        "SELECT * FROM usuarios WHERE email=? AND activo=1", (email.lower().strip(),)
+    ).fetchone()
+    if row:
+        conn.execute("UPDATE usuarios SET google_id=? WHERE id=?", (google_id, row['id']))
+        conn.commit()
+        conn.close()
+        return dict(row)
+
+    # Crear cuenta nueva (sin password — solo acceso via Google)
+    cur = conn.execute(
+        "INSERT INTO usuarios (email, password, nombre, plan, google_id) VALUES (?, '', ?, 'landing', ?)",
+        (email.lower().strip(), nombre.strip(), google_id)
+    )
+    uid = cur.lastrowid
+    conn.commit()
+    row = conn.execute("SELECT * FROM usuarios WHERE id=?", (uid,)).fetchone()
+    result = dict(row)
+    conn.close()
+    return result

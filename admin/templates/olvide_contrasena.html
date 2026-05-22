@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Olvidé mi contraseña · Plantillas Web RD</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='admin.css') }}">
+</head>
+<body class="login-body">
+
+  <div class="login-wrap">
+    <div class="login-card">
+
+      <div class="login-logo">
+        <span class="logo-mark">PW</span>
+        <div>
+          <p class="logo-title">Recuperar acceso</p>
+          <p class="logo-sub">Plantillas Web RD</p>
+        </div>
+      </div>
+
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% for category, message in messages %}
+          <div class="alert alert-{{ category }}">{{ message }}</div>
+        {% endfor %}
+      {% endwith %}
+
+      <p style="font-size:14px;color:var(--admin-text-muted);margin-bottom:20px;">
+        Ingresa tu email y te enviaremos un enlace para crear una nueva contraseña.
+      </p>
+
+      <form method="POST" class="login-form">
+        <div class="form-group">
+          <label for="email">Email</label>
+          <input type="email" id="email" name="email" required
+                 autocomplete="email" placeholder="tu@email.com">
+        </div>
+        <button type="submit" class="btn-login">Enviar enlace</button>
+      </form>
+
+      <p class="login-footer" style="margin-top:16px;">
+        <a href="{{ url_for('entrar') }}" style="color:var(--admin-accent);">← Volver al login</a>
+      </p>
+
+    </div>
+  </div>
+
+</body>
+</html>
