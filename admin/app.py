@@ -65,9 +65,13 @@ app.config['MAX_CONTENT_LENGTH'] = 5 * 1024 * 1024  # 5 MB máximo por imagen
 # ── Configuración SMTP (variables de entorno en PythonAnywhere) ───────────────
 MAIL_SERVER   = os.environ.get('MAIL_SERVER',   'smtp.gmail.com')
 MAIL_PORT     = int(os.environ.get('MAIL_PORT', '587'))
-MAIL_USER     = os.environ.get('MAIL_USER',     '')   # tu correo Gmail
-MAIL_PASSWORD = os.environ.get('MAIL_PASSWORD', '')   # contraseña de aplicación
+MAIL_USER     = os.environ.get('MAIL_USER',     '')
+MAIL_PASSWORD = os.environ.get('MAIL_PASSWORD', '')
 MAIL_FROM     = os.environ.get('MAIL_FROM',     MAIL_USER)
+
+# ── SendGrid ──────────────────────────────────────────────────────────────────
+SENDGRID_API_KEY = os.environ.get('SENDGRID_API_KEY', '')
+SENDGRID_FROM    = os.environ.get('SENDGRID_FROM', MAIL_FROM)
 
 # ── Configuración Google OAuth ────────────────────────────────────────────────
 GOOGLE_CLIENT_ID     = os.environ.get('GOOGLE_CLIENT_ID', '')
@@ -78,36 +82,44 @@ GOOGLE_USERINFO_URL  = 'https://www.googleapis.com/oauth2/v3/userinfo'
 
 
 def _enviar_email_reset(destinatario: str, nombre: str, reset_url: str):
-    """Envía email con enlace para resetear contraseña. Falla silenciosamente."""
-    if not MAIL_USER or not MAIL_PASSWORD:
+    """Envía email de reset via SendGrid API (HTTPS — funciona en PythonAnywhere free)."""
+    if not SENDGRID_API_KEY or not SENDGRID_FROM:
+        logging.warning('[mail] SENDGRID_API_KEY o SENDGRID_FROM no configurados')
         return
+    import urllib.request
+    html = f"""
+    <div style="font-family:Arial,sans-serif;max-width:480px;margin:0 auto">
+      <h2 style="color:#0bb180">Restablecer contraseña</h2>
+      <p>Hola <strong>{nombre}</strong>,</p>
+      <p>Recibimos una solicitud para restablecer la contraseña de tu cuenta.</p>
+      <p style="margin:24px 0">
+        <a href="{reset_url}"
+           style="background:#0bb180;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:bold">
+          Crear nueva contraseña
+        </a>
+      </p>
+      <p style="color:#666;font-size:13px">Este enlace expira en <strong>24 horas</strong>.<br>
+      Si no solicitaste esto, ignora este correo.</p>
+    </div>"""
+    payload = _json.dumps({
+        'personalizations': [{'to': [{'email': destinatario}]}],
+        'from': {'email': SENDGRID_FROM, 'name': 'Plantillas Web RD'},
+        'subject': 'Restablecer contraseña — Plantillas Web RD',
+        'content': [{'type': 'text/html', 'value': html}],
+    }).encode()
     try:
-        msg = MIMEMultipart('alternative')
-        msg['Subject'] = 'Restablecer contraseña — Plantillas Web RD'
-        msg['From']    = f'Plantillas Web RD <{MAIL_FROM}>'
-        msg['To']      = destinatario
-        html = f"""
-        <div style="font-family:Arial,sans-serif;max-width:480px;margin:0 auto">
-          <h2 style="color:#0bb180">Restablecer contraseña</h2>
-          <p>Hola <strong>{nombre}</strong>,</p>
-          <p>Recibimos una solicitud para restablecer la contraseña de tu cuenta.</p>
-          <p style="margin:24px 0">
-            <a href="{reset_url}"
-               style="background:#0bb180;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:bold">
-              Crear nueva contraseña
-            </a>
-          </p>
-          <p style="color:#666;font-size:13px">Este enlace expira en <strong>24 horas</strong>.<br>
-          Si no solicitaste esto, ignora este correo.</p>
-        </div>"""
-        msg.attach(MIMEText(html, 'html'))
-        with smtplib.SMTP(MAIL_SERVER, MAIL_PORT, timeout=10) as s:
-            s.ehlo()
-            s.starttls()
-            s.login(MAIL_USER, MAIL_PASSWORD)
-            s.sendmail(MAIL_FROM, destinatario, msg.as_string())
+        req = urllib.request.Request(
+            'https://api.sendgrid.com/v3/mail/send',
+            data=payload,
+            headers={
+                'Authorization': f'Bearer {SENDGRID_API_KEY}',
+                'Content-Type': 'application/json',
+            }
+        )
+        with urllib.request.urlopen(req, timeout=15) as resp:
+            logging.info(f'[mail] Reset enviado a {destinatario} — status {resp.status}')
     except Exception as e:
-        logging.warning(f'[mail] Error enviando reset a {destinatario}: {e}')
+        logging.warning(f'[mail] Error SendGrid enviando a {destinatario}: {e}')
 
 
 def _enviar_email_notificacion(destinatario: str, sitio_nombre: str,
