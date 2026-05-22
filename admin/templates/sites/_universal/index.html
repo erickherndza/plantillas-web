@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="description" content="{{ config.get('nosotros_descripcion', sitio.nombre) }}"/>
+  <title>{{ sitio.nombre }}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet"/>
+  <link href="{{ url_for('static', filename='sites/landing-base.css') }}" rel="stylesheet"/>
+  <style>
+    :root {
+      --c-primary:     {{ config.get('color_primario',  '#1e40af') }};
+      --c-accent:      {{ config.get('color_acento',    '#f59e0b') }};
+      --c-dark:        {{ config.get('color_footer_bg', '#0f172a') }};
+      --c-nav:         {{ config.get('color_navbar_bg', config.get('color_primario','#1e40af')) }};
+      --c-text:        {{ config.get('color_texto',     '#1e293b') }};
+      --c-section-alt: {{ config.get('color_seccion_bg','#f8fafc') }};
+      --font-title:    '{{ config.get('fuente_titulos','Inter') }}', sans-serif;
+      --font-body:     '{{ config.get('fuente_cuerpo', 'Inter') }}', sans-serif;
+      {% set _btn = {'redondeado':'999px','suave':'8px','cuadrado':'2px'} %}
+      --btn-radius: {{ _btn.get(config.get('btn_forma','redondeado'), '999px') }};
+      {% set _r = {'cuadrado':'0px','suave':'4px','redondeado':'12px','muy-redondeado':'24px'} %}
+      --card-radius: {{ _r.get(config.get('estilo_esquinas','redondeado'), '12px') }};
+      {% set _shadow = {'sin-sombra':'none','sutil':'0 1px 4px rgba(0,0,0,.08)','media':'0 4px 16px rgba(0,0,0,.14)','marcada':'0 8px 32px rgba(0,0,0,.22)'} %}
+      --card-shadow: {{ _shadow.get(config.get('estilo_sombra','sutil'), '0 1px 4px rgba(0,0,0,.08)') }};
+      {% set _icon_shape = {'emoji':'0','circulo':'50%','cuadrado':'8px','sin-icono':'0'} %}
+      --icon-shape:   {{ _icon_shape.get(config.get('estilo_icono','circulo'), '50%') }};
+      --c-icon-bg:    {{ config.get('color_icono', config.get('color_primario','#1e40af')) }}22;
+      --icon-padding: {{ '12px' if config.get('estilo_icono','circulo') in ('circulo','cuadrado') else '0' }};
+    }
+    {% if config.get('estilo_icono','circulo') == 'sin-icono' %}.lb-card-icon { display:none; }{% endif %}
+  </style>
+  {% if config.get('custom_css') %}<style>{{ config.get('custom_css') }}</style>{% endif %}
+  {% if config.get('css_personalizado') %}<style>{{ config.get('css_personalizado') }}</style>{% endif %}
+</head>
+<body>
+
+<!-- NAVBAR -->
+<nav class="lb-nav">
+  <div class="container">
+    <div class="lb-nav-logo">
+      {% if config.get('logo_url') %}
+        <img src="{{ config.get('logo_url') }}" alt="{{ sitio.nombre }}" style="max-height:36px;width:auto;">
+      {% else %}
+        <span class="logo-icon">🏢</span>
+        {{ config.get('nombre_negocio', sitio.nombre) }}
+      {% endif %}
+    </div>
+    <button class="lb-nav-toggle" id="navToggle">☰</button>
+    <ul class="lb-nav-links" id="navLinks">
+      {% set _menu = config.get('menu_items') %}
+      {% if _menu %}
+        {% set _items = _menu | from_json %}
+        {% for item in _items %}
+        <li class="{{ 'has-sub' if item.get('hijos') }}">
+          <a href="{{ item.get('href','#') }}"{{ ' target="_blank"' if item.get('externo') }}>{{ item.get('label','') }}</a>
+          {% if item.get('hijos') %}
+          <ul class="lb-submenu">
+            {% for hijo in item.hijos %}
+            <li><a href="{{ hijo.get('href','#') }}">{{ hijo.get('label','') }}</a></li>
+            {% endfor %}
+          </ul>
+          {% endif %}
+        </li>
+        {% endfor %}
+      {% else %}
+      <li><a href="#inicio">{{ config.get('menu_inicio','Inicio') }}</a></li>
+      <li><a href="#servicios">{{ config.get('menu_servicios','Servicios') }}</a></li>
+      <li><a href="#nosotros">{{ config.get('menu_nosotros','Nosotros') }}</a></li>
+      {% if secciones.equipo %}<li><a href="#equipo">{{ config.get('menu_equipo','Equipo') }}</a></li>{% endif %}
+      <li><a href="#contacto">{{ config.get('menu_contacto','Contacto') }}</a></li>
+      {% endif %}
+    </ul>
+    <a href="#contacto" class="lb-nav-cta">{{ config.get('hero_cta_texto','Contáctanos') }}</a>
+  </div>
+</nav>
+
+<!-- HERO — variante dinámica -->
+{% set _layout = layout if layout is defined else {} %}
+{% set _hero_var = _layout.get('hero', 'fullscreen') %}
+{% include 'sites/_universal/sections/hero_' + _hero_var + '.html' ignore missing %}
+
+<div class="sections-wrapper">
+
+<!-- SERVICIOS — variante dinámica -->
+{% if config.get('seccion_servicios_visible','1') != '0' %}
+{% if secciones.servicios %}
+<section class="lb-section" id="servicios" style="order:{{ config.get('seccion_servicios_orden','1') }};{% if config.get('seccion_servicios_bg') %}background:{{ config.get('seccion_servicios_bg') }};{% endif %}">
+  <div class="container">
+    <div class="lb-section-header fade-up">
+      <p class="lb-section-eyebrow">Lo que hacemos</p>
+      <h2 class="lb-section-title">{{ config.get('menu_servicios','Nuestros servicios') }}</h2>
+      <p class="lb-section-sub">{{ config.get('servicios_descripcion','Ofrecemos soluciones adaptadas a cada cliente.') }}</p>
+    </div>
+    {% set _srv_var = _layout.get('services', 'grid') %}
+    {% include 'sites/_universal/sections/services_' + _srv_var + '.html' ignore missing %}
+  </div>
+</section>
+{% endif %}
+{% endif %}
+
+<!-- NOSOTROS -->
+{% if config.get('seccion_nosotros_visible','1') != '0' %}
+<section class="lb-section alt" id="nosotros" style="order:{{ config.get('seccion_nosotros_orden','2') }};{% if config.get('seccion_nosotros_bg') %}background:{{ config.get('seccion_nosotros_bg') }};{% endif %}">
+  <div class="container">
+    <div class="lb-about-grid">
+      <div class="lb-about-img fade-up">
+        {% if config.get('nosotros_imagen') %}
+          <img src="{{ config.get('nosotros_imagen') }}" alt="Nosotros">
+        {% else %}
+          🏢
+        {% endif %}
+      </div>
+      <div class="fade-up">
+        <p class="lb-about-label">Quiénes somos</p>
+        <h2 class="lb-about-title">{{ config.get('nosotros_titulo','Sobre nosotros') }}</h2>
+        <p class="lb-about-text">{{ config.get('nosotros_descripcion','Somos una empresa comprometida con la excelencia y la innovación.') }}</p>
+        <div class="lb-mvv">
+          {% if config.get('nosotros_mision') %}
+          <div class="lb-mvv-item">
+            <div class="lb-mvv-dot"></div>
+            <div><p class="lb-mvv-label">Misión</p><p class="lb-mvv-val">{{ config.get('nosotros_mision') }}</p></div>
+          </div>
+          {% endif %}
+          {% if config.get('nosotros_vision') %}
+          <div class="lb-mvv-item">
+            <div class="lb-mvv-dot"></div>
+            <div><p class="lb-mvv-label">Visión</p><p class="lb-mvv-val">{{ config.get('nosotros_vision') }}</p></div>
+          </div>
+          {% endif %}
+          {% if config.get('nosotros_valores') %}
+          <div class="lb-mvv-item">
+            <div class="lb-mvv-dot"></div>
+            <div><p class="lb-mvv-label">Valores</p><p class="lb-mvv-val">{{ config.get('nosotros_valores') }}</p></div>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+{% endif %}
+
+<!-- PROYECTOS — variante dinámica -->
+{% if config.get('seccion_proyectos_visible','1') != '0' %}
+{% if secciones.proyectos %}
+<section class="lb-section" id="proyectos" style="order:{{ config.get('seccion_proyectos_orden','3') }};{% if config.get('seccion_proyectos_bg') %}background:{{ config.get('seccion_proyectos_bg') }};{% endif %}">
+  <div class="container">
+    <div class="lb-section-header fade-up">
+      <p class="lb-section-eyebrow">Nuestro trabajo</p>
+      <h2 class="lb-section-title">{{ config.get('menu_proyectos','Proyectos') }}</h2>
+      <p class="lb-section-sub">{{ config.get('proyectos_descripcion','Una muestra de nuestros trabajos más destacados.') }}</p>
+    </div>
+    {% set _prj_var = _layout.get('projects', 'grid') %}
+    {% include 'sites/_universal/sections/projects_' + _prj_var + '.html' ignore missing %}
+  </div>
+</section>
+{% endif %}
+{% endif %}
+
+<!-- EQUIPO — variante dinámica -->
+{% if config.get('seccion_equipo_visible','1') != '0' %}
+{% if secciones.equipo %}
+<section class="lb-section alt" id="equipo" style="order:{{ config.get('seccion_equipo_orden','4') }};{% if config.get('seccion_equipo_bg') %}background:{{ config.get('seccion_equipo_bg') }};{% endif %}">
+  <div class="container">
+    <div class="lb-section-header fade-up">
+      <p class="lb-section-eyebrow">Conoce al equipo</p>
+      <h2 class="lb-section-title">{{ config.get('menu_equipo','Nuestro equipo') }}</h2>
+      <p class="lb-section-sub">{{ config.get('equipo_descripcion','Profesionales comprometidos con tu éxito.') }}</p>
+    </div>
+    {% set _team_var = _layout.get('team', 'cards') %}
+    {% include 'sites/_universal/sections/team_' + _team_var + '.html' ignore missing %}
+  </div>
+</section>
+{% endif %}
+{% endif %}
+
+<!-- TESTIMONIOS -->
+{% if config.get('seccion_testimonios_visible','1') != '0' %}
+{% if secciones.testimonios %}
+<section class="lb-section alt" style="order:{{ config.get('seccion_testimonios_orden','5') }};{% if config.get('seccion_testimonios_bg') %}background:{{ config.get('seccion_testimonios_bg') }};{% endif %}">
+  <div class="container">
+    <div class="lb-section-header fade-up">
+      <p class="lb-section-eyebrow">Lo que dicen</p>
+      <h2 class="lb-section-title">{{ config.get('testimonios_titulo','Testimonios') }}</h2>
+    </div>
+    <div class="lb-testi-grid">
+      {% for t in secciones.testimonios %}
+      <div class="lb-testi-card fade-up">
+        <div class="lb-testi-stars">★★★★★</div>
+        <p class="lb-testi-text">"{{ t.get('texto','') }}"</p>
+        <p class="lb-testi-author">{{ t.get('nombre','') }}</p>
+        <p class="lb-testi-sub">{{ t.get('cargo','') }}</p>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endif %}
+{% endif %}
+
+<!-- CTA -->
+{% if config.get('seccion_citas_visible','1') != '0' %}
+<div class="lb-cta" style="order:{{ config.get('seccion_citas_orden','6') }};">
+  <h2>{{ config.get('cta_titulo','¿Listo para trabajar juntos?') }}</h2>
+  <p>Cuéntanos tu proyecto y te respondemos en menos de 24 horas.</p>
+  <a href="#contacto" class="lb-cta-btn">{{ config.get('hero_cta_texto','Contáctanos') }}</a>
+</div>
+{% endif %}
+
+<!-- CONTACTO -->
+{% if config.get('seccion_contacto_visible','1') != '0' %}
+<section class="lb-section" id="contacto" style="order:{{ config.get('seccion_contacto_orden','7') }};{% if config.get('seccion_contacto_bg') %}background:{{ config.get('seccion_contacto_bg') }};{% endif %}">
+  <div class="container">
+    <div class="lb-contacto-grid">
+      <div class="lb-contacto-info fade-up">
+        <h3>Ponte en contacto</h3>
+        <p>{{ config.get('contacto_descripcion','Estamos aquí para ayudarte. Escríbenos o llámanos.') }}</p>
+        <div class="lb-contacto-items">
+          {% if config.get('contacto_telefono') %}
+          <div class="lb-contacto-item"><strong>📞 Tel.</strong> {{ config.get('contacto_telefono') }}</div>
+          {% endif %}
+          {% if config.get('contacto_email') %}
+          <div class="lb-contacto-item"><strong>✉ Email</strong> {{ config.get('contacto_email') }}</div>
+          {% endif %}
+          {% if config.get('contacto_direccion') %}
+          <div class="lb-contacto-item"><strong>📍 Dir.</strong> {{ config.get('contacto_direccion') }}</div>
+          {% endif %}
+          {% if config.get('contacto_horario') %}
+          <div class="lb-contacto-item"><strong>🕐 Horario</strong> {{ config.get('contacto_horario') }}</div>
+          {% endif %}
+        </div>
+      </div>
+      {% if config.get('contacto_maps_embed') %}
+      <div style="grid-column:1/-1;height:260px;border-radius:var(--card-radius);overflow:hidden;border:1px solid var(--c-border,#e2e8f0);">
+        <iframe src="{{ config.get('contacto_maps_embed') }}" style="width:100%;height:100%;border:none;" allowfullscreen loading="lazy"></iframe>
+      </div>
+      {% endif %}
+      <form class="lb-form fade-up" method="POST" action="/s/{{ sitio.slug }}/enviar-contacto">
+        <input type="text" name="nombre" placeholder="Tu nombre" required>
+        <input type="email" name="email" placeholder="Tu correo electrónico" required>
+        <input type="tel" name="telefono" placeholder="Teléfono (opcional)">
+        <textarea name="mensaje" placeholder="¿En qué podemos ayudarte?" required></textarea>
+        <button type="submit" class="lb-form-btn">Enviar mensaje</button>
+      </form>
+    </div>
+  </div>
+</section>
+{% endif %}
+
+</div><!-- /sections-wrapper -->
+
+<!-- FOOTER -->
+<footer class="lb-footer">
+  <div class="container">
+    <div class="lb-footer-top">
+      <div>
+        <div class="lb-footer-brand">{{ config.get('nombre_negocio', sitio.nombre) }}</div>
+        <p class="lb-footer-tagline">{{ config.get('hero_subtitulo','') }}</p>
+      </div>
+      <div class="lb-footer-links">
+        <a href="#inicio">Inicio</a>
+        <a href="#servicios">Servicios</a>
+        <a href="#nosotros">Nosotros</a>
+        <a href="#contacto">Contacto</a>
+      </div>
+    </div>
+    <div class="lb-footer-bottom">&copy; {{ sitio.nombre }} · Todos los derechos reservados</div>
+  </div>
+</footer>
+
+<!-- Lightbox -->
+<div id="lb-lightbox" class="lb-lightbox">
+  <button class="lb-lbox-close">×</button>
+  <button class="lb-lbox-prev">&#8249;</button>
+  <img class="lb-lbox-img" src="" alt="">
+  <button class="lb-lbox-next">&#8250;</button>
+</div>
+
+<script src="{{ url_for('static', filename='sites/site-widgets.js') }}"></script>
+<script>
+  document.getElementById('navToggle').onclick = () =>
+    document.getElementById('navLinks').classList.toggle('open');
+
+  const obs = new IntersectionObserver(entries =>
+    entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); }),
+    { threshold: 0.12 }
+  );
+  document.querySelectorAll('.fade-up').forEach(el => obs.observe(el));
+</script>
+</body>
+</html>

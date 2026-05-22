@@ -1,0 +1,16 @@
+<!-- HERO minimal — compacto (60vh), texto centrado, gradiente con color primario, sin overlay oscuro -->
+<section class="lb-hero" id="inicio" style="min-height:60vh;display:flex;align-items:center;background:linear-gradient(135deg,var(--c-primary) 0%,var(--c-dark) 100%);">
+  <div class="container" style="text-align:center;padding-top:60px;padding-bottom:60px;">
+    <div class="lb-hero-content fade-up" style="margin:0 auto;text-align:center;">
+      {% if config.get('hero_eyebrow') %}
+        <p class="lb-hero-eyebrow" style="opacity:.85;">{{ config.get('hero_eyebrow') }}</p>
+      {% endif %}
+      <h1 class="lb-hero-title" style="font-size:clamp(2rem,5vw,3.5rem);">{{ config.get('hero_titulo', sitio.nombre) }}</h1>
+      <p class="lb-hero-sub" style="max-width:560px;margin:0 auto 28px;">{{ config.get('hero_subtitulo', 'Soluciones profesionales para tu negocio.') }}</p>
+      <div class="lb-hero-btns" style="justify-content:center;">
+        <a class="lb-btn-primary" href="{{ config.get('hero_cta_href','#contacto') }}">{{ config.get('hero_cta_texto','Contáctanos') }}</a>
+        <a class="lb-btn-outline" href="{{ config.get('hero_cta2_href','#servicios') }}">{{ config.get('hero_cta2_texto','Ver servicios') }}</a>
+      </div>
+    </div>
+  </div>
+</section>

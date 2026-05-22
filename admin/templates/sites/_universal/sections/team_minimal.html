@@ -1,0 +1,14 @@
+<!-- EQUIPO minimal — solo nombre + rol en lista simple, sin fotos -->
+<ul style="list-style:none;padding:0;margin:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;">
+  {% for m in secciones.equipo %}
+  <li class="fade-up" style="display:flex;align-items:center;gap:14px;padding:16px 20px;background:#fff;border-radius:var(--card-radius);box-shadow:var(--card-shadow);border-left:4px solid var(--c-primary);">
+    <div>
+      <p style="margin:0;font-weight:700;color:var(--c-text);font-size:1rem;">{{ m.get('nombre','') }}</p>
+      <p style="margin:0;color:var(--c-primary);font-size:.85rem;font-weight:500;">{{ m.get('rol','') }}</p>
+      {% if m.get('credenciales') %}
+      <p style="margin:4px 0 0;color:var(--c-text);opacity:.6;font-size:.8rem;">{{ m.credenciales }}</p>
+      {% endif %}
+    </div>
+  </li>
+  {% endfor %}
+</ul>

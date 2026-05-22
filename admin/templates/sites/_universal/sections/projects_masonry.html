@@ -1,0 +1,20 @@
+<!-- PROYECTOS masonry — columnas CSS con alturas variables -->
+<div style="column-count:3;column-gap:16px;" class="lb-masonry">
+  {% for item in secciones.proyectos %}
+  <div class="fade-up" style="break-inside:avoid;margin-bottom:16px;border-radius:var(--card-radius);overflow:hidden;box-shadow:var(--card-shadow);background:#fff;display:inline-block;width:100%;">
+    {% if item.get('imagen') %}
+    <img src="{{ item.imagen }}" alt="{{ item.get('titulo','') }}" style="width:100%;display:block;object-fit:cover;">
+    {% else %}
+    <div style="width:100%;height:{{ [140,200,160,240,180,220][(loop.index0 % 6)] }}px;background:var(--c-primary);opacity:.15;display:flex;align-items:center;justify-content:center;font-size:40px;">🖼</div>
+    {% endif %}
+    <div style="padding:12px 14px;">
+      <p style="font-size:.76rem;color:var(--c-primary);font-weight:600;text-transform:uppercase;letter-spacing:.05em;margin:0 0 2px;">{{ item.get('categoria','') }}</p>
+      <h3 style="margin:0;font-size:.93rem;color:var(--c-text);">{{ item.get('titulo','Proyecto') }}</h3>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+<style>
+  @media(max-width:768px){ .lb-masonry{ column-count:2; } }
+  @media(max-width:480px){ .lb-masonry{ column-count:1; } }
+</style>

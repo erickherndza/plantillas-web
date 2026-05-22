@@ -1,0 +1,10 @@
+<!-- SERVICIOS grid — tarjetas en cuadrícula (variante por defecto) -->
+<div class="lb-cards-grid" style="{{ 'grid-template-columns:repeat(' + config.get('seccion_servicios_cols','') + ',1fr)' if config.get('seccion_servicios_cols') else '' }}">
+  {% for item in secciones.servicios %}
+  <div class="lb-card fade-up">
+    <div class="lb-card-icon">{{ item.get('icono','⚡') }}</div>
+    <h3 class="lb-card-title">{{ item.get('titulo','Servicio') }}</h3>
+    <p class="lb-card-desc">{{ item.get('desc','') }}</p>
+  </div>
+  {% endfor %}
+</div>

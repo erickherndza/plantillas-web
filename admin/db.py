@@ -238,6 +238,17 @@ def init_db():
     """)
     conn.commit()
 
+    # Migración: columnas layout_json y defaults_json en plantilla_estilos (idempotente)
+    for _col, _def in [
+        ('layout_json',   '\'{"hero":"fullscreen","services":"grid","projects":"grid","team":"cards"}\''),
+        ('defaults_json', '\'{}\''),
+    ]:
+        try:
+            conn.execute(f"ALTER TABLE plantilla_estilos ADD COLUMN {_col} TEXT DEFAULT {_def}")
+            conn.commit()
+        except Exception:
+            pass  # ya existe
+
     # Migraciones columnas plantillas
     for col, default in [
         ('slider_config', '\'{"efecto":"fade","intervalo":4,"flechas":true,"puntos":true,"modo":"seccion"}\''),
@@ -1058,6 +1069,8 @@ _ESTILOS_DEFAULT = {
     'header_json': '{}', 'hero_json': '{}', 'footer_json': '{}',
     'movil_json': '{"h1":32,"padding":40,"hamburguesa":true}',
     'preset_activo': 'oceano-oscuro',
+    'layout_json': '{"hero":"fullscreen","services":"grid","projects":"grid","team":"cards"}',
+    'defaults_json': '{}',
 }
 
 def get_estilos(plantilla_id: int) -> dict:
@@ -1086,3 +1099,20 @@ def upsert_estilos(plantilla_id: int, campos: dict):
         conn.execute(f"INSERT INTO plantilla_estilos ({cols}) VALUES ({vals})", list(full.values()))
     conn.commit()
     conn.close()
+
+
+def get_layout(plantilla_id: int) -> dict:
+    """Retorna el dict de layout desde plantilla_estilos.layout_json."""
+    import json as _json
+    conn = get_db()
+    row = conn.execute(
+        "SELECT layout_json FROM plantilla_estilos WHERE plantilla_id=?", (plantilla_id,)
+    ).fetchone()
+    conn.close()
+    _default = {"hero": "fullscreen", "services": "grid", "projects": "grid", "team": "cards"}
+    if row and row['layout_json']:
+        try:
+            return _json.loads(row['layout_json'])
+        except Exception:
+            pass
+    return _default

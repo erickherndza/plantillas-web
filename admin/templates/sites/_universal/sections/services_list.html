@@ -1,0 +1,12 @@
+<!-- SERVICIOS list — lista horizontal: icono + título + descripción en línea -->
+<div style="border-radius:var(--card-radius);overflow:hidden;border:1px solid rgba(0,0,0,.08);">
+  {% for item in secciones.servicios %}
+  <div class="fade-up" style="display:flex;gap:16px;align-items:flex-start;padding:20px;border-bottom:1px solid rgba(0,0,0,.08);background:{% if loop.index is odd %}#fff{% else %}var(--c-section-alt){% endif %};">
+    <div style="font-size:28px;min-width:48px;text-align:center;padding-top:4px;">{{ item.get('icono','⚡') }}</div>
+    <div>
+      <h3 style="margin-bottom:6px;font-size:1.05rem;color:var(--c-text);">{{ item.get('titulo','Servicio') }}</h3>
+      <p style="color:var(--c-text);opacity:.7;margin:0;line-height:1.5;">{{ item.get('desc','') }}</p>
+    </div>
+  </div>
+  {% endfor %}
+</div>

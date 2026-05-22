@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>Nueva plantilla — Wizard</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='admin.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='admin/wizard.css') }}">
+</head>
+<body class="admin-body">
+<nav class="admin-topbar">
+  <a href="{{ url_for('admin_plantillas') }}" class="admin-brand">← Volver a plantillas</a>
+  <span class="admin-user">{{ nombre }}</span>
+</nav>
+
+<div class="wizard-wrap">
+  <div class="wizard-header">
+    <h1 class="wizard-title">Nueva plantilla con wizard</h1>
+    <p class="wizard-subtitle">Configura tu plantilla paso a paso en menos de 2 minutos.</p>
+    <div class="wizard-progress">
+      <div class="wizard-progress-bar" id="progressBar" style="width:20%"></div>
+    </div>
+    <div class="wizard-steps-indicator">
+      <div class="step-dot active" data-step="1">1</div>
+      <div class="step-connector"></div>
+      <div class="step-dot" data-step="2">2</div>
+      <div class="step-connector"></div>
+      <div class="step-dot" data-step="3">3</div>
+      <div class="step-connector"></div>
+      <div class="step-dot" data-step="4">4</div>
+    </div>
+    <div class="wizard-steps-labels">
+      <span>Info básica</span>
+      <span>Identidad visual</span>
+      <span>Layout</span>
+      <span>Contenido</span>
+    </div>
+  </div>
+
+  <form id="wizardForm" autocomplete="off">
+
+    <!-- ── STEP 1 — Info básica ─────────────────────────────────────────── -->
+    <div class="wizard-step active" id="step-1">
+      <h2 class="step-title">Información básica</h2>
+      <p class="step-desc">Define el nombre, identificador y tipo de esta plantilla.</p>
+
+      <div class="wiz-field">
+        <label for="nombre">Nombre de la plantilla *</label>
+        <input type="text" id="nombre" name="nombre" placeholder="Ej: Consultorio Médico" required>
+      </div>
+
+      <div class="wiz-field">
+        <label for="clave">
+          Clave (identificador) *
+          <span class="wiz-hint">Solo letras minúsculas, números, guiones. Ej: consultorio-medico</span>
+        </label>
+        <input type="text" id="clave" name="clave" placeholder="consultorio-medico" pattern="^[a-z][a-z0-9_-]{1,29}$" required>
+        <span class="wiz-validation" id="claveMsg"></span>
+      </div>
+
+      <div class="wiz-field">
+        <label>Tipo *</label>
+        <div class="wiz-radios">
+          <label class="wiz-radio-card">
+            <input type="radio" name="tipo" value="landing" checked>
+            <div class="wiz-radio-body">
+              <strong>Landing page</strong>
+              <p>Una sola página con todas las secciones.</p>
+            </div>
+          </label>
+          <label class="wiz-radio-card">
+            <input type="radio" name="tipo" value="web5">
+            <div class="wiz-radio-body">
+              <strong>Web completa</strong>
+              <p>Múltiples páginas (Inicio, Servicios, Contacto…).</p>
+            </div>
+          </label>
+        </div>
+      </div>
+
+      <div class="wiz-field">
+        <label for="descripcion">Descripción</label>
+        <textarea id="descripcion" name="descripcion" rows="3" placeholder="Para qué tipo de negocio está pensada esta plantilla."></textarea>
+      </div>
+    </div>
+
+    <!-- ── STEP 2 — Identidad visual ───────────────────────────────────── -->
+    <div class="wizard-step" id="step-2">
+      <h2 class="step-title">Identidad visual</h2>
+      <p class="step-desc">Elige los colores y tipografías. Usa el scraper para extraerlos de un sitio existente.</p>
+
+      <div class="wiz-tabs">
+        <button type="button" class="wiz-tab active" data-tab="scraper">Scraper de marca</button>
+        <button type="button" class="wiz-tab" data-tab="manual">Configuración manual</button>
+      </div>
+
+      <div class="wiz-tab-content active" id="tab-scraper">
+        <div class="wiz-field">
+          <label for="scraperUrl">URL del sitio a analizar</label>
+          <div style="display:flex;gap:10px;">
+            <input type="url" id="scraperUrl" placeholder="https://ejemplo.com" style="flex:1;">
+            <button type="button" class="wiz-btn-secondary" id="btnScraper">Analizar</button>
+          </div>
+        </div>
+        <div id="scraperResults" style="display:none;margin-top:16px;">
+          <p class="wiz-hint" style="margin-bottom:12px;">Colores detectados — haz clic para aplicar:</p>
+          <div id="scraperColors" class="scraper-colors"></div>
+        </div>
+        <div id="scraperError" class="wiz-alert wiz-alert-error" style="display:none;"></div>
+        <div id="scraperLoading" style="display:none;text-align:center;padding:20px;color:#666;">Analizando sitio...</div>
+      </div>
+
+      <div class="wiz-tab-content" id="tab-manual">
+        <div class="wiz-colors-grid">
+          <div class="wiz-field">
+            <label for="colorPrimario">Color primario</label>
+            <div class="wiz-color-input">
+              <input type="color" id="colorPrimarioPicker" value="#185FA5">
+              <input type="text" id="colorPrimario" name="color_primario" value="#185FA5" placeholder="#185FA5">
+            </div>
+          </div>
+          <div class="wiz-field">
+            <label for="colorAcento">Color acento</label>
+            <div class="wiz-color-input">
+              <input type="color" id="colorAcentoPicker" value="#0088CC">
+              <input type="text" id="colorAcento" name="color_acento" value="#0088CC" placeholder="#0088CC">
+            </div>
+          </div>
+          <div class="wiz-field">
+            <label for="colorFooter">Fondo footer/oscuro</label>
+            <div class="wiz-color-input">
+              <input type="color" id="colorFooterPicker" value="#0A0F1E">
+              <input type="text" id="colorFooter" name="color_footer_bg" value="#0A0F1E" placeholder="#0A0F1E">
+            </div>
+          </div>
+          <div class="wiz-field">
+            <label for="colorClaro">Fondo claro secciones</label>
+            <div class="wiz-color-input">
+              <input type="color" id="colorClaroPicker" value="#f8fafc">
+              <input type="text" id="colorClaro" name="color_seccion_bg" value="#f8fafc" placeholder="#f8fafc">
+            </div>
+          </div>
+        </div>
+
+        <div class="wiz-fonts-grid">
+          <div class="wiz-field">
+            <label for="fuenteTitulos">Fuente para títulos</label>
+            <select id="fuenteTitulos" name="fuente_titulos">
+              <option value="Inter">Inter (moderna)</option>
+              <option value="Playfair Display">Playfair Display (elegante)</option>
+              <option value="Raleway">Raleway (sofisticada)</option>
+              <option value="Merriweather">Merriweather (clásica)</option>
+              <option value="Montserrat">Montserrat (geométrica)</option>
+              <option value="Lato">Lato (neutral)</option>
+              <option value="Poppins">Poppins (redondeada)</option>
+              <option value="system-ui, sans-serif">Sistema (por defecto)</option>
+            </select>
+          </div>
+          <div class="wiz-field">
+            <label for="fuenteCuerpo">Fuente para cuerpo</label>
+            <select id="fuenteCuerpo" name="fuente_cuerpo">
+              <option value="Inter">Inter (moderna)</option>
+              <option value="Lato">Lato (neutral)</option>
+              <option value="Open Sans">Open Sans (legible)</option>
+              <option value="Source Sans 3">Source Sans 3</option>
+              <option value="Roboto">Roboto</option>
+              <option value="system-ui, sans-serif">Sistema (por defecto)</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── STEP 3 — Layout ──────────────────────────────────────────────── -->
+    <div class="wizard-step" id="step-3">
+      <h2 class="step-title">Layout de secciones</h2>
+      <p class="step-desc">Elige la variante visual de cada sección principal.</p>
+
+      <!-- Hero -->
+      <div class="wiz-layout-group">
+        <h3 class="wiz-group-title">Hero (portada)</h3>
+        <div class="wiz-layout-options" data-group="hero">
+          <label class="layout-card active">
+            <input type="radio" name="layout_hero" value="fullscreen" checked>
+            <div class="layout-preview">
+              <svg viewBox="0 0 120 70" xmlns="http://www.w3.org/2000/svg">
+                <rect width="120" height="70" fill="#1a2035"/>
+                <rect x="0" y="0" width="120" height="70" fill="rgba(0,0,0,.4)"/>
+                <rect x="20" y="22" width="80" height="8" rx="2" fill="#fff" opacity=".9"/>
+                <rect x="30" y="34" width="60" height="5" rx="2" fill="#fff" opacity=".6"/>
+                <rect x="38" y="45" width="20" height="8" rx="4" fill="#3b82f6"/>
+                <rect x="62" y="45" width="20" height="8" rx="4" fill="none" stroke="#fff" stroke-width="1.5"/>
+              </svg>
+            </div>
+            <span class="layout-name">Pantalla completa</span>
+          </label>
+
+          <label class="layout-card">
+            <input type="radio" name="layout_hero" value="split">
+            <div class="layout-preview">
+              <svg viewBox="0 0 120 70" xmlns="http://www.w3.org/2000/svg">
+                <rect width="120" height="70" fill="#1a2035"/>
+                <rect x="8" y="12" width="48" height="8" rx="2" fill="#fff" opacity=".9"/>
+                <rect x="8" y="24" width="44" height="4" rx="2" fill="#fff" opacity=".5"/>
+                <rect x="8" y="32" width="40" height="4" rx="2" fill="#fff" opacity=".4"/>
+                <rect x="8" y="44" width="18" height="8" rx="4" fill="#3b82f6"/>
+                <rect x="66" y="8" width="46" height="54" rx="4" fill="#3b82f6" opacity=".3"/>
+                <rect x="70" y="12" width="38" height="46" rx="3" fill="#3b82f6" opacity=".2"/>
+              </svg>
+            </div>
+            <span class="layout-name">Texto + imagen</span>
+          </label>
+
+          <label class="layout-card">
+            <input type="radio" name="layout_hero" value="minimal">
+            <div class="layout-preview">
+              <svg viewBox="0 0 120 70" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                  <linearGradient id="g1" x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0%" stop-color="#3b82f6"/>
+                    <stop offset="100%" stop-color="#1e3a5f"/>
+                  </linearGradient>
+                </defs>
+                <rect width="120" height="70" fill="url(#g1)"/>
+                <rect x="25" y="20" width="70" height="7" rx="2" fill="#fff" opacity=".9"/>
+                <rect x="30" y="31" width="60" height="4" rx="2" fill="#fff" opacity=".55"/>
+                <rect x="44" y="42" width="32" height="8" rx="4" fill="#fff" opacity=".9"/>
+              </svg>
+            </div>
+            <span class="layout-name">Minimalista</span>
+          </label>
+        </div>
+      </div>
+
+      <!-- Servicios -->
+      <div class="wiz-layout-group">
+        <h3 class="wiz-group-title">Servicios</h3>
+        <div class="wiz-layout-options" data-group="services">
+          <label class="layout-card active">
+            <input type="radio" name="layout_services" value="grid" checked>
+            <div class="layout-preview">
+              <svg viewBox="0 0 120 70" xmlns="http://www.w3.org/2000/svg">
+                <rect width="120" height="70" fill="#f8fafc"/>
+                <rect x="8" y="8" width="32" height="22" rx="4" fill="#e2e8f0"/>
+                <rect x="44" y="8" width="32" height="22" rx="4" fill="#e2e8f0"/>
+                <rect x="80" y="8" width="32" height="22" rx="4" fill="#e2e8f0"/>
+                <rect x="8" y="40" width="32" height="22" rx="4" fill="#e2e8f0"/>
+                <rect x="44" y="40" width="32" height="22" rx="4" fill="#e2e8f0"/>
+                <rect x="80" y="40" width="32" height="22" rx="4" fill="#e2e8f0"/>
+              </svg>
+            </div>
+            <span class="layout-name">Tarjetas</span>
+          </label>
+
+          <label class="layout-card">
+            <input type="radio" name="layout_services" value="list">
+            <div class="layout-preview">
+              <svg viewBox="0 0 120 70" xmlns="http://www.w3.org/2000/svg">
+                <rect width="120" height="70" fill="#f8fafc"/>
+                <rect x="8" y="10" width="8" height="8" rx="2" fill="#3b82f6"/>
+                <rect x="22" y="11" width="50" height="4" rx="2" fill="#1e293b" opacity=".7"/>
+                <rect x="22" y="18" width="80" height="3" rx="2" fill="#94a3b8"/>
+                <rect x="8" y="30" width="8" height="8" rx="2" fill="#3b82f6"/>
+                <rect x="22" y="31" width="45" height="4" rx="2" fill="#1e293b" opacity=".7"/>
+                <rect x="22" y="38" width="75" height="3" rx="2" fill="#94a3b8"/>
+                <rect x="8" y="50" width="8" height="8" rx="2" fill="#3b82f6"/>
+                <rect x="22" y="51" width="55" height="4" rx="2" fill="#1e293b" opacity=".7"/>
+                <rect x="22" y="58" width="70" height="3" rx="2" fill="#94a3b8"/>
+              </svg>
+            </div>
+            <span class="layout-name">Lista</span>
+          </label>
+
+          <label class="layout-card">
+            <input type="radio" name="layout_services" value="menu">
+            <div class="layout-preview">
+              <svg viewBox="0 0 120 70" xmlns="http://www.w3.org/2000/svg">
+                <rect width="120" height="70" fill="#fff7ed"/>
+                <rect x="8" y="8" width="32" height="26" rx="4" fill="#fff" stroke="#fed7aa" stroke-width="1"/>
+                <rect x="14" y="12" width="10" height="10" rx="2" fill="#f97316" opacity=".6"/>
+                <rect x="14" y="24" width="22" height="3" rx="2" fill="#1e293b" opacity=".5"/>
+                <rect x="44" y="8" width="32" height="26" rx="4" fill="#fff" stroke="#fed7aa" stroke-width="1"/>
+                <rect x="50" y="12" width="10" height="10" rx="2" fill="#f97316" opacity=".6"/>
+                <rect x="50" y="24" width="22" height="3" rx="2" fill="#1e293b" opacity=".5"/>
+                <rect x="80" y="8" width="32" height="26" rx="4" fill="#fff" stroke="#fed7aa" stroke-width="1"/>
+                <rect x="86" y="12" width="10" height="10" rx="2" fill="#f97316" opacity=".6"/>
+                <rect x="86" y="24" width="22" height="3" rx="2" fill="#1e293b" opacity=".5"/>
+              </svg>
+            </div>
+            <span class="layout-name">Carta / Menú</span>
+          </label>
+        </div>
+      </div>
+
+      <!-- Proyectos -->
+      <div class="wiz-layout-group">
+        <h3 class="wiz-group-title">Proyectos / Galería</h3>
+        <div class="wiz-layout-options" data-group="projects">
+          <label class="layout-card active">
+            <input type="radio" name="layout_projects" value="grid" checked>
+            <div class="layout-preview">
+              <svg viewBox="0 0 120 70" xmlns="http://www.w3.org/2000/svg">
+                <rect width="120" height="70" fill="#f8fafc"/>
+                <rect x="8" y="8" width="24" height="24" rx="3" fill="#94a3b8"/>
+                <rect x="36" y="8" width="24" height="24" rx="3" fill="#94a3b8"/>
+                <rect x="64" y="8" width="24" height="24" rx="3" fill="#94a3b8"/>
+                <rect x="92" y="8" width="20" height="24" rx="3" fill="#94a3b8"/>
+                <rect x="8" y="38" width="24" height="24" rx="3" fill="#cbd5e1"/>
+                <rect x="36" y="38" width="24" height="24" rx="3" fill="#cbd5e1"/>
+                <rect x="64" y="38" width="24" height="24" rx="3" fill="#cbd5e1"/>
+                <rect x="92" y="38" width="20" height="24" rx="3" fill="#cbd5e1"/>
+              </svg>
+            </div>
+            <span class="layout-name">Galería</span>
+          </label>
+
+          <label class="layout-card">
+            <input type="radio" name="layout_projects" value="masonry">
+            <div class="layout-preview">
+              <svg viewBox="0 0 120 70" xmlns="http://www.w3.org/2000/svg">
+                <rect width="120" height="70" fill="#f8fafc"/>
+                <rect x="8" y="8" width="32" height="20" rx="3" fill="#94a3b8"/>
+                <rect x="44" y="8" width="32" height="34" rx="3" fill="#94a3b8"/>
+                <rect x="80" y="8" width="32" height="26" rx="3" fill="#94a3b8"/>
+                <rect x="8" y="32" width="32" height="30" rx="3" fill="#cbd5e1"/>
+                <rect x="44" y="46" width="32" height="16" rx="3" fill="#cbd5e1"/>
+                <rect x="80" y="38" width="32" height="24" rx="3" fill="#cbd5e1"/>
+              </svg>
+            </div>
+            <span class="layout-name">Mosaico</span>
+          </label>
+        </div>
+      </div>
+
+      <!-- Equipo -->
+      <div class="wiz-layout-group">
+        <h3 class="wiz-group-title">Equipo</h3>
+        <div class="wiz-layout-options" data-group="team">
+          <label class="layout-card active">
+            <input type="radio" name="layout_team" value="cards" checked>
+            <div class="layout-preview">
+              <svg viewBox="0 0 120 70" xmlns="http://www.w3.org/2000/svg">
+                <rect width="120" height="70" fill="#f8fafc"/>
+                <circle cx="22" cy="26" r="10" fill="#cbd5e1"/>
+                <rect x="10" y="40" width="24" height="4" rx="2" fill="#94a3b8"/>
+                <rect x="12" y="47" width="20" height="3" rx="2" fill="#cbd5e1"/>
+                <circle cx="60" cy="26" r="10" fill="#cbd5e1"/>
+                <rect x="48" y="40" width="24" height="4" rx="2" fill="#94a3b8"/>
+                <rect x="50" y="47" width="20" height="3" rx="2" fill="#cbd5e1"/>
+                <circle cx="98" cy="26" r="10" fill="#cbd5e1"/>
+                <rect x="86" y="40" width="24" height="4" rx="2" fill="#94a3b8"/>
+                <rect x="88" y="47" width="20" height="3" rx="2" fill="#cbd5e1"/>
+              </svg>
+            </div>
+            <span class="layout-name">Tarjetas con foto</span>
+          </label>
+
+          <label class="layout-card">
+            <input type="radio" name="layout_team" value="minimal">
+            <div class="layout-preview">
+              <svg viewBox="0 0 120 70" xmlns="http://www.w3.org/2000/svg">
+                <rect width="120" height="70" fill="#f8fafc"/>
+                <rect x="8" y="10" width="104" height="14" rx="4" fill="#fff" stroke="#e2e8f0" stroke-width="1"/>
+                <rect x="12" y="14" width="36" height="4" rx="2" fill="#1e293b" opacity=".7"/>
+                <rect x="52" y="14" width="20" height="4" rx="2" fill="#3b82f6" opacity=".7"/>
+                <rect x="8" y="28" width="104" height="14" rx="4" fill="#fff" stroke="#e2e8f0" stroke-width="1"/>
+                <rect x="12" y="32" width="42" height="4" rx="2" fill="#1e293b" opacity=".7"/>
+                <rect x="58" y="32" width="24" height="4" rx="2" fill="#3b82f6" opacity=".7"/>
+                <rect x="8" y="46" width="104" height="14" rx="4" fill="#fff" stroke="#e2e8f0" stroke-width="1"/>
+                <rect x="12" y="50" width="30" height="4" rx="2" fill="#1e293b" opacity=".7"/>
+                <rect x="46" y="50" width="18" height="4" rx="2" fill="#3b82f6" opacity=".7"/>
+              </svg>
+            </div>
+            <span class="layout-name">Lista simple</span>
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── STEP 4 — Contenido por defecto ──────────────────────────────── -->
+    <div class="wizard-step" id="step-4">
+      <h2 class="step-title">Contenido por defecto</h2>
+      <p class="step-desc">Estos textos se precargarán cuando alguien use esta plantilla.</p>
+
+      <div class="wiz-section-block">
+        <h3 class="wiz-block-title">Hero (portada)</h3>
+        <div class="wiz-two-col">
+          <div class="wiz-field">
+            <label for="heroEyebrow">Eyebrow (texto pequeño sobre el título)</label>
+            <input type="text" id="heroEyebrow" name="hero_eyebrow" placeholder="Ej: ATENCIÓN MÉDICA DE CALIDAD">
+          </div>
+          <div class="wiz-field">
+            <label for="heroCtaTexto">Texto del botón CTA</label>
+            <input type="text" id="heroCtaTexto" name="hero_cta_texto" placeholder="Ej: Agendar cita" value="Contáctanos">
+          </div>
+        </div>
+        <div class="wiz-field">
+          <label for="heroTitulo">Título principal</label>
+          <input type="text" id="heroTitulo" name="hero_titulo" placeholder="Ej: Bienvenidos a nuestro consultorio">
+        </div>
+        <div class="wiz-field">
+          <label for="heroSubtitulo">Subtítulo</label>
+          <input type="text" id="heroSubtitulo" name="hero_subtitulo" placeholder="Ej: Cuidamos tu salud con profesionalismo y dedicación.">
+        </div>
+      </div>
+
+      <div class="wiz-section-block">
+        <h3 class="wiz-block-title">Menú de navegación</h3>
+        <div class="wiz-three-col">
+          <div class="wiz-field">
+            <label for="menuServicios">Nombre sección servicios</label>
+            <input type="text" id="menuServicios" name="menu_servicios" placeholder="Ej: Especialidades" value="Servicios">
+          </div>
+          <div class="wiz-field">
+            <label for="menuProyectos">Nombre sección proyectos</label>
+            <input type="text" id="menuProyectos" name="menu_proyectos" placeholder="Ej: Portafolio" value="Proyectos">
+          </div>
+          <div class="wiz-field">
+            <label for="menuEquipo">Nombre sección equipo</label>
+            <input type="text" id="menuEquipo" name="menu_equipo" placeholder="Ej: Especialistas" value="Equipo">
+          </div>
+        </div>
+      </div>
+
+      <div class="wiz-section-block">
+        <h3 class="wiz-block-title">Nosotros</h3>
+        <div class="wiz-field">
+          <label for="nosotrosDesc">Descripción</label>
+          <textarea id="nosotrosDesc" name="nosotros_descripcion" rows="2" placeholder="Somos una empresa comprometida con..."></textarea>
+        </div>
+        <div class="wiz-field">
+          <label for="nosotrosMision">Misión</label>
+          <textarea id="nosotrosMision" name="nosotros_mision" rows="2" placeholder="Nuestra misión es..."></textarea>
+        </div>
+      </div>
+
+      <div class="wizard-final-actions">
+        <div id="wizardError" class="wiz-alert wiz-alert-error" style="display:none;"></div>
+        <div id="wizardSuccess" class="wiz-alert wiz-alert-success" style="display:none;"></div>
+        <button type="submit" class="wiz-btn-submit" id="btnSubmit">
+          Crear plantilla
+        </button>
+      </div>
+    </div>
+
+    <!-- Botones de navegación -->
+    <div class="wizard-nav">
+      <button type="button" class="wiz-btn-back" id="btnBack" style="visibility:hidden;">← Atrás</button>
+      <div class="wizard-step-counter">Paso <span id="currentStepNum">1</span> de 4</div>
+      <button type="button" class="wiz-btn-next" id="btnNext">Siguiente →</button>
+    </div>
+
+  </form>
+</div>
+
+<script src="{{ url_for('static', filename='admin/wizard.js') }}"></script>
+</body>
+</html>

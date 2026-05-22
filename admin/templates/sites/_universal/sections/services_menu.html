@@ -1,0 +1,13 @@
+<!-- SERVICIOS menu — estilo carta de restaurante: emoji prominente, precio opcional, fondo cálido -->
+<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:20px;">
+  {% for item in secciones.servicios %}
+  <div class="fade-up" style="background:#fff;border-radius:var(--card-radius);padding:24px;box-shadow:var(--card-shadow);border:1px solid rgba(0,0,0,.06);position:relative;">
+    <div style="font-size:40px;margin-bottom:12px;line-height:1;">{{ item.get('icono','⚡') }}</div>
+    <h3 style="margin:0 0 6px;font-size:1.1rem;color:var(--c-text);">{{ item.get('titulo','Plato') }}</h3>
+    {% if item.get('precio') %}
+    <span style="position:absolute;top:20px;right:20px;background:var(--c-primary);color:#fff;font-weight:700;font-size:.9rem;padding:4px 10px;border-radius:999px;">{{ item.precio }}</span>
+    {% endif %}
+    <p style="color:var(--c-text);opacity:.68;font-size:.93rem;line-height:1.55;margin:0;">{{ item.get('desc','') }}</p>
+  </div>
+  {% endfor %}
+</div>

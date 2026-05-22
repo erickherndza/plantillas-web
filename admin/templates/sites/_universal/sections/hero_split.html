@@ -1,0 +1,23 @@
+<!-- HERO split — texto a la izquierda, imagen a la derecha -->
+<section class="lb-hero" id="inicio" style="min-height:80vh;display:flex;align-items:center;background:var(--c-dark);">
+  <div class="container" style="display:grid;grid-template-columns:1fr 1fr;gap:40px;align-items:center;padding-top:80px;padding-bottom:80px;">
+    <div class="lb-hero-content fade-up">
+      {% if config.get('hero_eyebrow') %}
+        <p class="lb-hero-eyebrow">{{ config.get('hero_eyebrow') }}</p>
+      {% endif %}
+      <h1 class="lb-hero-title">{{ config.get('hero_titulo', sitio.nombre) }}</h1>
+      <p class="lb-hero-sub">{{ config.get('hero_subtitulo', 'Soluciones profesionales para tu negocio.') }}</p>
+      <div class="lb-hero-btns">
+        <a class="lb-btn-primary" href="{{ config.get('hero_cta_href','#contacto') }}">{{ config.get('hero_cta_texto','Contáctanos') }}</a>
+        <a class="lb-btn-outline" href="{{ config.get('hero_cta2_href','#servicios') }}">{{ config.get('hero_cta2_texto','Ver servicios') }}</a>
+      </div>
+    </div>
+    <div style="border-radius:var(--card-radius);overflow:hidden;">
+      {% if config.get('hero_imagen') %}
+      <img src="{{ config.get('hero_imagen') }}" alt="{{ sitio.nombre }}" style="width:100%;height:420px;object-fit:cover;">
+      {% else %}
+      <div style="width:100%;height:420px;background:var(--c-primary);opacity:.2;border-radius:var(--card-radius);display:flex;align-items:center;justify-content:center;font-size:64px;">🏢</div>
+      {% endif %}
+    </div>
+  </div>
+</section>

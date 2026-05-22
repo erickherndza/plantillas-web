@@ -1,0 +1,14 @@
+<!-- EQUIPO cards — tarjetas con foto (variante por defecto) -->
+<div class="lb-team-grid">
+  {% for m in secciones.equipo %}
+  <div class="lb-team-card fade-up">
+    <div class="lb-team-avatar">
+      {% if m.get('foto') %}<img src="{{ m.foto }}" alt="{{ m.get('nombre','') }}">
+      {% else %}👤{% endif %}
+    </div>
+    <p class="lb-team-name">{{ m.get('nombre','') }}</p>
+    <p class="lb-team-role">{{ m.get('rol','') }}</p>
+    <p class="lb-team-desc">{{ m.get('credenciales','') }}</p>
+  </div>
+  {% endfor %}
+</div>

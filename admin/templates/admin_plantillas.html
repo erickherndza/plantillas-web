@@ -33,9 +33,14 @@
       <h1 class="page-title">Plantillas del CMS</h1>
       <p class="page-subtitle">Define qué plantillas pueden elegir los usuarios y qué secciones incluyen.</p>
     </div>
-    <a href="{{ url_for('admin_plantilla_nueva') }}" class="btn-admin-panel">
-      + Nueva plantilla
-    </a>
+    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+      <a href="{{ url_for('admin_plantilla_nueva') }}" class="btn-admin-panel">
+        + Nueva plantilla
+      </a>
+      <a href="{{ url_for('admin_plantilla_wizard_form') }}" class="btn-admin-panel" style="background:#16a34a;">
+        ✦ Nueva con wizard
+      </a>
+    </div>
   </div>
 
   {% if plantillas %}

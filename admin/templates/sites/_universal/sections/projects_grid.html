@@ -1,0 +1,16 @@
+<!-- PROYECTOS grid — galería en cuadrícula de 4 columnas -->
+<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:20px;">
+  {% for item in secciones.proyectos %}
+  <div class="lb-project-card fade-up" style="border-radius:var(--card-radius);overflow:hidden;box-shadow:var(--card-shadow);background:#fff;">
+    {% if item.get('imagen') %}
+    <img src="{{ item.imagen }}" alt="{{ item.get('titulo','') }}" style="width:100%;height:180px;object-fit:cover;">
+    {% else %}
+    <div style="width:100%;height:180px;background:var(--c-primary);opacity:.18;display:flex;align-items:center;justify-content:center;font-size:40px;">🖼</div>
+    {% endif %}
+    <div style="padding:14px 16px;">
+      <p style="font-size:.78rem;color:var(--c-primary);font-weight:600;text-transform:uppercase;letter-spacing:.05em;margin:0 0 4px;">{{ item.get('categoria','') }}</p>
+      <h3 style="margin:0;font-size:.97rem;color:var(--c-text);">{{ item.get('titulo','Proyecto') }}</h3>
+    </div>
+  </div>
+  {% endfor %}
+</div>

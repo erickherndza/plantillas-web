@@ -26,6 +26,7 @@ from db import (
     verificar_disponibilidad, crear_cita, horas_ocupadas,
     listar_citas_sitio, actualizar_estado_cita,
     eliminar_sitio,
+    get_estilos, upsert_estilos,
     crear_reset_token, obtener_usuario_por_reset_token,
     invalidar_reset_token, actualizar_password_usuario,
     crear_o_vincular_google,
@@ -1461,6 +1462,7 @@ def _contexto_sitio(sitio):
 @app.route('/s/<slug>/')
 @app.route('/s/<slug>')
 def ver_sitio(slug):
+    import os as _os
     sitio = obtener_sitio_por_slug(slug)
     if not sitio:
         abort(404)
@@ -1469,8 +1471,18 @@ def ver_sitio(slug):
     # Formato: 'landing' = una sola página propia, 'web5' = multi-página empresa
     formato = sitio['formato'] if 'formato' in sitio.keys() else 'web5'
     if formato == 'landing':
-        # Landing page: cada plantilla usa su propio index.html de una sola página
-        template = f'sites/{clave}/index.html'
+        # Verificar si existe un template específico para esta plantilla
+        _tmpl_especifico = f'sites/{clave}/index.html'
+        _tmpl_path = _os.path.join(app.root_path, 'templates', _tmpl_especifico)
+        if _os.path.exists(_tmpl_path):
+            template = _tmpl_especifico
+        else:
+            # Usar template universal con layout dinámico
+            template = 'sites/_universal/index.html'
+            from db import get_layout
+            _pobj = obtener_plantilla_por_id(sitio['plantilla_id']) if sitio.get('plantilla_id') else None
+            _layout = get_layout(_pobj['id']) if _pobj else {}
+            ctx['layout'] = _layout
     else:
         # Web completa (web5): sistema multi-página basado en empresa
         template = 'sites/empresa/inicio.html'
@@ -1698,6 +1710,56 @@ def rebuild_css(site_id):
     version = int(config.get('css_version', '1') or '1')
 
     return jsonify({'ok': True, 'css_length': len(css), 'version': version})
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# Admin — Wizard para crear plantillas
+# ══════════════════════════════════════════════════════════════════════════════
+
+@app.route('/admin/plantillas/wizard')
+@admin_requerido
+def admin_plantilla_wizard_form():
+    return render_template('admin/crear_plantilla_wizard.html',
+                           nombre=session.get('nombre'))
+
+
+@app.route('/admin/plantillas/wizard/crear', methods=['POST'])
+@admin_requerido
+def admin_plantilla_wizard():
+    d = request.get_json(force=True)
+
+    nombre      = d.get('nombre', '').strip()
+    clave       = d.get('clave', '').strip().lower()
+    tipo        = d.get('tipo', 'landing')
+    descripcion = d.get('descripcion', '').strip()
+    layout      = d.get('layout', {})
+    defaults    = d.get('defaults', {})
+
+    import re as _re
+    if not clave or not nombre:
+        return jsonify(ok=False, error='Nombre y clave son obligatorios.'), 400
+    if not _re.match(r'^[a-z][a-z0-9_-]{1,29}$', clave):
+        return jsonify(ok=False, error='Clave no válida.'), 400
+
+    try:
+        pid = crear_plantilla(clave, nombre, tipo, descripcion, '', '{}')
+    except Exception as e:
+        return jsonify(ok=False, error=f'La clave "{clave}" ya existe.'), 409
+
+    # Guardar estilos, layout y defaults
+    campos_estilos = {
+        'color_primary':  d.get('color_primario', '#185FA5'),
+        'color_accent':   d.get('color_acento',   '#0088CC'),
+        'color_secondary': d.get('color_footer_bg', '#0A0F1E'),
+        'font_heading':   d.get('fuente_titulos', 'system-ui, sans-serif'),
+        'font_body':      d.get('fuente_cuerpo',  'system-ui, sans-serif'),
+        'layout_json':    json.dumps(layout, ensure_ascii=False),
+        'defaults_json':  json.dumps(defaults, ensure_ascii=False),
+    }
+    upsert_estilos(pid, campos_estilos)
+
+    flash(f'Plantilla "{nombre}" creada con wizard.', 'success')
+    return jsonify(ok=True, redirect=url_for('admin_plantillas'))
 
 
 if __name__ == '__main__':
