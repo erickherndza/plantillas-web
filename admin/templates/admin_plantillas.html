@@ -75,6 +75,7 @@
           </td>
           <td class="cell-actions">
             <a href="{{ url_for('plantillas_editor.editor', pid=p.id) }}" class="btn-sm" style="background:var(--admin-accent);color:#fff;">Editor</a>
+            <a href="{{ url_for('plantillas_editor.apariencia', pid=p.id) }}" class="btn-sm" style="background:#038C8C;color:#fff;">Apariencia</a>
             <a href="{{ url_for('admin_plantilla_editar', plantilla_id=p.id) }}" class="btn-sm">Config</a>
             <form method="POST"
                   action="{{ url_for('admin_plantilla_toggle', plantilla_id=p.id) }}"

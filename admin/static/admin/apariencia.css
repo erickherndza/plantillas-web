@@ -1,0 +1,506 @@
+/* apariencia.css — Panel de apariencia/CSS builder */
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+.ap-body {
+  font-family: 'Inter', system-ui, sans-serif;
+  background: #f8fafc;
+  color: #1e293b;
+  height: 100vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ─── TOPBAR ──────────────────────────────────────────────────────────────── */
+.ap-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 44px;
+  background: #0f172a;
+  color: #e2e8f0;
+  padding: 0 16px;
+  gap: 12px;
+  flex-shrink: 0;
+  z-index: 100;
+}
+
+.ap-topbar-left,
+.ap-topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.ap-back {
+  color: #94a3b8;
+  text-decoration: none;
+  font-size: 13px;
+  transition: color .2s;
+}
+.ap-back:hover { color: #e2e8f0; }
+
+.ap-sep { color: #334155; }
+
+.ap-plantilla-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: #f1f5f9;
+}
+
+.ap-badge {
+  background: #1e3a5f;
+  color: #7dd3fc;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 12px;
+  text-transform: uppercase;
+  letter-spacing: .4px;
+}
+
+.ap-user {
+  font-size: 12px;
+  color: #64748b;
+  margin-left: 4px;
+}
+
+.ap-btn-css {
+  background: transparent;
+  border: 1px solid #334155;
+  color: #94a3b8;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all .2s;
+}
+.ap-btn-css:hover { border-color: #64748b; color: #e2e8f0; }
+
+.ap-btn-save {
+  background: #185FA5;
+  border: none;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 5px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background .2s;
+}
+.ap-btn-save:hover { background: #1a6fc0; }
+
+/* ─── GRID ────────────────────────────────────────────────────────────────── */
+.ap-grid {
+  display: grid;
+  grid-template-columns: 200px 1fr;
+  flex: 1;
+  overflow: hidden;
+}
+
+/* ─── SIDEBAR ─────────────────────────────────────────────────────────────── */
+.ap-sidebar {
+  background: #fff;
+  border-right: 1px solid #e2e8f0;
+  overflow-y: auto;
+  padding: 12px 0;
+}
+
+.ap-nav {
+  display: flex;
+  flex-direction: column;
+}
+
+.ap-nav-item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: none;
+  padding: 9px 18px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #475569;
+  cursor: pointer;
+  border-left: 3px solid transparent;
+  transition: all .15s;
+}
+.ap-nav-item:hover { background: #f1f5f9; color: #1e293b; }
+.ap-nav-item.active {
+  background: #eff6ff;
+  color: #185FA5;
+  border-left-color: #185FA5;
+  font-weight: 600;
+}
+
+.ap-nav-divider {
+  padding: 12px 18px 4px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .6px;
+  color: #94a3b8;
+}
+
+/* ─── MAIN ────────────────────────────────────────────────────────────────── */
+.ap-main {
+  overflow-y: auto;
+  padding: 28px 32px;
+  max-width: 680px;
+}
+
+/* ─── PANELS ──────────────────────────────────────────────────────────────── */
+.ap-panel {
+  display: none;
+}
+.ap-panel.active {
+  display: block;
+}
+
+.ap-panel-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: #0f172a;
+  margin-bottom: 6px;
+}
+
+.ap-panel-desc {
+  font-size: 13px;
+  color: #64748b;
+  margin-bottom: 20px;
+}
+
+/* ─── FORM GROUPS ─────────────────────────────────────────────────────────── */
+.ap-form-group {
+  margin-bottom: 20px;
+}
+
+.ap-form-group label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 6px;
+}
+
+.ap-val {
+  font-weight: 400;
+  color: #185FA5;
+  margin-left: 6px;
+}
+
+.ap-select {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1.5px solid #d1d5db;
+  border-radius: 7px;
+  font-size: 13px;
+  color: #1e293b;
+  background: #fff;
+  outline: none;
+  transition: border-color .2s;
+}
+.ap-select:focus { border-color: #185FA5; }
+
+.ap-range {
+  width: 100%;
+  height: 6px;
+  accent-color: #185FA5;
+  cursor: pointer;
+}
+
+.ap-toggle-label {
+  display: flex !important;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  font-weight: 500 !important;
+}
+.ap-toggle-label input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  accent-color: #185FA5;
+  cursor: pointer;
+}
+
+/* ─── COLOR ROW ───────────────────────────────────────────────────────────── */
+.color-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.color-swatch {
+  width: 38px;
+  height: 38px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  padding: 0;
+  background: none;
+  flex-shrink: 0;
+}
+.color-swatch::-webkit-color-swatch-wrapper { padding: 0; border-radius: 8px; }
+.color-swatch::-webkit-color-swatch { border: 1.5px solid #d1d5db; border-radius: 8px; }
+
+.color-hex {
+  width: 90px;
+  padding: 7px 10px;
+  border: 1.5px solid #d1d5db;
+  border-radius: 7px;
+  font-size: 13px;
+  font-family: 'Courier New', monospace;
+  color: #1e293b;
+  outline: none;
+  transition: border-color .2s;
+}
+.color-hex:focus { border-color: #185FA5; }
+
+.color-label {
+  font-size: 12px;
+  color: #94a3b8;
+}
+
+/* ─── COLOR PREVIEW ───────────────────────────────────────────────────────── */
+.color-preview {
+  display: flex;
+  height: 36px;
+  border-radius: 10px;
+  overflow: hidden;
+  margin: 16px 0;
+  border: 1px solid #e2e8f0;
+}
+.cp-bar {
+  flex: 1;
+  transition: background .3s;
+}
+
+/* ─── FONT PREVIEW ────────────────────────────────────────────────────────── */
+.font-preview {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 18px 20px;
+  margin: 16px 0;
+}
+.fp-heading {
+  font-size: 22px;
+  font-weight: 700;
+  color: #0f172a;
+  margin-bottom: 8px;
+  transition: font-family .3s;
+}
+.fp-body {
+  font-size: 14px;
+  color: #64748b;
+  line-height: 1.6;
+  transition: font-family .3s;
+}
+
+/* ─── ESPACIO PREVIEW ─────────────────────────────────────────────────────── */
+.espacio-preview {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  margin: 16px 0;
+}
+.ep-btn {
+  background: #185FA5;
+  color: #fff;
+  border: none;
+  padding: 8px 18px;
+  cursor: default;
+  font-size: 13px;
+  font-weight: 600;
+  transition: border-radius .2s;
+}
+.ep-card {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  padding: 12px 18px;
+  font-size: 13px;
+  color: #374151;
+  transition: border-radius .2s;
+}
+.ep-input {
+  border: 1.5px solid #d1d5db;
+  padding: 7px 12px;
+  font-size: 13px;
+  color: #374151;
+  background: #fff;
+  outline: none;
+  transition: border-radius .2s;
+}
+
+/* ─── PRESETS ─────────────────────────────────────────────────────────────── */
+.presets-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.preset-card {
+  border: 2px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 14px;
+  cursor: pointer;
+  transition: all .2s;
+  background: #fff;
+}
+.preset-card:hover { border-color: #185FA5; box-shadow: 0 2px 8px rgba(24,95,165,.1); }
+.preset-card.active { border-color: #185FA5; background: #eff6ff; }
+
+.preset-swatches {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 8px;
+}
+.preset-sw {
+  width: 20px;
+  height: 20px;
+  border-radius: 5px;
+  border: 1px solid rgba(0,0,0,.08);
+}
+.preset-name {
+  font-size: 12px;
+  font-weight: 600;
+  color: #374151;
+  text-transform: capitalize;
+}
+
+/* ─── RADIO GROUP ─────────────────────────────────────────────────────────── */
+.radio-group {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.radio-opt {
+  display: flex !important;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 400 !important;
+  color: #475569;
+  cursor: pointer;
+}
+.radio-opt input { accent-color: #185FA5; cursor: pointer; }
+
+/* ─── ACTIONS ─────────────────────────────────────────────────────────────── */
+.ap-actions {
+  margin-top: 24px;
+  padding-top: 16px;
+  border-top: 1px solid #f1f5f9;
+}
+
+.ap-btn-primary {
+  background: #185FA5;
+  color: #fff;
+  border: none;
+  padding: 9px 20px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background .2s;
+}
+.ap-btn-primary:hover { background: #1a6fc0; }
+
+/* ─── MODAL CSS ───────────────────────────────────────────────────────────── */
+.ap-modal-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.5);
+  z-index: 500;
+  align-items: center;
+  justify-content: center;
+}
+.ap-modal-overlay.open { display: flex; }
+
+.ap-modal {
+  background: #1e293b;
+  border-radius: 12px;
+  width: min(700px, 92vw);
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.ap-modal-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  background: #0f172a;
+  color: #94a3b8;
+  font-size: 13px;
+  font-weight: 600;
+}
+.ap-modal-header span { flex: 1; }
+
+.ap-btn-copy {
+  background: #185FA5;
+  color: #fff;
+  border: none;
+  padding: 4px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.ap-btn-copy:hover { background: #1a6fc0; }
+
+.ap-modal-close {
+  background: none;
+  border: none;
+  color: #64748b;
+  font-size: 20px;
+  cursor: pointer;
+  line-height: 1;
+  padding: 0 4px;
+}
+.ap-modal-close:hover { color: #e2e8f0; }
+
+.ap-css-pre {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px 20px;
+  font-family: 'Courier New', monospace;
+  font-size: 13px;
+  color: #7dd3fc;
+  line-height: 1.6;
+  white-space: pre;
+}
+
+/* ─── TOAST ───────────────────────────────────────────────────────────────── */
+.ap-toast {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  background: #1e293b;
+  color: #f1f5f9;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 10px 18px;
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(0,0,0,.25);
+  transform: translateY(12px);
+  opacity: 0;
+  pointer-events: none;
+  transition: all .25s;
+  z-index: 999;
+}
+.ap-toast.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+.ap-toast.ok { border-left: 4px solid #22c55e; }
+.ap-toast.err { border-left: 4px solid #ef4444; }

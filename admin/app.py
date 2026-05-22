@@ -63,6 +63,7 @@ if not _secret:
 app.secret_key = _secret
 import json as _json
 app.jinja_env.filters['from_json'] = _json.loads
+app.jinja_env.filters['fromjson'] = _json.loads
 app.config['MAX_CONTENT_LENGTH'] = 5 * 1024 * 1024  # 5 MB máximo por imagen
 
 # ── Configuración SMTP (variables de entorno en PythonAnywhere) ───────────────

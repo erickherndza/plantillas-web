@@ -13,6 +13,7 @@ from db import (
     get_footer_config, save_footer_config,
     get_custom_codes, create_custom_code, toggle_custom_code, delete_custom_code,
     get_secciones_habilitadas, save_secciones_habilitadas,
+    get_estilos, upsert_estilos,
 )
 
 log = logging.getLogger('editor')
@@ -305,3 +306,118 @@ def scraper_aplicar(pid):
     # La aplicación se hace vía configuracion_sitio del sitio o config de plantilla
     # Por ahora devuelve OK — el cliente JS gestiona la aplicación visual
     return jsonify(ok=True)
+
+
+# ── render_css ────────────────────────────────────────────────────────────────
+
+def render_css(e: dict) -> str:
+    return f""":root {{
+  --color-primary:   {e.get('color_primary',   '#185FA5')};
+  --color-secondary: {e.get('color_secondary', '#0A0F1E')};
+  --color-accent:    {e.get('color_accent',    '#0088CC')};
+  --color-neutral:   {e.get('color_neutral',   '#E8EAF0')};
+  --font-heading:    {e.get('font_heading',    'system-ui, sans-serif')};
+  --font-body:       {e.get('font_body',       'system-ui, sans-serif')};
+  --font-size-h1:    {e.get('font_size_h1',    48)}px;
+  --font-size-h2:    {e.get('font_size_h2',    32)}px;
+  --font-size-body:  {e.get('font_size_body',  16)}px;
+  --line-height:     {e.get('line_height',     1.6)};
+  --radius-btn:      {e.get('radius_btn',      8)}px;
+  --radius-card:     {e.get('radius_card',     12)}px;
+  --radius-input:    {e.get('radius_input',    6)}px;
+  --section-padding: {e.get('section_padding', 80)}px;
+  --gap-elements:    {e.get('gap_elements',    24)}px;
+}}"""
+
+
+# ── Rutas Apariencia ──────────────────────────────────────────────────────────
+
+@bp.route('/admin/plantillas/<int:pid>/apariencia')
+def apariencia(pid):
+    _admin_check()
+    p = _get_p(pid)
+    estilos = get_estilos(pid)
+    return render_template('apariencia.html',
+        p=dict(p), estilos=estilos, modo='admin',
+        nombre=session.get('nombre', ''),
+        css_generado=render_css(estilos),
+    )
+
+
+@bp.route('/admin/plantillas/<int:pid>/apariencia/colores', methods=['POST'])
+def apariencia_colores(pid):
+    _admin_check()
+    d = request.get_json(force=True)
+    upsert_estilos(pid, {
+        'color_primary':   d.get('color_primary',   '#185FA5'),
+        'color_secondary': d.get('color_secondary', '#0A0F1E'),
+        'color_accent':    d.get('color_accent',    '#0088CC'),
+        'color_neutral':   d.get('color_neutral',   '#E8EAF0'),
+        'modo_tema':       d.get('modo_tema',       'dark'),
+        'preset_activo':   d.get('preset_activo',   ''),
+    })
+    return jsonify(ok=True)
+
+
+@bp.route('/admin/plantillas/<int:pid>/apariencia/tipografia', methods=['POST'])
+def apariencia_tipografia(pid):
+    _admin_check()
+    d = request.get_json(force=True)
+    upsert_estilos(pid, {
+        'font_heading':   d.get('font_heading',   'system-ui, sans-serif'),
+        'font_body':      d.get('font_body',      'system-ui, sans-serif'),
+        'font_size_h1':   int(d.get('font_size_h1',  48)),
+        'font_size_h2':   int(d.get('font_size_h2',  32)),
+        'font_size_body': int(d.get('font_size_body', 16)),
+        'line_height':    float(d.get('line_height',  1.6)),
+    })
+    return jsonify(ok=True)
+
+
+@bp.route('/admin/plantillas/<int:pid>/apariencia/espacio', methods=['POST'])
+def apariencia_espacio(pid):
+    _admin_check()
+    d = request.get_json(force=True)
+    upsert_estilos(pid, {
+        'radius_btn':      int(d.get('radius_btn',      8)),
+        'radius_card':     int(d.get('radius_card',     12)),
+        'radius_input':    int(d.get('radius_input',    6)),
+        'section_padding': int(d.get('section_padding', 80)),
+        'gap_elements':    int(d.get('gap_elements',    24)),
+    })
+    return jsonify(ok=True)
+
+
+@bp.route('/admin/plantillas/<int:pid>/apariencia/efectos', methods=['POST'])
+def apariencia_efectos(pid):
+    _admin_check()
+    d = request.get_json(force=True)
+    upsert_estilos(pid, {'efectos_json': json.dumps(d, ensure_ascii=False)})
+    return jsonify(ok=True)
+
+
+@bp.route('/admin/plantillas/<int:pid>/apariencia/movil', methods=['POST'])
+def apariencia_movil(pid):
+    _admin_check()
+    d = request.get_json(force=True)
+    upsert_estilos(pid, {'movil_json': json.dumps(d, ensure_ascii=False)})
+    return jsonify(ok=True)
+
+
+@bp.route('/admin/plantillas/<int:pid>/apariencia/seccion', methods=['POST'])
+def apariencia_seccion(pid):
+    _admin_check()
+    d = request.get_json(force=True)
+    sec = d.pop('seccion', None)
+    col = {'header': 'header_json', 'hero': 'hero_json', 'footer': 'footer_json'}.get(sec)
+    if col:
+        upsert_estilos(pid, {col: json.dumps(d, ensure_ascii=False)})
+    return jsonify(ok=True)
+
+
+@bp.route('/admin/plantillas/<int:pid>/apariencia/css')
+def apariencia_css(pid):
+    _admin_check()
+    estilos = get_estilos(pid)
+    css = render_css(estilos)
+    return jsonify(css=css, chars=len(css))

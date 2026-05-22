@@ -207,6 +207,37 @@ def init_db():
     """)
     conn.commit()
 
+    # Tabla estilos de plantilla
+    conn.executescript("""
+        CREATE TABLE IF NOT EXISTS plantilla_estilos (
+            id               INTEGER PRIMARY KEY AUTOINCREMENT,
+            plantilla_id     INTEGER NOT NULL UNIQUE REFERENCES plantillas(id) ON DELETE CASCADE,
+            color_primary    TEXT DEFAULT '#185FA5',
+            color_secondary  TEXT DEFAULT '#0A0F1E',
+            color_accent     TEXT DEFAULT '#0088CC',
+            color_neutral    TEXT DEFAULT '#E8EAF0',
+            font_heading     TEXT DEFAULT 'system-ui, sans-serif',
+            font_body        TEXT DEFAULT 'system-ui, sans-serif',
+            font_size_h1     INTEGER DEFAULT 48,
+            font_size_h2     INTEGER DEFAULT 32,
+            font_size_body   INTEGER DEFAULT 16,
+            line_height      REAL DEFAULT 1.6,
+            radius_btn       INTEGER DEFAULT 8,
+            radius_card      INTEGER DEFAULT 12,
+            radius_input     INTEGER DEFAULT 6,
+            section_padding  INTEGER DEFAULT 80,
+            gap_elements     INTEGER DEFAULT 24,
+            modo_tema        TEXT DEFAULT 'dark',
+            efectos_json     TEXT DEFAULT '{"entrada":true,"hover_btn":true,"parallax":false,"cursor":false,"velocidad":"400ms","easing":"ease-out"}',
+            header_json      TEXT DEFAULT '{}',
+            hero_json        TEXT DEFAULT '{}',
+            footer_json      TEXT DEFAULT '{}',
+            movil_json       TEXT DEFAULT '{"h1":32,"padding":40,"hamburguesa":true}',
+            preset_activo    TEXT DEFAULT 'oceano-oscuro'
+        );
+    """)
+    conn.commit()
+
     # Migraciones columnas plantillas
     for col, default in [
         ('slider_config', '\'{"efecto":"fade","intervalo":4,"flechas":true,"puntos":true,"modo":"seccion"}\''),
@@ -1012,3 +1043,46 @@ def save_secciones_habilitadas(plantilla_id: int, secciones: list):
     conn.execute("UPDATE plantillas SET secciones_habilitadas=? WHERE id=?",
                  (json.dumps(secciones, ensure_ascii=False), plantilla_id))
     conn.commit(); conn.close()
+
+
+# ── Estilos de plantilla ──────────────────────────────────────────────────────
+
+_ESTILOS_DEFAULT = {
+    'color_primary': '#185FA5', 'color_secondary': '#0A0F1E',
+    'color_accent': '#0088CC', 'color_neutral': '#E8EAF0',
+    'font_heading': 'system-ui, sans-serif', 'font_body': 'system-ui, sans-serif',
+    'font_size_h1': 48, 'font_size_h2': 32, 'font_size_body': 16,
+    'line_height': 1.6, 'radius_btn': 8, 'radius_card': 12, 'radius_input': 6,
+    'section_padding': 80, 'gap_elements': 24, 'modo_tema': 'dark',
+    'efectos_json': '{"entrada":true,"hover_btn":true,"parallax":false,"cursor":false,"velocidad":"400ms","easing":"ease-out"}',
+    'header_json': '{}', 'hero_json': '{}', 'footer_json': '{}',
+    'movil_json': '{"h1":32,"padding":40,"hamburguesa":true}',
+    'preset_activo': 'oceano-oscuro',
+}
+
+def get_estilos(plantilla_id: int) -> dict:
+    conn = get_db()
+    row = conn.execute(
+        "SELECT * FROM plantilla_estilos WHERE plantilla_id=?", (plantilla_id,)
+    ).fetchone()
+    conn.close()
+    if row:
+        return dict(row)
+    return {**_ESTILOS_DEFAULT, 'plantilla_id': plantilla_id, 'id': None}
+
+def upsert_estilos(plantilla_id: int, campos: dict):
+    conn = get_db()
+    existing = conn.execute(
+        "SELECT id FROM plantilla_estilos WHERE plantilla_id=?", (plantilla_id,)
+    ).fetchone()
+    if existing:
+        sets = ', '.join(f"{k}=?" for k in campos)
+        conn.execute(f"UPDATE plantilla_estilos SET {sets} WHERE plantilla_id=?",
+                     list(campos.values()) + [plantilla_id])
+    else:
+        full = {**_ESTILOS_DEFAULT, **campos, 'plantilla_id': plantilla_id}
+        cols = ', '.join(full.keys())
+        vals = ', '.join('?' for _ in full)
+        conn.execute(f"INSERT INTO plantilla_estilos ({cols}) VALUES ({vals})", list(full.values()))
+    conn.commit()
+    conn.close()

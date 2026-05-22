@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Apariencia · {{ p.nombre }}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='admin.css') }}"/>
+  <link rel="stylesheet" href="{{ url_for('static', filename='admin/apariencia.css') }}"/>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet"/>
+</head>
+<body class="ap-body">
+
+<!-- TOPBAR -->
+<header class="ap-topbar">
+  <div class="ap-topbar-left">
+    <a href="{{ url_for('admin_plantillas') }}" class="ap-back">← Plantillas</a>
+    <span class="ap-sep">|</span>
+    <span class="ap-plantilla-name">{{ p.nombre }}</span>
+    <span class="ap-badge">Apariencia</span>
+  </div>
+  <div class="ap-topbar-right">
+    <button class="ap-btn-css" onclick="AP.verCSS()">Ver CSS</button>
+    <button class="ap-btn-save" onclick="AP.guardarActivo()">Guardar cambios</button>
+    <span class="ap-user">{{ nombre }}</span>
+  </div>
+</header>
+
+<!-- GRID PRINCIPAL -->
+<div class="ap-grid">
+
+  <!-- SIDEBAR -->
+  <aside class="ap-sidebar">
+    <nav class="ap-nav">
+      <button class="ap-nav-item active" data-panel="colores">Colores</button>
+      <button class="ap-nav-item" data-panel="tipografia">Tipografía</button>
+      <button class="ap-nav-item" data-panel="espacio">Espacio</button>
+      <button class="ap-nav-item" data-panel="presets">Presets</button>
+      <div class="ap-nav-divider">Secciones</div>
+      <button class="ap-nav-item" data-panel="header">Header</button>
+      <button class="ap-nav-item" data-panel="hero">Hero</button>
+      <button class="ap-nav-item" data-panel="footer">Footer</button>
+      {% if modo == 'admin' %}
+      <div class="ap-nav-divider">Avanzado</div>
+      <button class="ap-nav-item" data-panel="efectos">Efectos</button>
+      <button class="ap-nav-item" data-panel="movil">Móvil</button>
+      {% endif %}
+    </nav>
+  </aside>
+
+  <!-- MAIN PANELS -->
+  <main class="ap-main">
+
+    <!-- PANEL: COLORES -->
+    <section class="ap-panel active" id="panel-colores">
+      <h2 class="ap-panel-title">Paleta de colores</h2>
+
+      <div class="ap-form-group">
+        <label>Color primario</label>
+        <div class="color-row">
+          <input type="color" class="color-swatch" id="color_primary" value="{{ estilos.color_primary or '#185FA5' }}"/>
+          <input type="text" class="color-hex" id="color_primary_hex" value="{{ estilos.color_primary or '#185FA5' }}" maxlength="7"/>
+          <span class="color-label">Botones, enlaces, énfasis</span>
+        </div>
+      </div>
+
+      <div class="ap-form-group">
+        <label>Color secundario</label>
+        <div class="color-row">
+          <input type="color" class="color-swatch" id="color_secondary" value="{{ estilos.color_secondary or '#0A0F1E' }}"/>
+          <input type="text" class="color-hex" id="color_secondary_hex" value="{{ estilos.color_secondary or '#0A0F1E' }}" maxlength="7"/>
+          <span class="color-label">Fondos oscuros, nav</span>
+        </div>
+      </div>
+
+      <div class="ap-form-group">
+        <label>Color acento</label>
+        <div class="color-row">
+          <input type="color" class="color-swatch" id="color_accent" value="{{ estilos.color_accent or '#0088CC' }}"/>
+          <input type="text" class="color-hex" id="color_accent_hex" value="{{ estilos.color_accent or '#0088CC' }}" maxlength="7"/>
+          <span class="color-label">Hover, destacados</span>
+        </div>
+      </div>
+
+      <div class="ap-form-group">
+        <label>Color neutro</label>
+        <div class="color-row">
+          <input type="color" class="color-swatch" id="color_neutral" value="{{ estilos.color_neutral or '#E8EAF0' }}"/>
+          <input type="text" class="color-hex" id="color_neutral_hex" value="{{ estilos.color_neutral or '#E8EAF0' }}" maxlength="7"/>
+          <span class="color-label">Fondos claros, bordes</span>
+        </div>
+      </div>
+
+      <div class="ap-form-group">
+        <label>Modo de tema</label>
+        <div class="radio-group">
+          <label class="radio-opt">
+            <input type="radio" name="modo_tema" value="dark" {% if (estilos.modo_tema or 'dark') == 'dark' %}checked{% endif %}/>
+            Oscuro
+          </label>
+          <label class="radio-opt">
+            <input type="radio" name="modo_tema" value="light" {% if estilos.modo_tema == 'light' %}checked{% endif %}/>
+            Claro
+          </label>
+        </div>
+      </div>
+
+      <!-- Preview de colores -->
+      <div class="color-preview" id="color-preview">
+        <div class="cp-bar" id="cp-primary" title="Primario"></div>
+        <div class="cp-bar" id="cp-secondary" title="Secundario"></div>
+        <div class="cp-bar" id="cp-accent" title="Acento"></div>
+        <div class="cp-bar" id="cp-neutral" title="Neutro"></div>
+      </div>
+
+      <div class="ap-actions">
+        <button class="ap-btn-primary" onclick="AP.guardarColores()">Guardar colores</button>
+      </div>
+    </section>
+
+    <!-- PANEL: TIPOGRAFÍA -->
+    <section class="ap-panel" id="panel-tipografia">
+      <h2 class="ap-panel-title">Tipografía</h2>
+
+      <div class="ap-form-group">
+        <label>Fuente de títulos</label>
+        <select id="font_heading" class="ap-select">
+          {% set _fh = estilos.font_heading or 'system-ui, sans-serif' %}
+          <option value="system-ui, sans-serif" {% if _fh == 'system-ui, sans-serif' %}selected{% endif %}>System UI (defecto)</option>
+          <option value="'Inter', sans-serif" {% if 'Inter' in _fh %}selected{% endif %}>Inter</option>
+          <option value="'Montserrat', sans-serif" {% if 'Montserrat' in _fh %}selected{% endif %}>Montserrat</option>
+          <option value="'Playfair Display', serif" {% if 'Playfair' in _fh %}selected{% endif %}>Playfair Display</option>
+          <option value="'Roboto', sans-serif" {% if 'Roboto' in _fh %}selected{% endif %}>Roboto</option>
+          <option value="'Oswald', sans-serif" {% if 'Oswald' in _fh %}selected{% endif %}>Oswald</option>
+          <option value="'Raleway', sans-serif" {% if 'Raleway' in _fh %}selected{% endif %}>Raleway</option>
+          <option value="'Merriweather', serif" {% if 'Merriweather' in _fh %}selected{% endif %}>Merriweather</option>
+          <option value="'Poppins', sans-serif" {% if 'Poppins' in _fh %}selected{% endif %}>Poppins</option>
+        </select>
+      </div>
+
+      <div class="ap-form-group">
+        <label>Fuente de cuerpo</label>
+        <select id="font_body" class="ap-select">
+          {% set _fb = estilos.font_body or 'system-ui, sans-serif' %}
+          <option value="system-ui, sans-serif" {% if _fb == 'system-ui, sans-serif' %}selected{% endif %}>System UI (defecto)</option>
+          <option value="'Inter', sans-serif" {% if 'Inter' in _fb %}selected{% endif %}>Inter</option>
+          <option value="'Open Sans', sans-serif" {% if 'Open Sans' in _fb %}selected{% endif %}>Open Sans</option>
+          <option value="'Lato', sans-serif" {% if 'Lato' in _fb %}selected{% endif %}>Lato</option>
+          <option value="'Roboto', sans-serif" {% if 'Roboto' in _fb %}selected{% endif %}>Roboto</option>
+          <option value="'Source Sans 3', sans-serif" {% if 'Source Sans' in _fb %}selected{% endif %}>Source Sans 3</option>
+          <option value="'Nunito', sans-serif" {% if 'Nunito' in _fb %}selected{% endif %}>Nunito</option>
+          <option value="'PT Sans', sans-serif" {% if 'PT Sans' in _fb %}selected{% endif %}>PT Sans</option>
+        </select>
+      </div>
+
+      <div class="ap-form-group">
+        <label>Tamaño H1 <span class="ap-val" id="lbl_h1">{{ estilos.font_size_h1 or 48 }}px</span></label>
+        <input type="range" id="font_size_h1" min="28" max="80" value="{{ estilos.font_size_h1 or 48 }}" class="ap-range" oninput="document.getElementById('lbl_h1').textContent=this.value+'px'"/>
+      </div>
+
+      <div class="ap-form-group">
+        <label>Tamaño H2 <span class="ap-val" id="lbl_h2">{{ estilos.font_size_h2 or 32 }}px</span></label>
+        <input type="range" id="font_size_h2" min="20" max="60" value="{{ estilos.font_size_h2 or 32 }}" class="ap-range" oninput="document.getElementById('lbl_h2').textContent=this.value+'px'"/>
+      </div>
+
+      <div class="ap-form-group">
+        <label>Tamaño cuerpo <span class="ap-val" id="lbl_body">{{ estilos.font_size_body or 16 }}px</span></label>
+        <input type="range" id="font_size_body" min="12" max="24" value="{{ estilos.font_size_body or 16 }}" class="ap-range" oninput="document.getElementById('lbl_body').textContent=this.value+'px'"/>
+      </div>
+
+      <div class="ap-form-group">
+        <label>Altura de línea <span class="ap-val" id="lbl_lh">{{ estilos.line_height or 1.6 }}</span></label>
+        <input type="range" id="line_height" min="12" max="22" value="{{ ((estilos.line_height or 1.6)|float * 10)|int }}" class="ap-range" oninput="document.getElementById('lbl_lh').textContent=(this.value/10).toFixed(1)"/>
+      </div>
+
+      <!-- Font preview -->
+      <div class="font-preview" id="font-preview">
+        <div class="fp-heading">Título de ejemplo</div>
+        <div class="fp-body">Este es un párrafo de ejemplo para visualizar la tipografía seleccionada antes de guardar los cambios en la plantilla.</div>
+      </div>
+
+      <div class="ap-actions">
+        <button class="ap-btn-primary" onclick="AP.guardarTipografia()">Guardar tipografía</button>
+      </div>
+    </section>
+
+    <!-- PANEL: ESPACIO -->
+    <section class="ap-panel" id="panel-espacio">
+      <h2 class="ap-panel-title">Espaciado y bordes</h2>
+
+      <div class="ap-form-group">
+        <label>Radio botones <span class="ap-val" id="lbl_rbtn">{{ estilos.radius_btn or 8 }}px</span></label>
+        <input type="range" id="radius_btn" min="0" max="32" value="{{ estilos.radius_btn or 8 }}" class="ap-range" oninput="document.getElementById('lbl_rbtn').textContent=this.value+'px'; AP.previewEspacio()"/>
+      </div>
+
+      <div class="ap-form-group">
+        <label>Radio tarjetas <span class="ap-val" id="lbl_rcard">{{ estilos.radius_card or 12 }}px</span></label>
+        <input type="range" id="radius_card" min="0" max="32" value="{{ estilos.radius_card or 12 }}" class="ap-range" oninput="document.getElementById('lbl_rcard').textContent=this.value+'px'; AP.previewEspacio()"/>
+      </div>
+
+      <div class="ap-form-group">
+        <label>Radio inputs <span class="ap-val" id="lbl_rinput">{{ estilos.radius_input or 6 }}px</span></label>
+        <input type="range" id="radius_input" min="0" max="20" value="{{ estilos.radius_input or 6 }}" class="ap-range" oninput="document.getElementById('lbl_rinput').textContent=this.value+'px'"/>
+      </div>
+
+      <div class="ap-form-group">
+        <label>Padding secciones <span class="ap-val" id="lbl_sp">{{ estilos.section_padding or 80 }}px</span></label>
+        <input type="range" id="section_padding" min="24" max="160" value="{{ estilos.section_padding or 80 }}" class="ap-range" oninput="document.getElementById('lbl_sp').textContent=this.value+'px'"/>
+      </div>
+
+      <div class="ap-form-group">
+        <label>Gap entre elementos <span class="ap-val" id="lbl_gap">{{ estilos.gap_elements or 24 }}px</span></label>
+        <input type="range" id="gap_elements" min="8" max="64" value="{{ estilos.gap_elements or 24 }}" class="ap-range" oninput="document.getElementById('lbl_gap').textContent=this.value+'px'"/>
+      </div>
+
+      <!-- Preview espacio -->
+      <div class="espacio-preview" id="espacio-preview">
+        <button class="ep-btn" id="ep-btn">Botón</button>
+        <div class="ep-card" id="ep-card">Tarjeta</div>
+        <input class="ep-input" id="ep-input" type="text" placeholder="Input" readonly/>
+      </div>
+
+      <div class="ap-actions">
+        <button class="ap-btn-primary" onclick="AP.guardarEspacio()">Guardar espacio</button>
+      </div>
+    </section>
+
+    <!-- PANEL: PRESETS -->
+    <section class="ap-panel" id="panel-presets">
+      <h2 class="ap-panel-title">Presets de color</h2>
+      <p class="ap-panel-desc">Aplica una paleta predefinida. Puedes ajustarla después en el panel de Colores.</p>
+
+      <div class="presets-grid" id="presets-grid">
+        <!-- Generado por JS -->
+      </div>
+    </section>
+
+    <!-- PANEL: HEADER -->
+    <section class="ap-panel" id="panel-header">
+      <h2 class="ap-panel-title">Estilo del Header</h2>
+
+      <div class="ap-form-group">
+        <label>Fondo del header</label>
+        <div class="color-row">
+          <input type="color" class="color-swatch" id="header_bg" value="{{ (estilos.header_json | fromjson).get('bg', '#0A0F1E') if estilos.header_json else '#0A0F1E' }}"/>
+          <input type="text" class="color-hex" id="header_bg_hex" value="{{ (estilos.header_json | fromjson).get('bg', '#0A0F1E') if estilos.header_json else '#0A0F1E' }}" maxlength="7"/>
+        </div>
+      </div>
+
+      <div class="ap-form-group">
+        <label>Color texto nav</label>
+        <div class="color-row">
+          <input type="color" class="color-swatch" id="header_text" value="{{ (estilos.header_json | fromjson).get('text', '#FFFFFF') if estilos.header_json else '#FFFFFF' }}"/>
+          <input type="text" class="color-hex" id="header_text_hex" value="{{ (estilos.header_json | fromjson).get('text', '#FFFFFF') if estilos.header_json else '#FFFFFF' }}" maxlength="7"/>
+        </div>
+      </div>
+
+      <div class="ap-form-group">
+        <label>Altura del header <span class="ap-val" id="lbl_hh">{{ (estilos.header_json | fromjson).get('height', 64) if estilos.header_json else 64 }}px</span></label>
+        <input type="range" id="header_height" min="48" max="120" value="{{ (estilos.header_json | fromjson).get('height', 64) if estilos.header_json else 64 }}" class="ap-range" oninput="document.getElementById('lbl_hh').textContent=this.value+'px'"/>
+      </div>
+
+      <div class="ap-form-group">
+        <label class="ap-toggle-label">
+          <input type="checkbox" id="header_sticky" {% if estilos.header_json and (estilos.header_json | fromjson).get('sticky') %}checked{% endif %}/>
+          <span>Header fijo (sticky)</span>
+        </label>
+      </div>
+
+      <div class="ap-form-group">
+        <label class="ap-toggle-label">
+          <input type="checkbox" id="header_transparent" {% if estilos.header_json and (estilos.header_json | fromjson).get('transparent') %}checked{% endif %}/>
+          <span>Transparente sobre hero</span>
+        </label>
+      </div>
+
+      <div class="ap-actions">
+        <button class="ap-btn-primary" onclick="AP.guardarSeccion('header')">Guardar header</button>
+      </div>
+    </section>
+
+    <!-- PANEL: HERO -->
+    <section class="ap-panel" id="panel-hero">
+      <h2 class="ap-panel-title">Estilo del Hero</h2>
+
+      <div class="ap-form-group">
+        <label>Altura del hero</label>
+        <select id="hero_height" class="ap-select">
+          {% set _hj = (estilos.hero_json | fromjson) if estilos.hero_json else {} %}
+          <option value="50vh" {% if _hj.get('height','60vh') == '50vh' %}selected{% endif %}>50vh — Compacto</option>
+          <option value="60vh" {% if _hj.get('height','60vh') == '60vh' %}selected{% endif %}>60vh — Estándar</option>
+          <option value="80vh" {% if _hj.get('height','60vh') == '80vh' %}selected{% endif %}>80vh — Grande</option>
+          <option value="100vh" {% if _hj.get('height','60vh') == '100vh' %}selected{% endif %}>100vh — Pantalla completa</option>
+        </select>
+      </div>
+
+      <div class="ap-form-group">
+        <label>Alineación del texto</label>
+        <div class="radio-group">
+          {% for val, lbl in [('left','Izquierda'),('center','Centro'),('right','Derecha')] %}
+          <label class="radio-opt">
+            <input type="radio" name="hero_align" value="{{ val }}" {% if _hj.get('align','center') == val %}checked{% endif %}/>
+            {{ lbl }}
+          </label>
+          {% endfor %}
+        </div>
+      </div>
+
+      <div class="ap-form-group">
+        <label>Opacidad overlay <span class="ap-val" id="lbl_hov">{{ _hj.get('overlay', 50) }}%</span></label>
+        <input type="range" id="hero_overlay" min="0" max="90" value="{{ _hj.get('overlay', 50) }}" class="ap-range" oninput="document.getElementById('lbl_hov').textContent=this.value+'%'"/>
+      </div>
+
+      <div class="ap-form-group">
+        <label>Color overlay</label>
+        <div class="color-row">
+          <input type="color" class="color-swatch" id="hero_overlay_color" value="{{ _hj.get('overlay_color', '#000000') }}"/>
+          <input type="text" class="color-hex" id="hero_overlay_color_hex" value="{{ _hj.get('overlay_color', '#000000') }}" maxlength="7"/>
+        </div>
+      </div>
+
+      <div class="ap-actions">
+        <button class="ap-btn-primary" onclick="AP.guardarSeccion('hero')">Guardar hero</button>
+      </div>
+    </section>
+
+    <!-- PANEL: FOOTER -->
+    <section class="ap-panel" id="panel-footer">
+      <h2 class="ap-panel-title">Estilo del Footer</h2>
+
+      <div class="ap-form-group">
+        <label>Fondo del footer</label>
+        <div class="color-row">
+          {% set _fj = (estilos.footer_json | fromjson) if estilos.footer_json else {} %}
+          <input type="color" class="color-swatch" id="footer_bg" value="{{ _fj.get('bg', '#0A0F1E') }}"/>
+          <input type="text" class="color-hex" id="footer_bg_hex" value="{{ _fj.get('bg', '#0A0F1E') }}" maxlength="7"/>
+        </div>
+      </div>
+
+      <div class="ap-form-group">
+        <label>Color texto footer</label>
+        <div class="color-row">
+          <input type="color" class="color-swatch" id="footer_text" value="{{ _fj.get('text', '#94a3b8') }}"/>
+          <input type="text" class="color-hex" id="footer_text_hex" value="{{ _fj.get('text', '#94a3b8') }}" maxlength="7"/>
+        </div>
+      </div>
+
+      <div class="ap-form-group">
+        <label>Columnas del footer</label>
+        <select id="footer_cols" class="ap-select">
+          {% for n in [1,2,3,4] %}
+          <option value="{{ n }}" {% if _fj.get('cols', 3)|int == n %}selected{% endif %}>{{ n }} columna{{ 's' if n > 1 else '' }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="ap-actions">
+        <button class="ap-btn-primary" onclick="AP.guardarSeccion('footer')">Guardar footer</button>
+      </div>
+    </section>
+
+    {% if modo == 'admin' %}
+    <!-- PANEL: EFECTOS (admin only) -->
+    <section class="ap-panel" id="panel-efectos">
+      <h2 class="ap-panel-title">Efectos y animaciones</h2>
+      <p class="ap-panel-desc">Controla qué animaciones se activan globalmente en la plantilla.</p>
+
+      {% set _ef = {} %}
+      {% if estilos.efectos_json %}{% set _ef = estilos.efectos_json | fromjson %}{% endif %}
+
+      <div class="ap-form-group">
+        <label class="ap-toggle-label">
+          <input type="checkbox" id="ef_fade_in" {% if _ef.get('fade_in', true) %}checked{% endif %}/>
+          <span>Fade-in en secciones</span>
+        </label>
+      </div>
+      <div class="ap-form-group">
+        <label class="ap-toggle-label">
+          <input type="checkbox" id="ef_hover_scale" {% if _ef.get('hover_scale', true) %}checked{% endif %}/>
+          <span>Escala al hover en tarjetas</span>
+        </label>
+      </div>
+      <div class="ap-form-group">
+        <label class="ap-toggle-label">
+          <input type="checkbox" id="ef_smooth_scroll" {% if _ef.get('smooth_scroll', true) %}checked{% endif %}/>
+          <span>Scroll suave</span>
+        </label>
+      </div>
+      <div class="ap-form-group">
+        <label class="ap-toggle-label">
+          <input type="checkbox" id="ef_parallax" {% if _ef.get('parallax', false) %}checked{% endif %}/>
+          <span>Parallax en hero</span>
+        </label>
+      </div>
+
+      <div class="ap-actions">
+        <button class="ap-btn-primary" onclick="AP.guardarEfectos()">Guardar efectos</button>
+      </div>
+    </section>
+
+    <!-- PANEL: MÓVIL (admin only) -->
+    <section class="ap-panel" id="panel-movil">
+      <h2 class="ap-panel-title">Configuración móvil</h2>
+
+      {% set _mv = {} %}
+      {% if estilos.movil_json %}{% set _mv = estilos.movil_json | fromjson %}{% endif %}
+
+      <div class="ap-form-group">
+        <label>Tamaño fuente móvil <span class="ap-val" id="lbl_mob_body">{{ _mv.get('font_size_body', 15) }}px</span></label>
+        <input type="range" id="mob_font_size_body" min="12" max="20" value="{{ _mv.get('font_size_body', 15) }}" class="ap-range" oninput="document.getElementById('lbl_mob_body').textContent=this.value+'px'"/>
+      </div>
+
+      <div class="ap-form-group">
+        <label>Padding secciones móvil <span class="ap-val" id="lbl_mob_pad">{{ _mv.get('section_padding', 40) }}px</span></label>
+        <input type="range" id="mob_section_padding" min="16" max="80" value="{{ _mv.get('section_padding', 40) }}" class="ap-range" oninput="document.getElementById('lbl_mob_pad').textContent=this.value+'px'"/>
+      </div>
+
+      <div class="ap-form-group">
+        <label class="ap-toggle-label">
+          <input type="checkbox" id="mob_hide_hero_subtitle" {% if _mv.get('hide_hero_subtitle') %}checked{% endif %}/>
+          <span>Ocultar subtítulo del hero en móvil</span>
+        </label>
+      </div>
+
+      <div class="ap-form-group">
+        <label class="ap-toggle-label">
+          <input type="checkbox" id="mob_stack_columns" {% if _mv.get('stack_columns', true) %}checked{% endif %}/>
+          <span>Apilar columnas en móvil</span>
+        </label>
+      </div>
+
+      <div class="ap-actions">
+        <button class="ap-btn-primary" onclick="AP.guardarMovil()">Guardar móvil</button>
+      </div>
+    </section>
+    {% endif %}
+
+  </main>
+</div>
+
+<!-- MODAL CSS -->
+<div class="ap-modal-overlay" id="css-modal" onclick="AP.cerrarCSS(event)">
+  <div class="ap-modal">
+    <div class="ap-modal-header">
+      <span>CSS generado — :root variables</span>
+      <button onclick="AP.copiarCSS()" class="ap-btn-copy">Copiar</button>
+      <button onclick="AP.cerrarCSS()" class="ap-modal-close">×</button>
+    </div>
+    <pre class="ap-css-pre" id="css-output">{{ css_generado }}</pre>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="ap-toast" id="ap-toast"></div>
+
+<script>
+  const PID = {{ p.id }};
+</script>
+<script src="{{ url_for('static', filename='admin/apariencia.js') }}"></script>
+
+</body>
+</html>
