@@ -29,6 +29,9 @@ from db import (
     crear_reset_token, obtener_usuario_por_reset_token,
     invalidar_reset_token, actualizar_password_usuario,
     crear_o_vincular_google,
+    obtener_cliente_por_email, actualizar_email_cliente,
+    crear_admin_reset_token, obtener_cliente_por_reset_token,
+    invalidar_admin_reset_token, actualizar_password_cliente,
 )
 from parser import (
     extraer_valores, aplicar_cambios,
@@ -329,6 +332,43 @@ def logout():
     session.clear()
     flash('Sesión cerrada correctamente', 'info')
     return redirect(url_for('login'))
+
+
+@app.route('/login/recuperar', methods=['GET', 'POST'])
+def login_recuperar():
+    if 'usuario' in session:
+        return redirect(url_for('dashboard'))
+    if request.method == 'POST':
+        email = request.form.get('email', '').strip().lower()
+        cliente = obtener_cliente_por_email(email)
+        flash('Si ese email está registrado, recibirás un enlace en unos minutos.', 'info')
+        if cliente:
+            token = crear_admin_reset_token(cliente['id'])
+            reset_url = url_for('login_reset', token=token, _external=True)
+            _enviar_email_reset(email, cliente['nombre'] or cliente['usuario'], reset_url)
+        return redirect(url_for('login_recuperar'))
+    return render_template('login_recuperar.html')
+
+
+@app.route('/login/reset/<token>', methods=['GET', 'POST'])
+def login_reset(token):
+    cliente = obtener_cliente_por_reset_token(token)
+    if not cliente:
+        flash('El enlace no es válido o ya expiró.', 'error')
+        return redirect(url_for('login_recuperar'))
+    if request.method == 'POST':
+        nueva    = request.form.get('password', '').strip()
+        confirmar = request.form.get('confirm', '').strip()
+        if len(nueva) < 8:
+            flash('La contraseña debe tener al menos 8 caracteres.', 'error')
+        elif nueva != confirmar:
+            flash('Las contraseñas no coinciden.', 'error')
+        else:
+            actualizar_password_cliente(cliente['id'], generate_password_hash(nueva))
+            invalidar_admin_reset_token(token)
+            flash('Contraseña actualizada. Ya puedes iniciar sesión.', 'success')
+            return redirect(url_for('login'))
+    return render_template('login_reset.html', token=token)
 
 
 # ── Dashboard ─────────────────────────────────────────────────────────────────

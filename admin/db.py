@@ -157,6 +157,26 @@ def init_db():
     except Exception:
         pass  # ya existe
 
+    # Migración: columna email en clientes (idempotente)
+    try:
+        conn.execute("ALTER TABLE clientes ADD COLUMN email TEXT DEFAULT ''")
+        conn.commit()
+    except Exception:
+        pass  # ya existe
+
+    # Tabla tokens reset para clientes/admin
+    conn.executescript("""
+        CREATE TABLE IF NOT EXISTS admin_reset_tokens (
+            id         INTEGER PRIMARY KEY AUTOINCREMENT,
+            cliente_id INTEGER NOT NULL REFERENCES clientes(id) ON DELETE CASCADE,
+            token      TEXT    UNIQUE NOT NULL,
+            expires_at TEXT    NOT NULL,
+            used       INTEGER DEFAULT 0,
+            created_at TEXT    DEFAULT (datetime('now'))
+        );
+    """)
+    conn.commit()
+
     # Seed plantillas base si no existen
     _schema_completo = '{"secciones": ["apariencia", "marca", "hero", "nosotros", "servicios", "proyectos", "equipo", "contacto"]}'
     _plantillas_seed = [
@@ -738,3 +758,63 @@ def crear_o_vincular_google(email: str, nombre: str, google_id: str) -> dict:
     result = dict(row)
     conn.close()
     return result
+
+
+# ── Reset contraseña admin/clientes ──────────────────────────────────────────
+
+def obtener_cliente_por_email(email: str):
+    conn = get_db()
+    row = conn.execute(
+        "SELECT * FROM clientes WHERE email=? AND activo=1", (email.lower().strip(),)
+    ).fetchone()
+    conn.close()
+    return row
+
+
+def actualizar_email_cliente(cliente_id: int, email: str):
+    conn = get_db()
+    conn.execute("UPDATE clientes SET email=? WHERE id=?", (email.lower().strip(), cliente_id))
+    conn.commit()
+    conn.close()
+
+
+def crear_admin_reset_token(cliente_id: int) -> str:
+    token = secrets.token_urlsafe(32)
+    expires = (datetime.utcnow() + timedelta(hours=24)).strftime('%Y-%m-%d %H:%M:%S')
+    conn = get_db()
+    conn.execute("UPDATE admin_reset_tokens SET used=1 WHERE cliente_id=?", (cliente_id,))
+    conn.execute(
+        "INSERT INTO admin_reset_tokens (cliente_id, token, expires_at) VALUES (?, ?, ?)",
+        (cliente_id, token, expires)
+    )
+    conn.commit()
+    conn.close()
+    return token
+
+
+def obtener_cliente_por_reset_token(token: str):
+    conn = get_db()
+    row = conn.execute("""
+        SELECT c.* FROM clientes c
+        JOIN admin_reset_tokens r ON r.cliente_id = c.id
+        WHERE r.token = ?
+          AND r.used = 0
+          AND r.expires_at > datetime('now')
+          AND c.activo = 1
+    """, (token,)).fetchone()
+    conn.close()
+    return row
+
+
+def invalidar_admin_reset_token(token: str):
+    conn = get_db()
+    conn.execute("UPDATE admin_reset_tokens SET used=1 WHERE token=?", (token,))
+    conn.commit()
+    conn.close()
+
+
+def actualizar_password_cliente(cliente_id: int, password_hash: str):
+    conn = get_db()
+    conn.execute("UPDATE clientes SET password=? WHERE id=?", (password_hash, cliente_id))
+    conn.commit()
+    conn.close()
