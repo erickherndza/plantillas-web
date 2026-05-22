@@ -38,18 +38,17 @@ from parser import (
 app = Flask(__name__)
 
 # ── SECRET_KEY desde variable de entorno (DT-002) ─────────────────────────────
+# Cargar .env siempre (setdefault no sobreescribe variables del sistema)
+_env_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '.env')
+if os.path.isfile(_env_path):
+    with open(_env_path) as _f:
+        for _line in _f:
+            _line = _line.strip()
+            if _line and not _line.startswith('#') and '=' in _line:
+                _k, _v = _line.split('=', 1)
+                os.environ.setdefault(_k.strip(), _v.strip())
+
 _secret = os.environ.get('SECRET_KEY', '')
-if not _secret:
-    # Cargar .env manual si existe (evita dependencia de python-dotenv en dev)
-    _env_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '.env')
-    if os.path.isfile(_env_path):
-        with open(_env_path) as _f:
-            for _line in _f:
-                _line = _line.strip()
-                if _line and not _line.startswith('#') and '=' in _line:
-                    _k, _v = _line.split('=', 1)
-                    os.environ.setdefault(_k.strip(), _v.strip())
-        _secret = os.environ.get('SECRET_KEY', '')
 if not _secret:
     import secrets as _sec
     _secret = _sec.token_hex(32)
