@@ -612,6 +612,7 @@ def admin_cliente_editar(cliente_id):
         return redirect(url_for('admin_clientes'))
     if request.method == 'POST':
         nombre    = request.form.get('nombre', '').strip()
+        email     = request.form.get('email', '').strip().lower()
         pw_raw    = request.form.get('password', '').strip()
         # Si el admin dejó el campo vacío, conservar la contraseña actual
         if pw_raw:
@@ -621,6 +622,8 @@ def admin_cliente_editar(cliente_id):
         plan      = request.form.get('plan', 'landing')
         seleccion = request.form.getlist('plantillas')
         actualizar_cliente(cliente_id, nombre, password, plan)
+        if email:
+            actualizar_email_cliente(cliente_id, email)
         set_accesos(cliente_id, seleccion)
         if session.get('cliente_id') == cliente_id:
             session['nombre']     = nombre or session['nombre']
