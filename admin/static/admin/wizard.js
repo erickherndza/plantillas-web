@@ -146,6 +146,68 @@
 
   let _scraperSelected = {};  // {role: hex}  role = 'primario' | 'acento' | 'footer'
 
+  // Scraper 100% client-side via allorigins.win (bypass bloqueo de PA free)
+  async function scraperClientSide(targetUrl) {
+    const proxy = `https://api.allorigins.win/get?url=${encodeURIComponent(targetUrl)}`;
+    const resp  = await fetch(proxy, { signal: AbortSignal.timeout(15000) });
+    if (!resp.ok) throw new Error(`Proxy error ${resp.status}`);
+    const json = await resp.json();
+    const html = json.contents || '';
+
+    const parser = new DOMParser();
+    const doc    = parser.parseFromString(html, 'text/html');
+
+    // Extraer colores hex del CSS inline y <style>
+    const hexRe = /#([0-9a-fA-F]{6}|[0-9a-fA-F]{3})\b/g;
+    const rawColors = new Set();
+
+    doc.querySelectorAll('[style]').forEach(el => {
+      const m = el.getAttribute('style').matchAll(hexRe);
+      for (const [c] of m) rawColors.add(normalizeHex(c));
+    });
+    doc.querySelectorAll('style').forEach(st => {
+      const m = st.textContent.matchAll(hexRe);
+      for (const [c] of m) rawColors.add(normalizeHex(c));
+    });
+
+    // Filtrar blancos/negros/grises y deduplicar
+    const colores = [...rawColors].filter(h => {
+      const r = parseInt(h.slice(1,3),16), g = parseInt(h.slice(3,5),16), b = parseInt(h.slice(5,7),16);
+      const diff = Math.max(r,g,b) - Math.min(r,g,b);
+      return diff > 30; // descartar grises
+    }).slice(0, 10);
+
+    // Fuente
+    const fontRe = /font-family:\s*['"]?([^,;'"}{]+)/gi;
+    const fuentes = new Set();
+    doc.querySelectorAll('style').forEach(st => {
+      for (const [, f] of st.textContent.matchAll(fontRe)) {
+        const clean = f.trim().replace(/['"]/g,'');
+        if (clean && !clean.toLowerCase().includes('system') && !clean.toLowerCase().includes('sans-serif'))
+          fuentes.add(clean);
+      }
+    });
+
+    // Logo
+    let logoUrl = '';
+    for (const img of doc.querySelectorAll('img')) {
+      const alt = (img.getAttribute('alt') || '').toLowerCase();
+      const src = img.getAttribute('src') || '';
+      if (alt.includes('logo') || src.toLowerCase().includes('logo')) {
+        logoUrl = src.startsWith('http') ? src : '';
+        break;
+      }
+    }
+
+    return { colores, fuentes: [...fuentes].slice(0,4), logo_url: logoUrl };
+  }
+
+  function normalizeHex(h) {
+    h = h.toLowerCase();
+    if (h.length === 4) h = '#' + h[1]+h[1]+h[2]+h[2]+h[3]+h[3];
+    return h;
+  }
+
   btnScraper && btnScraper.addEventListener('click', async () => {
     const url = scraperUrl.value.trim();
     if (!url) { scraperError.textContent = 'Ingresa una URL.'; scraperError.style.display = 'block'; return; }
@@ -155,22 +217,16 @@
     scraperLoading.style.display = 'block';
 
     try {
-      const resp = await fetch('/admin/scraper/analizar', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({url})
-      });
-      const data = await resp.json();
+      const data = await scraperClientSide(url);
       scraperLoading.style.display = 'none';
 
-      if (!data.ok) {
-        scraperError.textContent   = data.error || 'No se pudo analizar el sitio.';
+      const colores = data.colores || [];
+      if (!colores.length) {
+        scraperError.textContent   = 'No se encontraron colores en el sitio. Prueba con otra URL o usa el modo manual.';
         scraperError.style.display = 'block';
         return;
       }
 
-      // Render swatches
-      const colores = data.colores || [];
       scraperColors.innerHTML = '';
       colores.forEach(hex => {
         const swatch = document.createElement('div');
@@ -178,16 +234,25 @@
         swatch.innerHTML = `<div class="scraper-swatch-box" style="background:${hex};"></div><span class="scraper-swatch-hex">${hex}</span>`;
         swatch.addEventListener('click', () => {
           swatch.classList.toggle('selected');
-          // Aplicar colores en orden: primario, acento, footer
           applyScraperColors();
         });
         scraperColors.appendChild(swatch);
       });
 
+      // Mostrar fuentes encontradas si las hay
+      if (data.fuentes && data.fuentes.length) {
+        const fInfo = document.createElement('p');
+        fInfo.style.cssText = 'margin-top:10px;font-size:12px;color:#6b7280;';
+        fInfo.textContent = `Fuentes detectadas: ${data.fuentes.join(', ')}`;
+        scraperColors.appendChild(fInfo);
+      }
+
       scraperResults.style.display = 'block';
     } catch(e) {
       scraperLoading.style.display = 'none';
-      scraperError.textContent   = 'Error de red al contactar el servidor.';
+      scraperError.textContent   = e.name === 'TimeoutError'
+        ? 'Tiempo de espera agotado. El sitio tardó demasiado.'
+        : 'No se pudo acceder al sitio. Prueba con otra URL o usa el modo manual.';
       scraperError.style.display = 'block';
     }
   });

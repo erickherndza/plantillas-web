@@ -328,8 +328,53 @@ async function deleteCode(id, btn) {
   toast('Bloque eliminado');
 }
 
-// ── Panel: Scraper ────────────────────────────────────────────────────────────
+// ── Panel: Scraper (client-side via allorigins.win) ───────────────────────────
 let scraperResult = null;
+
+async function _scraperClientSide(targetUrl) {
+  const proxy = `https://api.allorigins.win/get?url=${encodeURIComponent(targetUrl)}`;
+  const resp  = await fetch(proxy, { signal: AbortSignal.timeout(15000) });
+  if (!resp.ok) throw new Error(`Proxy ${resp.status}`);
+  const json = await resp.json();
+  const html = json.contents || '';
+  const doc  = new DOMParser().parseFromString(html, 'text/html');
+
+  const hexRe = /#([0-9a-fA-F]{6}|[0-9a-fA-F]{3})\b/g;
+  const rawSet = new Set();
+  const norm = h => { h=h.toLowerCase(); return h.length===4?'#'+h[1]+h[1]+h[2]+h[2]+h[3]+h[3]:h; };
+
+  doc.querySelectorAll('[style]').forEach(el => { for (const [c] of el.getAttribute('style').matchAll(hexRe)) rawSet.add(norm(c)); });
+  doc.querySelectorAll('style').forEach(st => { for (const [c] of st.textContent.matchAll(hexRe)) rawSet.add(norm(c)); });
+
+  const colores = [...rawSet].filter(h => {
+    const r=parseInt(h.slice(1,3),16), g=parseInt(h.slice(3,5),16), b=parseInt(h.slice(5,7),16);
+    return Math.max(r,g,b)-Math.min(r,g,b) > 30;
+  }).slice(0,10);
+
+  const fontRe = /font-family:\s*['"]?([^,;'"}{]+)/gi;
+  const fuentes = new Set();
+  doc.querySelectorAll('style').forEach(st => {
+    for (const [,f] of st.textContent.matchAll(fontRe)) {
+      const c=f.trim().replace(/['"]/g,'');
+      if (c && !c.toLowerCase().includes('system') && !c.toLowerCase().includes('sans-serif')) fuentes.add(c);
+    }
+  });
+
+  let logo_url = '';
+  for (const img of doc.querySelectorAll('img')) {
+    const src=(img.getAttribute('src')||'');
+    if ((img.getAttribute('alt')||'').toLowerCase().includes('logo')||src.toLowerCase().includes('logo')) {
+      if (src.startsWith('http')) { logo_url=src; break; }
+    }
+  }
+
+  const imagenes = [...doc.querySelectorAll('img')].map(i=>i.getAttribute('src')||'').filter(s=>s.startsWith('http')).slice(0,6);
+  const titulo   = (doc.querySelector('h1,h2,title')?.textContent||'').trim().slice(0,100);
+  const descMeta = doc.querySelector('meta[name="description"]');
+  const descripcion = (descMeta?.getAttribute('content')||'').slice(0,200);
+
+  return { colores, fuentes:[...fuentes].slice(0,4), logo_url, imagenes, textos:{titulo,descripcion} };
+}
 
 function initScraper() {
   document.getElementById('btn-analizar')?.addEventListener('click', async () => {
@@ -338,10 +383,12 @@ function initScraper() {
     const btn = document.getElementById('btn-analizar');
     btn.textContent = 'Analizando…'; btn.disabled = true;
     try {
-      scraperResult = await api('POST', '/admin/scraper/analizar', { url });
+      scraperResult = await _scraperClientSide(url);
       renderScraperResult(scraperResult);
       toast('Análisis completado');
-    } catch(e) { toast(e.message, 'error'); }
+    } catch(e) {
+      toast(e.name==='TimeoutError' ? 'Tiempo agotado. Intenta otra URL.' : 'No se pudo acceder al sitio.', 'error');
+    }
     finally { btn.textContent = 'Analizar'; btn.disabled = false; }
   });
   document.getElementById('btn-aplicar')?.addEventListener('click', async () => {
