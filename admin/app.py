@@ -1492,8 +1492,15 @@ def ver_sitio(slug):
 @app.route('/s/<slug>/<pagina>/')
 @app.route('/s/<slug>/<pagina>')
 def ver_pagina(slug, pagina):
+    from flask import redirect
     sitio = obtener_sitio_por_slug(slug)
-    if not sitio or sitio['plantilla_tipo'] != 'web5' or pagina not in _PAGINAS_WEB5:
+    if not sitio:
+        abort(404)
+    # Sitios landing/universal: redirigir sub-páginas a la sección con ancla
+    if sitio['plantilla_tipo'] != 'web5':
+        return redirect(f'/s/{slug}/#{pagina}', 302)
+    # Sitios web5: servir página dedicada
+    if pagina not in _PAGINAS_WEB5:
         abort(404)
     ctx = _contexto_sitio(sitio)
     return render_template(
