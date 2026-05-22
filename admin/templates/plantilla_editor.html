@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Editor · {{ p.nombre }}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='admin/editor.css') }}">
+</head>
+<body class="editor-body">
+
+<!-- ── Topbar ─────────────────────────────────────────────────────────────── -->
+<header class="e-topbar">
+  <div class="e-topbar-brand">
+    <div class="logo-sm">PW</div>
+    <span class="e-topbar-sep">|</span>
+    <span class="e-topbar-name">{{ p.nombre }}</span>
+  </div>
+
+  <nav class="e-tabs">
+    <button class="e-tab" data-tab="general">General</button>
+    <button class="e-tab" data-tab="navegacion">Navegación</button>
+    <button class="e-tab" data-tab="secciones">Secciones</button>
+    <button class="e-tab" data-tab="footer">Footer</button>
+    <button class="e-tab" data-tab="devtools">Dev Tools</button>
+  </nav>
+
+  <div class="e-topbar-actions">
+    <a href="{{ url_for('admin_plantillas') }}" class="e-btn-back">← Volver</a>
+  </div>
+</header>
+
+<!-- ── Layout ─────────────────────────────────────────────────────────────── -->
+<div class="e-layout">
+
+  <!-- Sidebar -->
+  <aside class="e-sidebar">
+
+    <div class="e-sidebar-group" data-tab="general">
+      <div class="e-sidebar-group-label">Plantilla</div>
+      <button class="e-sidebar-link" data-panel="general-info">📋 Información general</button>
+      <button class="e-sidebar-link" data-panel="general-preview">🖼️ Preview / imagen</button>
+    </div>
+
+    <div class="e-sidebar-group" data-tab="navegacion">
+      <div class="e-sidebar-group-label">Navegación</div>
+      <button class="e-sidebar-link" data-panel="menu">☰ Menú principal</button>
+    </div>
+
+    <div class="e-sidebar-group" data-tab="secciones">
+      <div class="e-sidebar-group-label">Secciones</div>
+      <button class="e-sidebar-link" data-panel="secciones">⚙️ Secciones disponibles</button>
+      <button class="e-sidebar-link" data-panel="slider">🎞️ Slider <span class="badge">nuevo</span></button>
+    </div>
+
+    <div class="e-sidebar-group" data-tab="footer">
+      <div class="e-sidebar-group-label">Pie de página</div>
+      <button class="e-sidebar-link" data-panel="footer">🏗️ Footer builder</button>
+    </div>
+
+    <div class="e-sidebar-group" data-tab="devtools">
+      <div class="e-sidebar-group-label">Dev Tools</div>
+      <button class="e-sidebar-link" data-panel="scraper">🔍 Scraper / Import</button>
+      <button class="e-sidebar-link" data-panel="custom-code">⌨️ Código custom</button>
+    </div>
+
+  </aside>
+
+  <!-- Main -->
+  <main class="e-main">
+
+    <!-- ── General info ─────────────────────────────────────────────────── -->
+    <div class="e-panel" id="panel-general-info">
+      <h2 class="e-panel-title">Información general</h2>
+      <p class="e-panel-sub">Datos básicos de la plantilla.</p>
+      <div class="e-card">
+        <div class="e-form-group">
+          <label class="e-label">Nombre visible</label>
+          <input class="e-input" id="g-nombre" value="{{ p.nombre }}">
+        </div>
+        <div class="e-form-group">
+          <label class="e-label">Tipo</label>
+          <select class="e-select" id="g-tipo">
+            <option value="landing" {{ 'selected' if p.tipo=='landing' }}>Landing page (1 página)</option>
+            <option value="web5"    {{ 'selected' if p.tipo=='web5'    }}>Web 5 páginas (multi-página)</option>
+          </select>
+        </div>
+        <div class="e-form-group">
+          <label class="e-label">Descripción</label>
+          <textarea class="e-textarea" id="g-descripcion">{{ p.descripcion or '' }}</textarea>
+        </div>
+        <button class="e-btn-primary" id="btn-save-general">Guardar cambios</button>
+      </div>
+    </div>
+
+    <!-- ── Preview ──────────────────────────────────────────────────────── -->
+    <div class="e-panel" id="panel-general-preview">
+      <h2 class="e-panel-title">Preview / imagen</h2>
+      <p class="e-panel-sub">Imagen que verán los clientes al elegir esta plantilla.</p>
+      <div class="e-card">
+        <div class="e-form-group">
+          <label class="e-label">URL de imagen de preview</label>
+          <input class="e-input" id="g-preview" value="{{ p.preview_img or '' }}" placeholder="https://…/preview.png">
+        </div>
+        {% if p.preview_img %}
+        <img src="{{ p.preview_img }}" style="max-width:100%;border-radius:8px;border:1px solid var(--e-border);">
+        {% endif %}
+        <br>
+        <button class="e-btn-primary" id="btn-save-general" style="margin-top:12px">Guardar</button>
+      </div>
+    </div>
+
+    <!-- ── Menú ─────────────────────────────────────────────────────────── -->
+    <div class="e-panel" id="panel-menu">
+      <h2 class="e-panel-title">Menú principal</h2>
+      <p class="e-panel-sub">Arrastra para reordenar. Los submenús aparecen indentados.</p>
+      <div class="e-card">
+        <div class="e-menu-list" id="menu-list"></div>
+        <button class="e-btn-add" id="btn-add-menu">+ Agregar item</button>
+        <div class="e-menu-form" id="menu-form" style="display:none;margin-top:14px">
+          <div class="e-menu-form-title" id="menu-form-title">Nuevo item</div>
+          <div class="e-form-row">
+            <div class="e-form-group">
+              <label class="e-label">Label</label>
+              <input class="e-input" id="mi-label" placeholder="Inicio">
+            </div>
+            <div class="e-form-group">
+              <label class="e-label">URL / ancla</label>
+              <input class="e-input" id="mi-url" placeholder="#inicio">
+            </div>
+            <div class="e-form-group">
+              <label class="e-label">Submenu de</label>
+              <select class="e-select" id="mi-parent">
+                <option value="">Ninguno (raíz)</option>
+              </select>
+            </div>
+          </div>
+          <div class="e-form-actions">
+            <button class="e-btn-secondary" id="btn-cancel-menu">Cancelar</button>
+            <button class="e-btn-primary" id="btn-save-menu">Guardar item</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Secciones ────────────────────────────────────────────────────── -->
+    <div class="e-panel" id="panel-secciones">
+      <h2 class="e-panel-title">Secciones disponibles</h2>
+      <p class="e-panel-sub">Activa las secciones que el cliente podrá editar en esta plantilla.</p>
+      <div class="e-card">
+        <div class="e-toggle-grid">
+          {% for clave, label in secciones_todas %}
+          <label class="e-toggle-item">
+            <span>{{ label }}</span>
+            <label class="e-toggle">
+              <input type="checkbox" class="sec-toggle" value="{{ clave }}"
+                     {{ 'checked' if clave in secciones_hab }}>
+              <span class="e-toggle-slider"></span>
+            </label>
+          </label>
+          {% endfor %}
+        </div>
+        <br>
+        <button class="e-btn-primary" id="btn-save-secciones">Guardar secciones</button>
+      </div>
+    </div>
+
+    <!-- ── Slider ───────────────────────────────────────────────────────── -->
+    <div class="e-panel" id="panel-slider">
+      <h2 class="e-panel-title">Slider</h2>
+      <p class="e-panel-sub">Configura el carrusel de imágenes de esta plantilla.</p>
+
+      <div class="e-card">
+        <div class="e-card-title">Configuración</div>
+        <div class="e-slider-config">
+          <div class="e-form-group">
+            <label class="e-label">Efecto</label>
+            <select class="e-select" id="sl-efecto">
+              {% set sl_cfg = slider.config %}
+              <option value="fade"  {{ 'selected' if sl_cfg.get('efecto','fade')=='fade'  }}>Fade</option>
+              <option value="slide" {{ 'selected' if sl_cfg.get('efecto')=='slide' }}>Slide</option>
+              <option value="zoom"  {{ 'selected' if sl_cfg.get('efecto')=='zoom'  }}>Zoom</option>
+            </select>
+          </div>
+          <div class="e-form-group">
+            <label class="e-label">Intervalo (segundos)</label>
+            <input class="e-input" type="number" id="sl-intervalo" value="{{ sl_cfg.get('intervalo', 4) }}" min="1" max="30">
+          </div>
+          <div class="e-form-group">
+            <label class="e-label">Mostrar flechas</label>
+            <select class="e-select" id="sl-flechas">
+              <option value="1" {{ 'selected' if sl_cfg.get('flechas', true) }}>Sí</option>
+              <option value="0" {{ 'selected' if not sl_cfg.get('flechas', true) }}>No</option>
+            </select>
+          </div>
+          <div class="e-form-group">
+            <label class="e-label">Mostrar puntos</label>
+            <select class="e-select" id="sl-puntos">
+              <option value="1" {{ 'selected' if sl_cfg.get('puntos', true) }}>Sí</option>
+              <option value="0" {{ 'selected' if not sl_cfg.get('puntos', true) }}>No</option>
+            </select>
+          </div>
+          <div class="e-form-group">
+            <label class="e-label">Modo</label>
+            <select class="e-select" id="sl-modo">
+              <option value="seccion" {{ 'selected' if sl_cfg.get('modo','seccion')=='seccion' }}>Sección propia</option>
+              <option value="componente" {{ 'selected' if sl_cfg.get('modo')=='componente' }}>Componente insertable</option>
+            </select>
+          </div>
+        </div>
+        <button class="e-btn-primary" id="btn-save-slider-config" style="margin-top:8px">Guardar configuración</button>
+      </div>
+
+      <div class="e-card">
+        <div class="e-card-title">Slides</div>
+        <div class="e-slides-grid" id="slides-grid"></div>
+        <button class="e-btn-add" id="btn-add-slide">+ Agregar slide</button>
+        <div class="e-slide-form" id="slide-form" style="display:none;margin-top:14px">
+          <div class="e-form-group">
+            <label class="e-label">URL de imagen</label>
+            <input class="e-input" id="slide-img" placeholder="https://…/imagen.jpg">
+          </div>
+          <div class="e-row">
+            <div class="e-form-group">
+              <label class="e-label">Título</label>
+              <input class="e-input" id="slide-title" placeholder="Título del slide">
+            </div>
+            <div class="e-form-group">
+              <label class="e-label">Subtítulo</label>
+              <input class="e-input" id="slide-sub" placeholder="Descripción breve">
+            </div>
+          </div>
+          <button class="e-btn-primary" id="btn-save-slide">Guardar slide</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Footer ───────────────────────────────────────────────────────── -->
+    <div class="e-panel" id="panel-footer">
+      <h2 class="e-panel-title">Footer builder</h2>
+      <p class="e-panel-sub">Diseña el pie de página de la plantilla.</p>
+      <div class="e-card">
+        {% set fc = footer %}
+        <div class="e-row">
+          <div class="e-form-group">
+            <label class="e-label">Número de columnas</label>
+            <select class="e-select" id="footer-cols-count">
+              {% for n in [2,3,4] %}
+              <option value="{{ n }}" {{ 'selected' if fc.get('columnas',3)==n }}>{{ n }} columnas</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="e-form-group">
+            <label class="e-label">Color de fondo</label>
+            <input class="e-input" type="color" id="footer-bg" value="{{ fc.get('bg_color','#012840') }}" style="height:42px;padding:4px">
+          </div>
+        </div>
+        <div class="e-form-group">
+          <label class="e-label">Texto de copyright</label>
+          <input class="e-input" id="footer-copy" value="{{ fc.get('copyright','© 2025 Mi Empresa.') }}">
+        </div>
+        <div class="e-card-title" style="margin-top:8px">Columnas</div>
+        <div class="e-footer-cols" id="footer-cols-grid" style="grid-template-columns:repeat({{ fc.get('columnas',3) }},1fr)">
+          {% set cols = fc.get('cols', []) %}
+          {% for i in range(fc.get('columnas', 3)) %}
+          {% set col = cols[i] if i < cols|length else {} %}
+          <div class="e-footer-col footer-col-data">
+            <div class="e-footer-col-header">
+              <span class="e-footer-col-title">Columna {{ i+1 }}</span>
+            </div>
+            <div class="e-form-group">
+              <label class="e-label">Tipo</label>
+              <select class="e-select footer-col-tipo">
+                {% for val, lbl in [('logo','Logo + texto'),('links','Links rápidos'),('contacto','Contacto'),('social','Redes sociales'),('texto','Texto libre')] %}
+                <option value="{{ val }}" {{ 'selected' if col.get('tipo','logo')==val }}>{{ lbl }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="e-form-group">
+              <label class="e-label">Contenido</label>
+              <textarea class="e-textarea" rows="3" placeholder="Contenido de la columna..." class="footer-col-content">{{ col.get('contenido','') }}</textarea>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+        <button class="e-btn-primary" id="btn-save-footer" style="margin-top:14px">Guardar footer</button>
+      </div>
+    </div>
+
+    <!-- ── Scraper ───────────────────────────────────────────────────────── -->
+    <div class="e-panel" id="panel-scraper">
+      <h2 class="e-panel-title">Scraper / Import</h2>
+      <p class="e-panel-sub">Analiza un sitio web existente e importa sus estilos y contenido.</p>
+      <div class="e-card">
+        <div class="e-form-group">
+          <label class="e-label">URL del sitio a analizar</label>
+          <div style="display:flex;gap:10px">
+            <input class="e-input" id="scraper-url" placeholder="https://ejemplo.com" style="flex:1">
+            <button class="e-btn-primary" id="btn-analizar">Analizar</button>
+          </div>
+          <span class="e-hint">Se respeta robots.txt. Solo uso legítimo.</span>
+        </div>
+      </div>
+      <div class="e-scraper-result e-card" id="scraper-result" style="display:none">
+        <div class="e-card-title">Resultados</div>
+        <div class="e-form-group">
+          <label class="e-label">Colores detectados</label>
+          <div class="e-color-chips" id="sr-colores"></div>
+        </div>
+        <div class="e-form-group">
+          <label class="e-label">Imágenes detectadas</label>
+          <div class="e-img-chips" id="sr-imagenes"></div>
+        </div>
+        <div class="e-row">
+          <div class="e-form-group">
+            <label class="e-label">Título detectado</label>
+            <input class="e-input" id="sr-titulo" readonly>
+          </div>
+          <div class="e-form-group">
+            <label class="e-label">Logo detectado</label>
+            <input class="e-input" id="sr-logo" readonly>
+          </div>
+        </div>
+        <div class="e-form-group">
+          <label class="e-label">Descripción</label>
+          <textarea class="e-textarea" id="sr-desc" readonly rows="2"></textarea>
+        </div>
+        <button class="e-btn-primary" id="btn-aplicar">Aplicar selección a plantilla</button>
+      </div>
+    </div>
+
+    <!-- ── Custom Code ───────────────────────────────────────────────────── -->
+    <div class="e-panel" id="panel-custom-code">
+      <h2 class="e-panel-title">Código custom</h2>
+      <p class="e-panel-sub">Inyecta CSS, JS o HTML en puntos específicos de la plantilla.</p>
+
+      <div class="e-card">
+        <div class="e-card-title">Nuevo bloque</div>
+        <div class="e-row">
+          <div class="e-form-group">
+            <label class="e-label">Tipo</label>
+            <select class="e-select" id="cc-tipo">
+              <option value="css">CSS</option>
+              <option value="js">JavaScript</option>
+              <option value="html">HTML</option>
+            </select>
+          </div>
+          <div class="e-form-group">
+            <label class="e-label">Inyectar en</label>
+            <select class="e-select" id="cc-inject">
+              <option value="head">&#60;head&#62;</option>
+              <option value="body_end">Antes de &#60;/body&#62;</option>
+              <option value="seccion">Sección específica</option>
+            </select>
+          </div>
+          <div class="e-form-group">
+            <label class="e-label">Sección target</label>
+            <input class="e-input" id="cc-seccion" placeholder="hero, servicios…">
+          </div>
+        </div>
+        <div class="e-form-group">
+          <label class="e-label">Código</label>
+          <textarea class="e-textarea code" id="cc-codigo" placeholder="/* tu código aquí */"></textarea>
+        </div>
+        <button class="e-btn-primary" id="btn-save-code">Guardar bloque</button>
+      </div>
+
+      <div class="e-card">
+        <div class="e-card-title">Bloques guardados</div>
+        <div class="e-code-list" id="code-list">
+          {% for cc in custom_codes %}
+          <div class="e-code-item {{ 'e-code-inactive' if not cc.activo }}" data-id="{{ cc.id }}">
+            <span class="e-code-badge {{ cc.tipo }}">{{ cc.tipo.upper() }}</span>
+            <span style="font-size:12px;color:var(--e-muted)">{{ cc.inject_in }}</span>
+            <span style="flex:1;font-size:12px;font-family:monospace;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
+              {{ cc.codigo[:60] }}…
+            </span>
+            <button class="e-btn-icon" onclick="toggleCode({{ cc.id }},this)" title="Activar/Desactivar">⏸</button>
+            <button class="e-btn-icon danger" onclick="deleteCode({{ cc.id }},this)" title="Eliminar">🗑️</button>
+          </div>
+          {% else %}
+          <p style="color:var(--e-muted);font-size:13px">Sin bloques de código.</p>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- Toast -->
+<div class="e-toast" id="e-toast"></div>
+
+<!-- SortableJS CDN -->
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
+
+<!-- Datos del servidor -->
+<script>
+  window.PLANTILLA_ID  = {{ p.id }};
+  window.MENU_ITEMS    = {{ menu_items | tojson }};
+  window.SLIDER_DATA   = {{ slider | tojson }};
+</script>
+
+<script src="{{ url_for('static', filename='admin/editor.js') }}"></script>
+</body>
+</html>

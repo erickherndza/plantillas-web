@@ -40,6 +40,9 @@ from parser import (
 
 app = Flask(__name__)
 
+from plantillas_editor import bp as _editor_bp
+app.register_blueprint(_editor_bp)
+
 # ── SECRET_KEY desde variable de entorno (DT-002) ─────────────────────────────
 # Cargar .env siempre (setdefault no sobreescribe variables del sistema)
 _env_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '.env')

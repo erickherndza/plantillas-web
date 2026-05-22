@@ -174,8 +174,50 @@ def init_db():
             used       INTEGER DEFAULT 0,
             created_at TEXT    DEFAULT (datetime('now'))
         );
+
+        -- ── CMS Editor de plantillas ─────────────────────────────────────────
+        CREATE TABLE IF NOT EXISTS menu_items (
+            id           INTEGER PRIMARY KEY AUTOINCREMENT,
+            plantilla_id INTEGER NOT NULL REFERENCES plantillas(id) ON DELETE CASCADE,
+            label        TEXT    NOT NULL,
+            url          TEXT    NOT NULL DEFAULT '#',
+            orden        INTEGER DEFAULT 0,
+            parent_id    INTEGER DEFAULT NULL REFERENCES menu_items(id) ON DELETE CASCADE
+        );
+
+        CREATE TABLE IF NOT EXISTS slider_slides (
+            id           INTEGER PRIMARY KEY AUTOINCREMENT,
+            plantilla_id INTEGER NOT NULL REFERENCES plantillas(id) ON DELETE CASCADE,
+            imagen_url   TEXT    DEFAULT '',
+            titulo       TEXT    DEFAULT '',
+            subtitulo    TEXT    DEFAULT '',
+            orden        INTEGER DEFAULT 0
+        );
+
+        CREATE TABLE IF NOT EXISTS custom_code (
+            id           INTEGER PRIMARY KEY AUTOINCREMENT,
+            plantilla_id INTEGER NOT NULL REFERENCES plantillas(id) ON DELETE CASCADE,
+            tipo         TEXT    CHECK(tipo IN ('css','js','html')) NOT NULL DEFAULT 'css',
+            inject_in    TEXT    CHECK(inject_in IN ('head','body_end','seccion')) NOT NULL DEFAULT 'head',
+            seccion_target TEXT  DEFAULT NULL,
+            codigo       TEXT    NOT NULL DEFAULT '',
+            activo       INTEGER DEFAULT 1,
+            created_at   TEXT    DEFAULT (datetime('now'))
+        );
     """)
     conn.commit()
+
+    # Migraciones columnas plantillas
+    for col, default in [
+        ('slider_config', '\'{"efecto":"fade","intervalo":4,"flechas":true,"puntos":true,"modo":"seccion"}\''),
+        ('footer_config',  '\'{"columnas":3,"bg_color":"#012840","copyright":"© 2025 Mi Empresa.","cols":[]}\' '),
+        ('secciones_habilitadas', '\'[]\''),
+    ]:
+        try:
+            conn.execute(f"ALTER TABLE plantillas ADD COLUMN {col} TEXT DEFAULT {default}")
+            conn.commit()
+        except Exception:
+            pass
 
     # Seed plantillas base si no existen
     _schema_completo = '{"secciones": ["apariencia", "marca", "hero", "nosotros", "servicios", "proyectos", "equipo", "contacto"]}'
@@ -818,3 +860,155 @@ def actualizar_password_cliente(cliente_id: int, password_hash: str):
     conn.execute("UPDATE clientes SET password=? WHERE id=?", (password_hash, cliente_id))
     conn.commit()
     conn.close()
+
+
+# ── Editor de plantillas — Menu ───────────────────────────────────────────────
+
+def get_menu_items(plantilla_id: int) -> list:
+    conn = get_db()
+    rows = conn.execute(
+        "SELECT * FROM menu_items WHERE plantilla_id=? ORDER BY orden", (plantilla_id,)
+    ).fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
+
+def create_menu_item(plantilla_id: int, label: str, url: str, orden: int, parent_id) -> int:
+    conn = get_db()
+    cur = conn.execute(
+        "INSERT INTO menu_items (plantilla_id,label,url,orden,parent_id) VALUES (?,?,?,?,?)",
+        (plantilla_id, label, url, orden, parent_id)
+    )
+    iid = cur.lastrowid
+    conn.commit(); conn.close()
+    return iid
+
+def update_menu_item(item_id: int, label: str, url: str, parent_id):
+    conn = get_db()
+    conn.execute("UPDATE menu_items SET label=?,url=?,parent_id=? WHERE id=?",
+                 (label, url, parent_id, item_id))
+    conn.commit(); conn.close()
+
+def delete_menu_item(item_id: int):
+    conn = get_db()
+    conn.execute("DELETE FROM menu_items WHERE id=? OR parent_id=?", (item_id, item_id))
+    conn.commit(); conn.close()
+
+def reorder_menu_items(orden: list):
+    conn = get_db()
+    for i, iid in enumerate(orden):
+        conn.execute("UPDATE menu_items SET orden=? WHERE id=?", (i, iid))
+    conn.commit(); conn.close()
+
+
+# ── Editor de plantillas — Slider ─────────────────────────────────────────────
+
+def get_slider_data(plantilla_id: int) -> dict:
+    conn = get_db()
+    p = conn.execute("SELECT slider_config FROM plantillas WHERE id=?", (plantilla_id,)).fetchone()
+    slides = conn.execute(
+        "SELECT * FROM slider_slides WHERE plantilla_id=? ORDER BY orden", (plantilla_id,)
+    ).fetchall()
+    conn.close()
+    import json
+    cfg = {}
+    if p and p['slider_config']:
+        try: cfg = json.loads(p['slider_config'])
+        except: pass
+    return {'config': cfg, 'slides': [dict(s) for s in slides]}
+
+def save_slider_config(plantilla_id: int, config: dict):
+    import json
+    conn = get_db()
+    conn.execute("UPDATE plantillas SET slider_config=? WHERE id=?",
+                 (json.dumps(config, ensure_ascii=False), plantilla_id))
+    conn.commit(); conn.close()
+
+def create_slide(plantilla_id: int, imagen_url: str, titulo: str, subtitulo: str, orden: int) -> int:
+    conn = get_db()
+    cur = conn.execute(
+        "INSERT INTO slider_slides (plantilla_id,imagen_url,titulo,subtitulo,orden) VALUES (?,?,?,?,?)",
+        (plantilla_id, imagen_url, titulo, subtitulo, orden)
+    )
+    iid = cur.lastrowid; conn.commit(); conn.close()
+    return iid
+
+def update_slide(slide_id: int, imagen_url: str, titulo: str, subtitulo: str, orden: int):
+    conn = get_db()
+    conn.execute("UPDATE slider_slides SET imagen_url=?,titulo=?,subtitulo=?,orden=? WHERE id=?",
+                 (imagen_url, titulo, subtitulo, orden, slide_id))
+    conn.commit(); conn.close()
+
+def delete_slide(slide_id: int):
+    conn = get_db()
+    conn.execute("DELETE FROM slider_slides WHERE id=?", (slide_id,))
+    conn.commit(); conn.close()
+
+
+# ── Editor de plantillas — Footer ─────────────────────────────────────────────
+
+def get_footer_config(plantilla_id: int) -> dict:
+    import json
+    conn = get_db()
+    p = conn.execute("SELECT footer_config FROM plantillas WHERE id=?", (plantilla_id,)).fetchone()
+    conn.close()
+    if p and p['footer_config']:
+        try: return json.loads(p['footer_config'])
+        except: pass
+    return {'columnas': 3, 'bg_color': '#012840', 'copyright': '© 2025 Mi Empresa.', 'cols': []}
+
+def save_footer_config(plantilla_id: int, config: dict):
+    import json
+    conn = get_db()
+    conn.execute("UPDATE plantillas SET footer_config=? WHERE id=?",
+                 (json.dumps(config, ensure_ascii=False), plantilla_id))
+    conn.commit(); conn.close()
+
+
+# ── Editor de plantillas — Custom Code ───────────────────────────────────────
+
+def get_custom_codes(plantilla_id: int) -> list:
+    conn = get_db()
+    rows = conn.execute(
+        "SELECT * FROM custom_code WHERE plantilla_id=? ORDER BY id", (plantilla_id,)
+    ).fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
+
+def create_custom_code(plantilla_id: int, tipo: str, inject_in: str, seccion_target, codigo: str) -> int:
+    conn = get_db()
+    cur = conn.execute(
+        "INSERT INTO custom_code (plantilla_id,tipo,inject_in,seccion_target,codigo) VALUES (?,?,?,?,?)",
+        (plantilla_id, tipo, inject_in, seccion_target, codigo)
+    )
+    iid = cur.lastrowid; conn.commit(); conn.close()
+    return iid
+
+def toggle_custom_code(code_id: int):
+    conn = get_db()
+    conn.execute("UPDATE custom_code SET activo = CASE WHEN activo=1 THEN 0 ELSE 1 END WHERE id=?", (code_id,))
+    conn.commit(); conn.close()
+
+def delete_custom_code(code_id: int):
+    conn = get_db()
+    conn.execute("DELETE FROM custom_code WHERE id=?", (code_id,))
+    conn.commit(); conn.close()
+
+
+# ── Editor de plantillas — Secciones habilitadas ─────────────────────────────
+
+def get_secciones_habilitadas(plantilla_id: int) -> list:
+    import json
+    conn = get_db()
+    p = conn.execute("SELECT secciones_habilitadas FROM plantillas WHERE id=?", (plantilla_id,)).fetchone()
+    conn.close()
+    if p and p['secciones_habilitadas']:
+        try: return json.loads(p['secciones_habilitadas'])
+        except: pass
+    return []
+
+def save_secciones_habilitadas(plantilla_id: int, secciones: list):
+    import json
+    conn = get_db()
+    conn.execute("UPDATE plantillas SET secciones_habilitadas=? WHERE id=?",
+                 (json.dumps(secciones, ensure_ascii=False), plantilla_id))
+    conn.commit(); conn.close()
