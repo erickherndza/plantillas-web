@@ -341,6 +341,8 @@ def apariencia(pid):
         p=dict(p), estilos=estilos, modo='admin',
         nombre=session.get('nombre', ''),
         css_generado=render_css(estilos),
+        menu_items=get_menu_items(pid),
+        secciones_hab=get_secciones_habilitadas(pid),
     )
 
 

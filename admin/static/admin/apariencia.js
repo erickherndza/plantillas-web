@@ -1,364 +1,387 @@
-/* apariencia.js — Panel CSS Builder */
+/* apariencia.js — Panel de Apariencia CMS */
 
-const PRESETS = {
-  'oceano-oscuro': { primary:'#185FA5', secondary:'#0A0F1E', accent:'#0088CC', neutral:'#E8EAF0' },
-  'magenta-noche': { primary:'#b4327a', secondary:'#1a0a12', accent:'#f9a8d4', neutral:'#F1EFE8' },
-  'caribe':        { primary:'#038C8C', secondary:'#024959', accent:'#9FE1CB', neutral:'#E1F5EE' },
-  'bosque':        { primary:'#639922', secondary:'#173404', accent:'#C0DD97', neutral:'#EAF3DE' },
-  'ambar':         { primary:'#BA7517', secondary:'#412402', accent:'#FAC775', neutral:'#FAEEDA' },
-  'grafito':       { primary:'#5F5E5A', secondary:'#2C2C2A', accent:'#D3D1C7', neutral:'#F1EFE8' },
-};
+// ── Panel navigation ──────────────────────────────────────────────────────────
 
-const PRESET_LABELS = {
-  'oceano-oscuro': 'Océano Oscuro',
-  'magenta-noche': 'Magenta Noche',
-  'caribe':        'Caribe',
-  'bosque':        'Bosque',
-  'ambar':         'Ámbar',
-  'grafito':       'Grafito',
-};
+function showPanel(name, item) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  const p = document.getElementById('panel-' + name);
+  if (p) p.classList.add('active');
+  document.querySelectorAll('.sb-item').forEach(i => i.classList.remove('active'));
+  if (item) item.classList.add('active');
+}
 
-const AP = (() => {
-  /* ── helpers ── */
-  const $ = id => document.getElementById(id);
-  const BASE = `/admin/plantillas/${PID}`;
+// ── Mode toggle (admin/client) ────────────────────────────────────────────────
 
-  async function api(path, data) {
-    const r = await fetch(BASE + path, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data),
-    });
-    return r.json();
+function setMode(mode) {
+  const btnA = document.getElementById('btn-admin');
+  const btnC = document.getElementById('btn-client');
+  if (btnA) btnA.classList.toggle('active', mode === 'admin');
+  if (btnC) btnC.classList.toggle('active', mode === 'client');
+  document.querySelectorAll('.admin-only').forEach(el => {
+    el.style.display = mode === 'admin' ? '' : 'none';
+  });
+}
+
+// ── Color sync ────────────────────────────────────────────────────────────────
+
+function syncColor(picker, key) {
+  const sw = document.getElementById('sw-' + key);
+  const hex = document.getElementById('hex-' + key);
+  if (sw)  sw.style.background = picker.value;
+  if (hex) hex.value = picker.value;
+}
+
+function syncHex(input, key) {
+  if (/^#[0-9A-Fa-f]{6}$/.test(input.value)) {
+    const sw = document.getElementById('sw-' + key);
+    if (sw) sw.style.background = input.value;
+    const picker = input.closest('.color-swatch-wrap')
+      ? input.closest('.color-row').querySelector('.color-picker-native')
+      : null;
+    if (picker) picker.value = input.value;
   }
+}
 
-  function toast(msg, ok = true) {
-    const t = $('ap-toast');
-    t.textContent = msg;
-    t.className = 'ap-toast ' + (ok ? 'ok' : 'err') + ' visible';
-    setTimeout(() => { t.className = 'ap-toast'; }, 3200);
-  }
+// ── Font preview ──────────────────────────────────────────────────────────────
 
-  /* ── panel navigation ── */
-  function initNav() {
-    document.querySelectorAll('.ap-nav-item').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const panel = btn.dataset.panel;
-        document.querySelectorAll('.ap-nav-item').forEach(b => b.classList.remove('active'));
-        document.querySelectorAll('.ap-panel').forEach(p => p.classList.remove('active'));
-        btn.classList.add('active');
-        const el = $('panel-' + panel);
-        if (el) el.classList.add('active');
-      });
-    });
-  }
+function previewFont() {
+  const fh = document.getElementById('font-heading');
+  const fb = document.getElementById('font-body');
+  const h  = document.getElementById('fp-h');
+  const p  = document.getElementById('fp-p');
+  if (fh && h) h.style.fontFamily = fh.value;
+  if (fb && p) p.style.fontFamily = fb.value;
 
-  /* ── color sync (swatch ↔ hex) ── */
-  function bindColors() {
-    const pairs = [
-      ['color_primary', 'color_primary_hex'],
-      ['color_secondary', 'color_secondary_hex'],
-      ['color_accent', 'color_accent_hex'],
-      ['color_neutral', 'color_neutral_hex'],
-      ['header_bg', 'header_bg_hex'],
-      ['header_text', 'header_text_hex'],
-      ['hero_overlay_color', 'hero_overlay_color_hex'],
-      ['footer_bg', 'footer_bg_hex'],
-      ['footer_text', 'footer_text_hex'],
-    ];
-
-    pairs.forEach(([swatchId, hexId]) => {
-      const swatch = $(swatchId);
-      const hex = $(hexId);
-      if (!swatch || !hex) return;
-
-      swatch.addEventListener('input', () => {
-        hex.value = swatch.value;
-        updateColorPreview();
-      });
-
-      hex.addEventListener('input', () => {
-        const v = hex.value.trim();
-        if (/^#[0-9a-fA-F]{6}$/.test(v)) {
-          swatch.value = v;
-          updateColorPreview();
-        }
-      });
-    });
-  }
-
-  function updateColorPreview() {
-    const ids = ['cp-primary','cp-secondary','cp-accent','cp-neutral'];
-    const fields = ['color_primary','color_secondary','color_accent','color_neutral'];
-    ids.forEach((id, i) => {
-      const el = $(id);
-      const f = $(fields[i]);
-      if (el && f) el.style.background = f.value;
-    });
-  }
-
-  /* ── font preview ── */
-  function bindFonts() {
-    const heading = $('font_heading');
-    const body = $('font_body');
-    if (!heading || !body) return;
-
-    function updateFontPreview() {
-      const fh = $('fp-heading');
-      const fb = $('fp-body');
-      if (fh) fh.style.fontFamily = heading.value;
-      if (fb) fb.style.fontFamily = body.value;
-
-      // Cargar fuente de Google si es necesaria
-      [heading.value, body.value].forEach(fam => {
-        const match = fam.match(/['"]([^'"]+)['"]/);
-        if (match) {
-          const name = match[1].replace(/ /g, '+');
-          const id = 'gf-' + name;
-          if (!document.getElementById(id)) {
-            const link = document.createElement('link');
-            link.id = id;
-            link.rel = 'stylesheet';
-            link.href = `https://fonts.googleapis.com/css2?family=${name}:wght@400;700&display=swap`;
-            document.head.appendChild(link);
-          }
-        }
-      });
+  // Cargar Google Font bajo demanda
+  [fh?.value, fb?.value].forEach(fam => {
+    if (!fam) return;
+    const m = fam.match(/['"]([^'"]+)['"]/);
+    if (m) {
+      const name = m[1].replace(/ /g, '+');
+      const id = 'gf-' + name;
+      if (!document.getElementById(id)) {
+        const l = document.createElement('link');
+        l.id = id; l.rel = 'stylesheet';
+        l.href = `https://fonts.googleapis.com/css2?family=${name}:wght@400;600&display=swap`;
+        document.head.appendChild(l);
+      }
     }
+  });
+}
 
-    heading.addEventListener('change', updateFontPreview);
-    body.addEventListener('change', updateFontPreview);
-    updateFontPreview();
-  }
+// ── Presets ───────────────────────────────────────────────────────────────────
 
-  /* ── espacio preview ── */
-  function previewEspacio() {
-    const rb = $('radius_btn');
-    const rc = $('radius_card');
-    const ri = $('radius_input');
-    if (rb) { const ep = $('ep-btn'); if (ep) ep.style.borderRadius = rb.value + 'px'; }
-    if (rc) { const ep = $('ep-card'); if (ep) ep.style.borderRadius = rc.value + 'px'; }
-    if (ri) { const ep = $('ep-input'); if (ep) ep.style.borderRadius = ri.value + 'px'; }
-  }
+function applyPreset(card, key) {
+  const p = PRESETS[key];
+  if (!p) return;
 
-  /* ── presets ── */
-  function initPresets() {
-    const grid = $('presets-grid');
-    if (!grid) return;
+  ['primary','secondary','accent','neutral'].forEach(k => {
+    const sw  = document.getElementById('sw-' + k);
+    const hex = document.getElementById('hex-' + k);
+    if (sw)  sw.style.background = p[k];
+    if (hex) hex.value = p[k];
+    // Actualizar color picker nativo
+    const row = hex?.closest('.color-row');
+    const picker = row?.querySelector('.color-picker-native');
+    if (picker) picker.value = p[k];
+  });
 
-    Object.entries(PRESETS).forEach(([key, colors]) => {
-      const card = document.createElement('div');
-      card.className = 'preset-card';
-      card.dataset.key = key;
+  document.querySelectorAll('.preset-card').forEach(c => c.classList.remove('active'));
+  card.classList.add('active');
 
-      const swatches = ['primary','secondary','accent','neutral'].map(k =>
-        `<div class="preset-sw" style="background:${colors[k]}" title="${k}"></div>`
-      ).join('');
+  guardarColores(true);
+}
 
-      card.innerHTML = `
-        <div class="preset-swatches">${swatches}</div>
-        <div class="preset-name">${PRESET_LABELS[key] || key}</div>
-      `;
+function buildPresets() {
+  const grid = document.getElementById('presets-grid');
+  if (!grid) return;
 
-      card.addEventListener('click', () => {
-        document.querySelectorAll('.preset-card').forEach(c => c.classList.remove('active'));
-        card.classList.add('active');
-        applyPreset(colors);
-      });
+  Object.entries(PRESETS).forEach(([key, p]) => {
+    const card = document.createElement('div');
+    card.className = 'preset-card';
+    card.onclick = () => applyPreset(card, key);
 
-      grid.appendChild(card);
-    });
-  }
+    const dots = ['primary','secondary','accent'].map(k =>
+      `<div class="preset-dot" style="background:${p[k]}"></div>`
+    ).join('');
 
-  function applyPreset(colors) {
-    const fields = {
-      primary: ['color_primary', 'color_primary_hex'],
-      secondary: ['color_secondary', 'color_secondary_hex'],
-      accent: ['color_accent', 'color_accent_hex'],
-      neutral: ['color_neutral', 'color_neutral_hex'],
-    };
-    Object.entries(colors).forEach(([k, v]) => {
-      if (!fields[k]) return;
-      const [sw, hx] = fields[k];
-      if ($(sw)) $(sw).value = v;
-      if ($(hx)) $(hx).value = v;
-    });
-    updateColorPreview();
-    // Auto-guardar colores al aplicar preset
-    guardarColores(true);
-  }
+    card.innerHTML = `<div class="preset-dots">${dots}</div><div class="preset-name">${p.label}</div>`;
+    grid.appendChild(card);
+  });
+}
 
-  /* ── guardar colores ── */
-  async function guardarColores(silent = false) {
-    const modo_tema = document.querySelector('input[name="modo_tema"]:checked');
-    const data = {
-      color_primary:   $('color_primary')?.value || '#185FA5',
-      color_secondary: $('color_secondary')?.value || '#0A0F1E',
-      color_accent:    $('color_accent')?.value || '#0088CC',
-      color_neutral:   $('color_neutral')?.value || '#E8EAF0',
-      modo_tema:       modo_tema?.value || 'dark',
-    };
-    const res = await api('/apariencia/colores', data);
-    if (!silent) toast(res.ok ? 'Colores guardados' : 'Error guardando', res.ok);
-    if (res.ok) refreshCSS();
-  }
+// ── Toggle secciones ──────────────────────────────────────────────────────────
 
-  /* ── guardar tipografía ── */
-  async function guardarTipografia() {
-    const lh = $('line_height');
-    const data = {
-      font_heading:   $('font_heading')?.value || 'system-ui, sans-serif',
-      font_body:      $('font_body')?.value || 'system-ui, sans-serif',
-      font_size_h1:   parseInt($('font_size_h1')?.value) || 48,
-      font_size_h2:   parseInt($('font_size_h2')?.value) || 32,
-      font_size_body: parseInt($('font_size_body')?.value) || 16,
-      line_height:    lh ? parseFloat(lh.value) / 10 : 1.6,
-    };
-    const res = await api('/apariencia/tipografia', data);
-    toast(res.ok ? 'Tipografía guardada' : 'Error guardando', res.ok);
-    if (res.ok) refreshCSS();
-  }
+function toggleSeccion(el) {
+  el.classList.toggle('on');
+}
 
-  /* ── guardar espacio ── */
-  async function guardarEspacio() {
-    const data = {
-      radius_btn:      parseInt($('radius_btn')?.value) || 8,
-      radius_card:     parseInt($('radius_card')?.value) || 12,
-      radius_input:    parseInt($('radius_input')?.value) || 6,
-      section_padding: parseInt($('section_padding')?.value) || 80,
-      gap_elements:    parseInt($('gap_elements')?.value) || 24,
-    };
-    const res = await api('/apariencia/espacio', data);
-    toast(res.ok ? 'Espacio guardado' : 'Error guardando', res.ok);
-    if (res.ok) refreshCSS();
-  }
+// ── API helper ────────────────────────────────────────────────────────────────
 
-  /* ── guardar efectos ── */
-  async function guardarEfectos() {
-    const data = {
-      fade_in:       $('ef_fade_in')?.checked ?? true,
-      hover_scale:   $('ef_hover_scale')?.checked ?? true,
-      smooth_scroll: $('ef_smooth_scroll')?.checked ?? true,
-      parallax:      $('ef_parallax')?.checked ?? false,
-    };
-    const res = await api('/apariencia/efectos', data);
-    toast(res.ok ? 'Efectos guardados' : 'Error guardando', res.ok);
-  }
+async function api(path, data) {
+  const r = await fetch(`/admin/plantillas/${PID}${path}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  return r.json();
+}
 
-  /* ── guardar móvil ── */
-  async function guardarMovil() {
-    const data = {
-      font_size_body:     parseInt($('mob_font_size_body')?.value) || 15,
-      section_padding:    parseInt($('mob_section_padding')?.value) || 40,
-      hide_hero_subtitle: $('mob_hide_hero_subtitle')?.checked ?? false,
-      stack_columns:      $('mob_stack_columns')?.checked ?? true,
-    };
-    const res = await api('/apariencia/movil', data);
-    toast(res.ok ? 'Móvil guardado' : 'Error guardando', res.ok);
-  }
+// ── Toast ─────────────────────────────────────────────────────────────────────
 
-  /* ── guardar sección ── */
-  async function guardarSeccion(sec) {
-    let data = { seccion: sec };
+function showToast(msg, type = 'success') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = `toast ${type} show`;
+  setTimeout(() => t.classList.remove('show'), 2800);
+}
 
-    if (sec === 'header') {
-      data.bg          = $('header_bg')?.value || '#0A0F1E';
-      data.text        = $('header_text')?.value || '#FFFFFF';
-      data.height      = parseInt($('header_height')?.value) || 64;
-      data.sticky      = $('header_sticky')?.checked ?? true;
-      data.transparent = $('header_transparent')?.checked ?? false;
-    } else if (sec === 'hero') {
-      data.height        = $('hero_height')?.value || '60vh';
-      data.align         = document.querySelector('input[name="hero_align"]:checked')?.value || 'center';
-      data.overlay       = parseInt($('hero_overlay')?.value) || 50;
-      data.overlay_color = $('hero_overlay_color')?.value || '#000000';
-    } else if (sec === 'footer') {
-      data.bg   = $('footer_bg')?.value || '#0A0F1E';
-      data.text = $('footer_text')?.value || '#94a3b8';
-      data.cols = parseInt($('footer_cols')?.value) || 3;
-    }
+// ── Guardar colores ───────────────────────────────────────────────────────────
 
-    const res = await api('/apariencia/seccion', data);
-    toast(res.ok ? `${sec.charAt(0).toUpperCase()+sec.slice(1)} guardado` : 'Error guardando', res.ok);
-  }
-
-  /* ── guardar panel activo ── */
-  function guardarActivo() {
-    const active = document.querySelector('.ap-nav-item.active');
-    if (!active) return;
-    const panel = active.dataset.panel;
-    const map = {
-      colores:    guardarColores,
-      tipografia: guardarTipografia,
-      espacio:    guardarEspacio,
-      efectos:    guardarEfectos,
-      movil:      guardarMovil,
-      presets:    () => toast('Selecciona un preset para aplicarlo', false),
-      header:     () => guardarSeccion('header'),
-      hero:       () => guardarSeccion('hero'),
-      footer:     () => guardarSeccion('footer'),
-    };
-    if (map[panel]) map[panel]();
-  }
-
-  /* ── CSS preview ── */
-  async function refreshCSS() {
-    try {
-      const r = await fetch(BASE + '/apariencia/css');
-      const d = await r.json();
-      const pre = $('css-output');
-      if (pre) pre.textContent = d.css;
-    } catch (_) {}
-  }
-
-  function verCSS() {
-    $('css-modal').classList.add('open');
-    refreshCSS();
-  }
-
-  function cerrarCSS(e) {
-    if (!e || e.target === $('css-modal') || e.currentTarget?.classList?.contains('ap-modal-close')) {
-      $('css-modal').classList.remove('open');
-    }
-  }
-
-  function copiarCSS() {
-    const pre = $('css-output');
-    if (!pre) return;
-    navigator.clipboard.writeText(pre.textContent)
-      .then(() => toast('CSS copiado al portapapeles'))
-      .catch(() => toast('No se pudo copiar', false));
-  }
-
-  /* ── init ── */
-  function init() {
-    initNav();
-    bindColors();
-    bindFonts();
-    initPresets();
-    updateColorPreview();
-
-    // bind espacio preview ranges
-    ['radius_btn','radius_card','radius_input'].forEach(id => {
-      const el = $(id);
-      if (el) el.addEventListener('input', previewEspacio);
-    });
-    previewEspacio();
-  }
-
-  document.addEventListener('DOMContentLoaded', init);
-
-  return {
-    guardarColores,
-    guardarTipografia,
-    guardarEspacio,
-    guardarEfectos,
-    guardarMovil,
-    guardarSeccion,
-    guardarActivo,
-    previewEspacio,
-    verCSS,
-    cerrarCSS,
-    copiarCSS,
+async function guardarColores(silent = false) {
+  const data = {
+    color_primary:   document.getElementById('hex-primary')?.value   || '#185FA5',
+    color_secondary: document.getElementById('hex-secondary')?.value || '#0A0F1E',
+    color_accent:    document.getElementById('hex-accent')?.value    || '#0088CC',
+    color_neutral:   document.getElementById('hex-neutral')?.value   || '#E8EAF0',
+    modo_tema:       document.getElementById('modo-tema')?.value     || 'dark',
   };
-})();
+  const res = await api('/apariencia/colores', data);
+  if (!silent) showToast(res.ok ? 'Colores guardados' : 'Error al guardar', res.ok ? 'success' : 'error');
+  if (res.ok) actualizarCSS();
+}
+
+// ── Guardar tipografía ────────────────────────────────────────────────────────
+
+async function guardarTipografia() {
+  const lhEl = document.getElementById('line_height');
+  const data = {
+    font_heading:   document.getElementById('font-heading')?.value  || 'system-ui, sans-serif',
+    font_body:      document.getElementById('font-body')?.value     || 'system-ui, sans-serif',
+    font_size_h1:   parseInt(document.getElementById('font_size_h1')?.value) || 48,
+    font_size_h2:   parseInt(document.getElementById('font_size_h2')?.value) || 32,
+    font_size_body: parseInt(document.getElementById('font_size_body')?.value) || 16,
+    line_height:    lhEl ? parseFloat(lhEl.value) / 10 : 1.6,
+  };
+  const res = await api('/apariencia/tipografia', data);
+  showToast(res.ok ? 'Tipografía guardada' : 'Error al guardar', res.ok ? 'success' : 'error');
+  if (res.ok) actualizarCSS();
+}
+
+// ── Guardar espacio ───────────────────────────────────────────────────────────
+
+async function guardarEspacio() {
+  const data = {
+    radius_btn:      parseInt(document.getElementById('radius_btn')?.value)      || 8,
+    radius_card:     parseInt(document.getElementById('radius_card')?.value)     || 12,
+    radius_input:    parseInt(document.getElementById('radius_input')?.value)    || 6,
+    section_padding: parseInt(document.getElementById('section_padding')?.value) || 80,
+    gap_elements:    parseInt(document.getElementById('gap_elements')?.value)    || 24,
+  };
+  const res = await api('/apariencia/espacio', data);
+  showToast(res.ok ? 'Espacio guardado' : 'Error al guardar', res.ok ? 'success' : 'error');
+  if (res.ok) actualizarCSS();
+}
+
+// ── Guardar efectos ───────────────────────────────────────────────────────────
+
+async function guardarEfectos() {
+  const data = {
+    entrada:   document.getElementById('ef-entrada')?.classList.contains('on')  ?? true,
+    hover_btn: document.getElementById('ef-hover')?.classList.contains('on')    ?? true,
+    parallax:  document.getElementById('ef-parallax')?.classList.contains('on') ?? false,
+    cursor:    document.getElementById('ef-cursor')?.classList.contains('on')   ?? false,
+    velocidad: document.getElementById('ef-velocidad')?.value || '400ms',
+    easing:    document.getElementById('ef-easing')?.value    || 'ease-out',
+  };
+  const res = await api('/apariencia/efectos', data);
+  showToast(res.ok ? 'Efectos guardados' : 'Error al guardar', res.ok ? 'success' : 'error');
+}
+
+// ── Guardar móvil ─────────────────────────────────────────────────────────────
+
+async function guardarMovil() {
+  const data = {
+    h1:             parseInt(document.getElementById('mob_font')?.value)    || 15,
+    padding:        parseInt(document.getElementById('mob_padding')?.value) || 40,
+    hide_subtitle:  document.getElementById('chk-sub')?.checked  ?? false,
+    stack_columns:  document.getElementById('chk-col')?.checked  ?? true,
+    hamburguesa:    document.getElementById('chk-ham')?.checked  ?? true,
+  };
+  const res = await api('/apariencia/movil', data);
+  showToast(res.ok ? 'Móvil guardado' : 'Error al guardar', res.ok ? 'success' : 'error');
+}
+
+// ── Guardar sección (header / hero / footer) ──────────────────────────────────
+
+async function guardarSeccion(sec) {
+  let data = { seccion: sec };
+
+  if (sec === 'header') {
+    data.bg         = document.getElementById('header-bg')?.value           || '#0A0F1E';
+    data.text        = document.getElementById('header-text')?.value         || '#E8EAF0';
+    data.menu_style  = document.getElementById('header-menu-style')?.value   || 'horizontal';
+    data.posicion    = document.getElementById('header-pos')?.value           || 'sticky';
+    data.show_logo   = document.getElementById('header-logo')?.classList.contains('on') ?? true;
+    data.show_cta    = document.getElementById('header-cta')?.classList.contains('on')  ?? true;
+  } else if (sec === 'hero') {
+    data.layout  = document.getElementById('hero-layout')?.value  || 'centrado';
+    data.height  = document.getElementById('hero-height')?.value  || '100vh';
+    data.bg      = document.getElementById('hero-bg')?.value      || '#0A0F1E';
+    data.overlay = parseInt(document.getElementById('hero-overlay')?.value) || 40;
+    const ph     = document.getElementById('hero-ph');
+    if (ph) {
+      data.page_header = ph.classList.contains('on');
+      data.ph_height   = document.getElementById('hero-ph-height')?.value || '300';
+      data.ph_bg       = document.getElementById('hero-ph-bg')?.value     || '#0A0F1E';
+    }
+  } else if (sec === 'footer') {
+    data.bg     = document.getElementById('footer-bg')?.value     || '#012840';
+    data.text   = document.getElementById('footer-text')?.value   || '#9FE1CB';
+    data.links  = document.getElementById('footer-links')?.value  || '#5DCAA5';
+    data.border = document.getElementById('footer-border')?.value || 'none';
+  }
+
+  const res = await api('/apariencia/seccion', data);
+  const nombre = { header: 'Header', hero: 'Hero', footer: 'Footer' }[sec] || sec;
+  showToast(res.ok ? `${nombre} guardado` : 'Error al guardar', res.ok ? 'success' : 'error');
+}
+
+// ── Guardar secciones activas ─────────────────────────────────────────────────
+
+async function guardarSecciones() {
+  const activas = [...document.querySelectorAll('.toggle-item.on')].map(el => el.dataset.sec);
+  const res = await api('/secciones', { secciones: activas });
+  showToast(res.ok ? 'Secciones guardadas' : 'Error al guardar', res.ok ? 'success' : 'error');
+}
+
+// ── Guardar activo (topbar button) ────────────────────────────────────────────
+
+function guardarActivo() {
+  const active = document.querySelector('.sb-item.active');
+  if (!active) return;
+
+  const panelMap = {
+    'colores':     () => guardarColores(),
+    'tipografia':  () => guardarTipografia(),
+    'espacio':     () => guardarEspacio(),
+    'efectos':     () => guardarEfectos(),
+    'movil':       () => guardarMovil(),
+    'presets':     () => showToast('Selecciona un preset para aplicarlo', 'error'),
+    'menu':        () => menuGuardar(),
+    'header':      () => guardarSeccion('header'),
+    'hero':        () => guardarSeccion('hero'),
+    'footer-sec':  () => guardarSeccion('footer'),
+    'secciones':   () => guardarSecciones(),
+  };
+
+  // Detectar cuál panel está activo buscando el que tiene onclick con el nombre
+  const onclick = active.getAttribute('onclick') || '';
+  const m = onclick.match(/showPanel\('([^']+)'/);
+  const key = m?.[1];
+  if (key && panelMap[key]) panelMap[key]();
+}
+
+// ── Ver CSS ───────────────────────────────────────────────────────────────────
+
+async function verCSS() {
+  try {
+    const r = await fetch(`/admin/plantillas/${PID}/apariencia/css`);
+    const d = await r.json();
+    const box = document.getElementById('css-output');
+    if (box) box.textContent = d.css;
+    // Cambiar al panel de colores donde está el css-output-box
+    showPanel('colores', document.querySelector('[onclick*="colores"]'));
+  } catch (e) {
+    showToast('Error obteniendo CSS', 'error');
+  }
+}
+
+async function actualizarCSS() {
+  const box = document.getElementById('css-output');
+  if (!box) return;
+  try {
+    const r = await fetch(`/admin/plantillas/${PID}/apariencia/css`);
+    const d = await r.json();
+    box.textContent = d.css;
+  } catch (_) {}
+}
+
+function copiarCSS() {
+  const box = document.getElementById('css-output');
+  if (!box) return;
+  navigator.clipboard.writeText(box.textContent)
+    .then(() => showToast('CSS copiado'))
+    .catch(() => showToast('No se pudo copiar', 'error'));
+}
+
+// ── Menú ──────────────────────────────────────────────────────────────────────
+
+function menuRender(items) {
+  const list = document.getElementById('menu-list');
+  if (!list) return;
+  list.innerHTML = '';
+
+  items.forEach(item => {
+    const row = document.createElement('div');
+    row.className = 'menu-row';
+    row.dataset.id = item.id;
+    row.innerHTML = `
+      <i class="ti ti-grip-vertical drag-handle"></i>
+      <input class="menu-label-input" type="text" value="${_esc(item.label)}" placeholder="Etiqueta">
+      <input class="menu-url-input" type="text" value="${_esc(item.url)}" placeholder="${TIPO === 'landing' ? '#seccion' : '/ruta'}">
+      <button class="btn-icon danger" onclick="menuEliminar(this,${item.id})"><i class="ti ti-trash"></i></button>
+    `;
+    list.appendChild(row);
+  });
+}
+
+async function menuAgregar() {
+  const defaultUrl = TIPO === 'landing' ? '#nueva-seccion' : '/nueva-pagina';
+  const res = await api('/menu', { label: 'Nuevo item', url: defaultUrl });
+  if (res.ok) {
+    const r2 = await fetch(`/admin/plantillas/${PID}/menu`);
+    menuRender(await r2.json());
+    showToast('Item agregado');
+  }
+}
+
+async function menuEliminar(btn, id) {
+  const r = await fetch(`/admin/plantillas/${PID}/menu/${id}`, { method: 'DELETE' });
+  const d = await r.json();
+  if (d.ok) {
+    btn.closest('.menu-row').remove();
+    showToast('Item eliminado');
+  }
+}
+
+async function menuGuardar() {
+  const rows = document.querySelectorAll('#menu-list .menu-row');
+  const saves = [...rows].map(row => {
+    const id = row.dataset.id;
+    const label = row.querySelector('.menu-label-input').value;
+    const url   = row.querySelector('.menu-url-input').value;
+    return fetch(`/admin/plantillas/${PID}/menu/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ label, url }),
+    });
+  });
+  await Promise.all(saves);
+  showToast('Menú guardado');
+}
+
+// ── Utils ─────────────────────────────────────────────────────────────────────
+
+function _esc(s) {
+  return String(s || '').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+
+document.addEventListener('DOMContentLoaded', () => {
+  buildPresets();
+  menuRender(typeof MENU_ITEMS !== 'undefined' ? MENU_ITEMS : []);
+  if (MODO === 'admin') setMode('admin');
+  previewFont();
+});
