@@ -1,0 +1,51 @@
+<!-- PROYECTOS carousel — carrusel horizontal con flechas prev/next -->
+<div style="position:relative;overflow:hidden;" class="lb-carousel-wrap">
+  <div id="lb-carousel-track" style="display:flex;gap:24px;overflow-x:auto;scroll-behavior:smooth;scrollbar-width:none;-ms-overflow-style:none;padding-bottom:4px;">
+    {% for item in secciones.proyectos %}
+    <div class="fade-up lb-carousel-item" style="flex:0 0 calc(33.33% - 16px);min-width:280px;border-radius:var(--card-radius);overflow:hidden;box-shadow:var(--card-shadow);background:#fff;">
+      {% if item.get('imagen') %}
+      <img src="{{ item.imagen }}" alt="{{ item.get('titulo','') }}" style="width:100%;height:200px;object-fit:cover;display:block;">
+      {% else %}
+      <div style="width:100%;height:200px;background:linear-gradient(135deg,var(--c-primary),var(--c-accent));opacity:.25;display:flex;align-items:center;justify-content:center;font-size:48px;">🖼</div>
+      {% endif %}
+      <div style="padding:16px 18px;">
+        {% if item.get('categoria') %}
+        <p style="font-size:.75rem;color:var(--c-primary);font-weight:700;text-transform:uppercase;letter-spacing:.07em;margin:0 0 4px;">{{ item.categoria }}</p>
+        {% endif %}
+        <h3 style="margin:0 0 6px;font-size:1rem;color:var(--c-text);font-weight:600;">{{ item.get('titulo','Proyecto') }}</h3>
+        {% if item.get('desc') %}
+        <p style="margin:0;font-size:.88rem;color:var(--c-text);opacity:.65;line-height:1.5;">{{ item.desc }}</p>
+        {% endif %}
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <!-- flechas prev / next -->
+  <button id="lb-car-prev" aria-label="Anterior"
+    style="position:absolute;left:0;top:50%;transform:translateY(-50%);z-index:10;background:#fff;border:none;width:44px;height:44px;border-radius:50%;box-shadow:0 2px 12px rgba(0,0,0,.18);font-size:1.4rem;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--c-primary);">&#8249;</button>
+  <button id="lb-car-next" aria-label="Siguiente"
+    style="position:absolute;right:0;top:50%;transform:translateY(-50%);z-index:10;background:#fff;border:none;width:44px;height:44px;border-radius:50%;box-shadow:0 2px 12px rgba(0,0,0,.18);font-size:1.4rem;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--c-primary);">&#8250;</button>
+</div>
+
+<style>
+#lb-carousel-track::-webkit-scrollbar { display:none; }
+@media(max-width:768px){
+  .lb-carousel-item { flex:0 0 calc(80% - 12px) !important; min-width:240px !important; }
+}
+@media(max-width:480px){
+  .lb-carousel-item { flex:0 0 90% !important; }
+}
+</style>
+
+<script>
+(function(){
+  const track = document.getElementById('lb-carousel-track');
+  const prev  = document.getElementById('lb-car-prev');
+  const next  = document.getElementById('lb-car-next');
+  if (!track || !prev || !next) return;
+  const step = () => track.querySelector('.lb-carousel-item')?.offsetWidth + 24 || 300;
+  prev.addEventListener('click', () => track.scrollBy({ left: -step(), behavior: 'smooth' }));
+  next.addEventListener('click', () => track.scrollBy({ left:  step(), behavior: 'smooth' }));
+})();
+</script>

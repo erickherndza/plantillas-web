@@ -1,0 +1,26 @@
+<!-- HERO gradient — fondo gradiente primario→acento, texto centrado, CTA prominente -->
+<section class="lb-hero" id="inicio" style="min-height:85vh;display:flex;align-items:center;background:linear-gradient(135deg,var(--c-primary) 0%,var(--c-accent) 100%);position:relative;overflow:hidden;">
+  <!-- formas geométricas decorativas -->
+  <div style="position:absolute;width:500px;height:500px;border-radius:50%;background:rgba(255,255,255,.08);top:-120px;right:-100px;pointer-events:none;"></div>
+  <div style="position:absolute;width:300px;height:300px;border-radius:50%;background:rgba(255,255,255,.06);bottom:-80px;left:-60px;pointer-events:none;"></div>
+  <div style="position:absolute;width:160px;height:160px;border-radius:50%;background:rgba(255,255,255,.05);top:30%;left:20%;pointer-events:none;"></div>
+  <div class="container" style="position:relative;z-index:1;text-align:center;padding-top:80px;padding-bottom:80px;">
+    <div class="lb-hero-content fade-up" style="margin:0 auto;max-width:720px;">
+      {% if config.get('hero_eyebrow') %}
+        <p class="lb-hero-eyebrow" style="color:rgba(255,255,255,.85);background:rgba(255,255,255,.15);display:inline-block;padding:6px 18px;border-radius:999px;font-size:.8rem;letter-spacing:.1em;text-transform:uppercase;font-weight:700;margin-bottom:24px;">{{ config.get('hero_eyebrow') }}</p>
+      {% endif %}
+      <h1 class="lb-hero-title" style="color:#fff;font-size:clamp(2.6rem,6vw,4.5rem);line-height:1.08;margin-bottom:20px;text-shadow:0 2px 20px rgba(0,0,0,.2);">{{ config.get('hero_titulo', sitio.nombre) }}</h1>
+      <p class="lb-hero-sub" style="color:rgba(255,255,255,.85);max-width:600px;margin:0 auto 40px;font-size:1.2rem;line-height:1.6;">{{ config.get('hero_subtitulo', 'Soluciones profesionales para tu negocio.') }}</p>
+      <div class="lb-hero-btns" style="justify-content:center;gap:16px;flex-wrap:wrap;">
+        <a class="lb-btn-primary" href="{{ config.get('hero_cta_href','#contacto') }}"
+           style="background:#fff;color:var(--c-primary);border-color:#fff;padding:15px 40px;font-size:1.05rem;font-weight:700;box-shadow:0 4px 24px rgba(0,0,0,.18);">
+          {{ config.get('hero_cta_texto','Contáctanos') }}
+        </a>
+        <a class="lb-btn-outline" href="{{ config.get('hero_cta2_href','#servicios') }}"
+           style="border-color:rgba(255,255,255,.6);color:#fff;padding:15px 40px;font-size:1.05rem;">
+          {{ config.get('hero_cta2_texto','Ver servicios') }}
+        </a>
+      </div>
+    </div>
+  </div>
+</section>

@@ -1873,5 +1873,105 @@ def admin_plantilla_wizard():
     return jsonify(ok=True, redirect=url_for('admin_plantillas'))
 
 
+# ══════════════════════════════════════════════════════════════════════════════
+# Admin — Scraper / Creación por Categoría
+# ══════════════════════════════════════════════════════════════════════════════
+
+_CATEGORIAS = {
+    'clinica':      {'color_primary':'#0077B6','color_accent':'#00B4D8','color_secondary':'#03045E','font_heading':'Montserrat','font_body':'Open Sans','layout':{'hero':'split','services':'list','projects':'grid','team':'cards'}},
+    'restaurante':  {'color_primary':'#C1440E','color_accent':'#F4A261','color_secondary':'#1A0A00','font_heading':'Playfair Display','font_body':'Lato','layout':{'hero':'fullscreen','services':'menu','projects':'masonry','team':'minimal'}},
+    'abogados':     {'color_primary':'#1B2A4A','color_accent':'#C9A84C','color_secondary':'#0D1B2A','font_heading':'Cormorant Garamond','font_body':'Source Sans Pro','layout':{'hero':'minimal','services':'list','projects':'grid','team':'cards'}},
+    'creativo':     {'color_primary':'#6D28D9','color_accent':'#F59E0B','color_secondary':'#1F1135','font_heading':'Space Grotesk','font_body':'Inter','layout':{'hero':'gradient','services':'cards','projects':'masonry','team':'grid'}},
+    'educacion':    {'color_primary':'#F97316','color_accent':'#3B82F6','color_secondary':'#1E3A5F','font_heading':'Nunito','font_body':'Open Sans','layout':{'hero':'split','services':'cards','projects':'grid','team':'grid'}},
+    'tecnologia':   {'color_primary':'#06B6D4','color_accent':'#8B5CF6','color_secondary':'#030712','font_heading':'Space Grotesk','font_body':'Inter','layout':{'hero':'dark','services':'grid','projects':'masonry','team':'minimal'}},
+    'inmobiliaria': {'color_primary':'#78716C','color_accent':'#D97706','color_secondary':'#1C1917','font_heading':'Cormorant Garamond','font_body':'Lato','layout':{'hero':'fullscreen','services':'list','projects':'masonry','team':'cards'}},
+    'belleza':      {'color_primary':'#DB2777','color_accent':'#F59E0B','color_secondary':'#4A0E2A','font_heading':'Playfair Display','font_body':'Lato','layout':{'hero':'gradient','services':'cards','projects':'grid','team':'minimal'}},
+}
+
+
+@app.route('/admin/scraper')
+@admin_requerido
+def admin_scraper():
+    return render_template('admin/scraper_plantillas.html',
+                           nombre=session.get('nombre'))
+
+
+@app.route('/admin/scraper/crear-desde-url', methods=['POST'])
+@admin_requerido
+def admin_scraper_crear_url():
+    import re as _re
+    d = request.get_json(force=True)
+
+    nombre   = d.get('nombre', '').strip()
+    clave    = d.get('clave', '').strip().lower()
+    tipo     = d.get('tipo', 'landing')
+    layout   = d.get('layout', {'hero': 'split', 'services': 'grid', 'projects': 'masonry', 'team': 'cards'})
+
+    if not nombre or not clave:
+        return jsonify(ok=False, error='Nombre y clave son obligatorios.'), 400
+    if not _re.match(r'^[a-z][a-z0-9_-]{1,29}$', clave):
+        return jsonify(ok=False, error='Clave no válida: solo minúsculas, números, guiones.'), 400
+
+    try:
+        pid = crear_plantilla(clave, nombre, tipo, f'Creada desde scraper URL', '', '{}')
+    except Exception:
+        return jsonify(ok=False, error=f'La clave "{clave}" ya existe.'), 409
+
+    campos_estilos = {
+        'color_primary':   d.get('color_primario', '#185FA5'),
+        'color_accent':    d.get('color_acento',   '#0088CC'),
+        'color_secondary': d.get('color_footer',   '#0A0F1E'),
+        'font_heading':    d.get('fuente_titulos', 'system-ui, sans-serif'),
+        'font_body':       d.get('fuente_cuerpo',  'system-ui, sans-serif'),
+        'layout_json':     json.dumps(layout, ensure_ascii=False),
+        'defaults_json':   '{}',
+    }
+    upsert_estilos(pid, campos_estilos)
+
+    flash(f'Plantilla "{nombre}" creada desde scraper.', 'success')
+    return jsonify(ok=True, pid=pid, redirect=url_for('admin_plantillas'))
+
+
+@app.route('/admin/scraper/crear-desde-categoria', methods=['POST'])
+@admin_requerido
+def admin_scraper_crear_categoria():
+    import re as _re
+    d = request.get_json(force=True)
+
+    categoria = d.get('categoria', '').strip().lower()
+    nombre    = d.get('nombre', '').strip()
+    clave     = d.get('clave', '').strip().lower()
+    tipo      = d.get('tipo', 'landing')
+
+    if categoria not in _CATEGORIAS:
+        return jsonify(ok=False, error=f'Categoría "{categoria}" no reconocida.'), 400
+    if not nombre or not clave:
+        return jsonify(ok=False, error='Nombre y clave son obligatorios.'), 400
+    if not _re.match(r'^[a-z][a-z0-9_-]{1,29}$', clave):
+        return jsonify(ok=False, error='Clave no válida: solo minúsculas, números, guiones.'), 400
+
+    cat = _CATEGORIAS[categoria]
+
+    try:
+        pid = crear_plantilla(clave, nombre, tipo, f'Plantilla {categoria}', '', '{}')
+    except Exception:
+        return jsonify(ok=False, error=f'La clave "{clave}" ya existe.'), 409
+
+    # Permitir override de colores si el usuario los ajustó en el formulario
+    campos_estilos = {
+        'color_primary':   d.get('color_primario', cat['color_primary']),
+        'color_accent':    d.get('color_acento',   cat['color_accent']),
+        'color_secondary': d.get('color_footer',   cat['color_secondary']),
+        'font_heading':    cat['font_heading'],
+        'font_body':       cat['font_body'],
+        'layout_json':     json.dumps(cat['layout'], ensure_ascii=False),
+        'defaults_json':   '{}',
+    }
+    upsert_estilos(pid, campos_estilos)
+
+    flash(f'Plantilla "{nombre}" ({categoria}) creada.', 'success')
+    return jsonify(ok=True, pid=pid, redirect=url_for('admin_plantillas'))
+
+
 if __name__ == '__main__':
     app.run(debug=True, port=5002)

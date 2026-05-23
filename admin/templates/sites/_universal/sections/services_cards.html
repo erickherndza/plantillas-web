@@ -1,0 +1,15 @@
+<!-- SERVICIOS cards — icono grande arriba, título, descripción, borde sutil (variante card vertical) -->
+<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:28px;">
+  {% for item in secciones.servicios %}
+  <div class="fade-up" style="background:#fff;border-radius:var(--card-radius);padding:36px 28px 28px;box-shadow:var(--card-shadow);border:1.5px solid rgba(0,0,0,.07);text-align:center;transition:transform .2s,box-shadow .2s;display:flex;flex-direction:column;align-items:center;">
+    <div style="width:72px;height:72px;border-radius:50%;background:linear-gradient(135deg,var(--c-primary),var(--c-accent));display:flex;align-items:center;justify-content:center;font-size:32px;margin:0 auto 20px;box-shadow:0 4px 16px rgba(0,0,0,.12);">
+      {{ item.get('icono','⚡') }}
+    </div>
+    <h3 style="margin:0 0 12px;font-size:1.1rem;color:var(--c-text);font-weight:700;">{{ item.get('titulo','Servicio') }}</h3>
+    <p style="color:var(--c-text);opacity:.65;font-size:.94rem;line-height:1.6;margin:0;flex:1;">{{ item.get('desc','') }}</p>
+    {% if item.get('precio') %}
+    <span style="margin-top:18px;display:inline-block;background:var(--c-accent);color:#fff;font-weight:700;font-size:.88rem;padding:5px 16px;border-radius:999px;">{{ item.precio }}</span>
+    {% endif %}
+  </div>
+  {% endfor %}
+</div>

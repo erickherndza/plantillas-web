@@ -1,0 +1,27 @@
+<!-- EQUIPO grid — 4 columnas, foto redonda, nombre, cargo (diferente a team_cards) -->
+<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:32px;">
+  {% for m in secciones.equipo %}
+  <div class="fade-up" style="text-align:center;">
+    <div style="width:100px;height:100px;border-radius:50%;overflow:hidden;margin:0 auto 14px;border:3px solid var(--c-primary);box-shadow:0 4px 16px rgba(0,0,0,.12);background:var(--c-section-alt);display:flex;align-items:center;justify-content:center;">
+      {% if m.get('foto') %}
+        <img src="{{ m.foto }}" alt="{{ m.get('nombre','') }}" style="width:100%;height:100%;object-fit:cover;">
+      {% else %}
+        <span style="font-size:40px;">👤</span>
+      {% endif %}
+    </div>
+    <p style="margin:0 0 4px;font-weight:700;color:var(--c-text);font-size:.97rem;">{{ m.get('nombre','') }}</p>
+    <p style="margin:0 0 6px;color:var(--c-primary);font-size:.83rem;font-weight:600;text-transform:uppercase;letter-spacing:.06em;">{{ m.get('rol','') }}</p>
+    {% if m.get('credenciales') %}
+    <p style="margin:0;color:var(--c-text);opacity:.58;font-size:.8rem;line-height:1.4;">{{ m.credenciales }}</p>
+    {% endif %}
+  </div>
+  {% endfor %}
+</div>
+<style>
+@media(max-width:900px){
+  .lb-team-grid-4 { grid-template-columns: repeat(2,1fr) !important; }
+}
+@media(max-width:520px){
+  .lb-team-grid-4 { grid-template-columns: 1fr 1fr !important; gap:20px !important; }
+}
+</style>

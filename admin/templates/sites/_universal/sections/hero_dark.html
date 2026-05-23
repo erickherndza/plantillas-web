@@ -1,0 +1,22 @@
+<!-- HERO dark — pantalla completa oscura, overlay negro 80%, texto blanco centrado, fondo CSS gradient -->
+<section class="lb-hero" id="inicio" style="min-height:90vh;display:flex;align-items:center;background:linear-gradient(160deg,#0a0a0a 0%,#111827 60%,#1a0a2e 100%);position:relative;">
+  <div style="position:absolute;inset:0;background:rgba(0,0,0,.80);pointer-events:none;"></div>
+  <!-- partículas decorativas -->
+  <div style="position:absolute;inset:0;overflow:hidden;pointer-events:none;">
+    <div style="position:absolute;width:300px;height:300px;border-radius:50%;background:var(--c-primary);opacity:.06;top:-60px;right:10%;filter:blur(80px);"></div>
+    <div style="position:absolute;width:200px;height:200px;border-radius:50%;background:var(--c-accent);opacity:.05;bottom:10%;left:5%;filter:blur(60px);"></div>
+  </div>
+  <div class="container" style="position:relative;z-index:1;text-align:center;padding-top:80px;padding-bottom:80px;">
+    <div class="lb-hero-content fade-up" style="margin:0 auto;text-align:center;max-width:760px;">
+      {% if config.get('hero_eyebrow') %}
+        <p class="lb-hero-eyebrow" style="color:var(--c-accent);opacity:1;letter-spacing:.12em;text-transform:uppercase;font-size:.8rem;font-weight:700;margin-bottom:16px;">{{ config.get('hero_eyebrow') }}</p>
+      {% endif %}
+      <h1 class="lb-hero-title" style="color:#fff;font-size:clamp(2.4rem,6vw,4.2rem);line-height:1.1;margin-bottom:20px;">{{ config.get('hero_titulo', sitio.nombre) }}</h1>
+      <p class="lb-hero-sub" style="color:rgba(255,255,255,.72);max-width:580px;margin:0 auto 36px;font-size:1.15rem;line-height:1.65;">{{ config.get('hero_subtitulo', 'Soluciones profesionales para tu negocio.') }}</p>
+      <div class="lb-hero-btns" style="justify-content:center;gap:16px;">
+        <a class="lb-btn-primary" href="{{ config.get('hero_cta_href','#contacto') }}" style="padding:14px 36px;font-size:1rem;">{{ config.get('hero_cta_texto','Contáctanos') }}</a>
+        <a class="lb-btn-outline" href="{{ config.get('hero_cta2_href','#servicios') }}" style="padding:14px 36px;font-size:1rem;border-color:rgba(255,255,255,.3);color:#fff;">{{ config.get('hero_cta2_texto','Ver servicios') }}</a>
+      </div>
+    </div>
+  </div>
+</section>
