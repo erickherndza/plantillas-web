@@ -427,6 +427,39 @@ function esColorNoGris(hex){
   return (max - min) > 30;  // diferencia mínima entre canales
 }
 
+/* ── Fetch con fallback entre 3 proxies CORS ─────────────────────────── */
+async function fetchConFallback(url) {
+  const proxies = [
+    async (u) => {
+      const r = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(u)}`, { signal: AbortSignal.timeout(12000) });
+      if (!r.ok) throw new Error('allorigins ' + r.status);
+      return (await r.json()).contents || '';
+    },
+    async (u) => {
+      const r = await fetch(`https://corsproxy.io/?url=${encodeURIComponent(u)}`, { signal: AbortSignal.timeout(12000) });
+      if (!r.ok) throw new Error('corsproxy ' + r.status);
+      return await r.text();
+    },
+    async (u) => {
+      const r = await fetch(`https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(u)}`, { signal: AbortSignal.timeout(12000) });
+      if (!r.ok) throw new Error('codetabs ' + r.status);
+      return await r.text();
+    },
+  ];
+
+  let lastErr;
+  for (let i = 0; i < proxies.length; i++) {
+    try {
+      const html = await proxies[i](url);
+      if (html && html.length > 100) return html;
+    } catch(e) {
+      lastErr = e;
+      console.warn(`Proxy ${i+1} falló:`, e.message);
+    }
+  }
+  throw new Error('Todos los proxies fallaron. ' + (lastErr?.message || ''));
+}
+
 function extraerColores(html){
   const seen = new Set();
   const colores = [];
@@ -550,11 +583,7 @@ document.getElementById('btn-analizar').addEventListener('click', async () => {
   document.getElementById('sc-results').style.display = 'none';
 
   try {
-    const proxy = `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
-    const resp  = await fetch(proxy, { signal: AbortSignal.timeout(15000) });
-    if (!resp.ok) throw new Error('Error de red: ' + resp.status);
-    const data = await resp.json();
-    const html = data.contents || '';
+    const html = await fetchConFallback(url);
 
     const colores = extraerColores(html);
     const fuentes = extraerFuentes(html);
@@ -576,7 +605,10 @@ document.getElementById('btn-analizar').addEventListener('click', async () => {
     if (!colores.length) showAlert('sc-alert-url','No se detectaron colores no-grises. Prueba con otra URL.','error');
 
   } catch(err){
-    showAlert('sc-alert-url', 'No se pudo analizar el sitio. ' + (err.message || '') + '. Verifica que la URL sea pública y correcta.');
+    const msg = err.name === 'TimeoutError' || err.message?.includes('timed out')
+      ? 'El sitio tardó demasiado en responder. Prueba con otra URL.'
+      : 'No se pudo acceder al sitio (bloqueado por el sitio o CORS). Usa la pestaña "Por Categoría" como alternativa.';
+    showAlert('sc-alert-url', msg);
   } finally {
     setSpinner('sp-txt','sp-spin', false);
   }
