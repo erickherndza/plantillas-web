@@ -1621,8 +1621,10 @@ def ver_pagina(slug, pagina):
     sitio = obtener_sitio_por_slug(slug)
     if not sitio:
         abort(404)
+    # Usar el formato real del sitio (no el tipo de la plantilla)
+    _formato = sitio['formato'] if 'formato' in sitio.keys() else 'web5'
     # Sitios landing/universal: redirigir sub-páginas a la sección con ancla
-    if sitio['plantilla_tipo'] != 'web5':
+    if _formato != 'web5':
         return redirect(f'/s/{slug}/#{pagina}', 302)
     # Sitios web5: servir página dedicada
     if pagina not in _PAGINAS_WEB5:
