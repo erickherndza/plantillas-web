@@ -1135,7 +1135,12 @@ def crear_sitio():
         plantilla_id  = request.form.get('plantilla_id', '').strip()
         nombre_sitio  = request.form.get('nombre_sitio', '').strip()
         slug          = request.form.get('slug', '').strip().lower()
-        formato       = request.form.get('formato', 'web5').strip()
+        formato       = request.form.get('formato', '').strip()
+        # Auto-detectar formato desde el tipo de la plantilla
+        if plantilla_id and plantilla_id.isdigit():
+            _p_tmp = obtener_plantilla_por_id(int(plantilla_id))
+            if _p_tmp and not formato:
+                formato = 'landing' if _p_tmp['tipo'] == 'landing' else 'web5'
         if formato not in ('landing', 'web5'):
             formato = 'web5'
 
@@ -1161,6 +1166,10 @@ def crear_sitio():
                 # Obtener la clave de la plantilla elegida para aplicar defaults específicos
                 _pobj = obtener_plantilla_por_id(int(plantilla_id))
                 _clave = _pobj['clave'] if _pobj else 'empresa'
+
+                # Leer estilos scrapeados/wizard de plantilla_estilos
+                from db import get_estilos as _get_estilos
+                _pe = _get_estilos(int(plantilla_id))
 
                 # Identidades visuales por plantilla
                 _temas = {
@@ -1277,6 +1286,18 @@ def crear_sitio():
                     },
                 }
                 _defaults_tema = _temas.get(_clave, {})
+
+                # Si la plantilla fue creada con wizard/scraper, sus estilos tienen prioridad
+                # sobre los defaults genéricos (pero no sobre _temas hardcodeados)
+                if _pe and _clave not in _temas:
+                    _defaults_tema = {
+                        'color_primario':  _pe.get('color_primary',  '#0bb180'),
+                        'color_acento':    _pe.get('color_accent',   '#38b2ac'),
+                        'color_footer_bg': _pe.get('color_secondary','#0d1b2a'),
+                        'color_navbar_bg': _pe.get('color_primary',  '#0bb180'),
+                        'fuente_titulos':  _pe.get('font_heading',   'Inter'),
+                        'fuente_cuerpo':   _pe.get('font_body',      'Inter'),
+                    }
 
                 # Config base (aplica a todas las plantillas)
                 _config_base = {
