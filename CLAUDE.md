@@ -484,6 +484,30 @@ cp ~/plantillas-web/admin/plantillas.db ~/plantillas-web/admin/plantillas_$(date
 - Fix: logs de debug en `subirImagen` (console.log en cada paso del AJAX)
 - CSS: `.btn-upload-label` tiene `position:relative; overflow:hidden` — el file input absoluto se ancla AHÍ, no al body
 
+### 2026-05-22 (sesión 5 — sistema multi-agente + fixes)
+- Fix: `ver_pagina()` redirige sitios tipo `landing` a `/s/<slug>/#<pagina>` en lugar de 404
+- Sistema multi-agente creado en `.claude/agents/`: orchestrator, cms-builder, qa-runner, scraper, git-deploy
+- Wizard de plantillas: 4 pasos, scraper client-side via allorigins.win, universal template con variantes
+- Próximo: sistema de planes (Básico=landing, Corporativo=web5) + registro público de clientes
+
+---
+
+## SISTEMA MULTI-AGENTE (.claude/agents/)
+
+5 agentes especializados. El usuario solo aprueba el deploy final.
+
+| Agente | Archivo | Rol |
+|---|---|---|
+| orchestrator | agents/orchestrator.md | Director — coordina los demás |
+| cms-builder | agents/cms-builder.md | Construye features Flask/Jinja/SQLite |
+| qa-runner | agents/qa-runner.md | Testea rutas, templates, BD |
+| scraper | agents/scraper.md | Genera plantillas desde sitios reales |
+| git-deploy | agents/git-deploy.md | Commit + push + instrucciones PA (pide OK al usuario) |
+
+**Regla de uso:** Escribir la tarea → el orchestrator toma el control → al final git-deploy muestra resumen y pide aprobación.
+
+---
+
 ### 2026-05-18 (sesión 4 — fix overlay logo)
 - **BUG CRÍTICO encontrado y resuelto:** `btn-quitar-logo` con `position:absolute;top:0;left:0;width:100%;height:100%` se anclaba al `<body>` (`.img-upload-actions` no tiene `position:relative`) → cubría TODA LA PÁGINA como overlay invisible → interceptaba todos los clicks
 - Fix: cambiado a `display:none` cuando no hay logo (seguro, no crea overlay)
