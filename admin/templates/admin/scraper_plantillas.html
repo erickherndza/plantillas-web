@@ -130,10 +130,14 @@
     <!-- Resultados del scraper -->
     <div id="sc-results" style="display:none;">
 
+      <!-- Badge estilo detectado -->
+      <div id="estilo-badge" style="display:none;background:#ede9fe;color:#5b21b6;padding:8px 14px;border-radius:8px;font-size:.85rem;font-weight:600;margin-bottom:12px;"></div>
+
       <!-- Colores detectados -->
       <div class="result-box">
-        <div class="result-title">Colores detectados (clic para asignar)</div>
+        <div class="result-title">Colores detectados — los enmarcados fueron auto-asignados a su rol</div>
         <div class="swatch-row" id="swatch-container"></div>
+        <p style="margin:8px 0 0;font-size:.8rem;color:#6b7280;">Haz clic en cualquier swatch para reasignarlo al rol activo (Primario → Acento → Footer)</p>
       </div>
 
       <!-- Fuentes detectadas -->
@@ -460,57 +464,170 @@ async function fetchConFallback(url) {
   throw new Error('Todos los proxies fallaron. ' + (lastErr?.message || ''));
 }
 
-function extraerColores(html){
+/* ── Extraer URLs de CSS externos del HTML ───────────────────────────── */
+function extraerUrlsCSS(html, baseUrl) {
+  const doc = new DOMParser().parseFromString(html, 'text/html');
+  const urls = [];
+  const base = new URL(baseUrl);
+  doc.querySelectorAll('link[rel="stylesheet"]').forEach(el => {
+    const href = el.getAttribute('href');
+    if (!href) return;
+    try {
+      const abs = new URL(href, base).href;
+      if (!abs.includes('fonts.googleapis') && !abs.includes('font-awesome') && !abs.includes('bootstrap.min'))
+        urls.push(abs);
+    } catch(e) {}
+  });
+  return urls.slice(0, 5); // máximo 5 archivos CSS
+}
+
+/* ── Descargar CSS externos via proxy ────────────────────────────────── */
+async function fetchCSSExterno(cssUrl) {
+  try {
+    const r = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(cssUrl)}`, { signal: AbortSignal.timeout(8000) });
+    if (!r.ok) return '';
+    const data = await r.json();
+    return data.contents || '';
+  } catch(e) { return ''; }
+}
+
+/* ── Extraer colores de texto CSS ────────────────────────────────────── */
+function extraerColoresDeTexto(texto) {
   const seen = new Set();
-  const colores = [];
-  // colores hex de 6 dígitos
-  const re6 = /#([0-9a-fA-F]{6})\b/g;
-  let m;
-  while ((m = re6.exec(html)) !== null){
-    const hex = '#' + m[1].toUpperCase();
-    if (!seen.has(hex)){ seen.add(hex); colores.push(hex); }
+  const all  = [];
+
+  // colores hex 6 dígitos
+  for (const m of texto.matchAll(/#([0-9a-fA-F]{6})\b/g)) {
+    const h = '#' + m[1].toUpperCase();
+    if (!seen.has(h)) { seen.add(h); all.push(h); }
   }
-  // colores hex de 3 dígitos → expandir
-  const re3 = /#([0-9a-fA-F]{3})\b/g;
-  while ((m = re3.exec(html)) !== null){
+  // colores hex 3 dígitos → expandir
+  for (const m of texto.matchAll(/#([0-9a-fA-F]{3})\b/g)) {
     const c = m[1];
-    const hex = '#' + (c[0]+c[0]+c[1]+c[1]+c[2]+c[2]).toUpperCase();
-    if (!seen.has(hex)){ seen.add(hex); colores.push(hex); }
+    const h = '#' + (c[0]+c[0]+c[1]+c[1]+c[2]+c[2]).toUpperCase();
+    if (!seen.has(h)) { seen.add(h); all.push(h); }
   }
-  return colores.filter(esColorNoGris).slice(0,24);
+  // rgb(r, g, b) → hex
+  for (const m of texto.matchAll(/rgb\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*\)/g)) {
+    const hex = '#' + [m[1],m[2],m[3]].map(n => parseInt(n).toString(16).padStart(2,'0')).join('').toUpperCase();
+    if (!seen.has(hex)) { seen.add(hex); all.push(hex); }
+  }
+  return all;
+}
+
+/* ── Puntuar colores por importancia en CSS ──────────────────────────── */
+function puntuarColores(cssTexto) {
+  // Contextos de alta importancia → el color es de marca
+  const reglasMarca = [
+    /background(?:-color)?\s*:\s*([^;}{]+)/gi,
+    /color\s*:\s*([^;}{]+)/gi,
+    /border(?:-color)?\s*:\s*([^;}{]+)/gi,
+    /--[\w-]+\s*:\s*([^;}{]+)/gi,     // CSS variables
+    /\.btn[^{]*\{[^}]*background[^:]*:\s*([^;}{]+)/gi,
+    /\.hero[^{]*\{[^}]*background[^:]*:\s*([^;}{]+)/gi,
+    /\.nav[^{]*\{[^}]*background[^:]*:\s*([^;}{]+)/gi,
+    /\.header[^{]*\{[^}]*background[^:]*:\s*([^;}{]+)/gi,
+  ];
+  const score = {};
+  for (const re of reglasMarca) {
+    for (const m of cssTexto.matchAll(re)) {
+      const coloresEnValor = extraerColoresDeTexto(m[1] || '');
+      coloresEnValor.forEach(c => { score[c] = (score[c] || 0) + 2; });
+    }
+  }
+  // Todos los colores del CSS con score 1
+  extraerColoresDeTexto(cssTexto).forEach(c => { score[c] = score[c] || 1; });
+  return score;
+}
+
+/* ── Detectar tema oscuro/claro ──────────────────────────────────────── */
+function detectarTema(colores) {
+  const oscuros = colores.filter(h => {
+    const r = parseInt(h.slice(1,3),16), g = parseInt(h.slice(3,5),16), b = parseInt(h.slice(5,7),16);
+    const l = (0.299*r + 0.587*g + 0.114*b) / 255;
+    return l < 0.25; // muy oscuro
+  });
+  return oscuros.length >= 2 ? 'dark' : 'light';
+}
+
+/* ── Detectar estilo visual dominante ────────────────────────────────── */
+function detectarEstilo(cssTexto, tema) {
+  const tieneGradiente = /gradient/i.test(cssTexto);
+  const tieneSombras   = /box-shadow/i.test(cssTexto);
+  const tieneAnimacion = /animation|transition/i.test(cssTexto);
+  const bordeRedondeado = /border-radius\s*:\s*([1-9][0-9]+)/i.test(cssTexto);
+
+  if (tema === 'dark' && tieneGradiente) return 'gradient';
+  if (tema === 'dark') return 'dark';
+  if (tieneGradiente && bordeRedondeado) return 'modern';
+  if (tieneSombras && tieneAnimacion) return 'dynamic';
+  return 'clean';
+}
+
+/* ── Recomendar layout según estilo ──────────────────────────────────── */
+function recomendarLayout(estilo, tema) {
+  const layouts = {
+    'dark':     { hero:'dark',       services:'grid',  projects:'masonry', team:'minimal' },
+    'gradient': { hero:'gradient',   services:'cards', projects:'masonry', team:'grid'    },
+    'modern':   { hero:'split',      services:'cards', projects:'masonry', team:'grid'    },
+    'dynamic':  { hero:'fullscreen', services:'grid',  projects:'carousel', team:'cards'  },
+    'clean':    { hero:'minimal',    services:'list',  projects:'grid',    team:'cards'   },
+  };
+  return layouts[estilo] || layouts['clean'];
+}
+
+/* ── Seleccionar los mejores colores por rol ─────────────────────────── */
+function seleccionarRoles(scoreMap, tema) {
+  // Ordenar por score
+  const ordenados = Object.entries(scoreMap)
+    .filter(([h]) => esColorNoGris(h))
+    .sort((a,b) => b[1] - a[1])
+    .map(([h]) => h);
+
+  const isOscuro = h => { const r=parseInt(h.slice(1,3),16),g=parseInt(h.slice(3,5),16),b=parseInt(h.slice(5,7),16); return (0.299*r+0.587*g+0.114*b)/255 < 0.3; };
+  const isClaro  = h => { const r=parseInt(h.slice(1,3),16),g=parseInt(h.slice(3,5),16),b=parseInt(h.slice(5,7),16); return (0.299*r+0.587*g+0.114*b)/255 > 0.7; };
+
+  // Primario: primer color con buen score
+  const primario = ordenados[0] || '#185FA5';
+  // Acento: segundo color distinto al primario
+  const acento   = ordenados.find(h => h !== primario && !isClaro(h)) || '#0088CC';
+  // Footer: color oscuro o el tercero
+  const footer   = ordenados.find(h => isOscuro(h) && h !== primario) || (tema === 'dark' ? '#0D1117' : '#1E293B');
+
+  return { primario, acento, footer };
+}
+
+function extraerColores(html) {
+  return extraerColoresDeTexto(html).filter(esColorNoGris).slice(0, 24);
 }
 
 function extraerFuentes(html){
   const fuentes = new Set();
   // Google Fonts links
-  const reGF = /family=([A-Za-z+:0-9,]+)/g;
-  let m;
-  while ((m = reGF.exec(html)) !== null){
-    m[1].split(',').forEach(f => fuentes.add(f.split(':')[0].replace(/\+/g,' ')));
-  }
-  // font-family en style
-  const reFF = /font-family\s*:\s*([^;}"']+)/gi;
-  while ((m = reFF.exec(html)) !== null){
+  for (const m of html.matchAll(/family=([A-Za-z+:0-9,]+)/g))
+    m[1].split(',').forEach(f => fuentes.add(f.split(':')[0].replace(/\+/g,' ').trim()));
+  // font-family en CSS
+  for (const m of html.matchAll(/font-family\s*:\s*([^;}"']+)/gi)) {
     const f = m[1].trim().split(',')[0].replace(/['"]/g,'').trim();
-    if (f && !f.toLowerCase().startsWith('inherit') && !f.toLowerCase().startsWith('initial') && f.length < 40)
+    if (f && f.length < 50 && !['inherit','initial','unset','var('].some(x => f.toLowerCase().startsWith(x)))
       fuentes.add(f);
   }
-  return [...fuentes].slice(0,10);
+  return [...fuentes].filter(f => f.length > 2).slice(0, 10);
 }
 
 function extraerMeta(html){
-  const parser = new DOMParser();
-  const doc = parser.parseFromString(html, 'text/html');
-  const title = doc.querySelector('title')?.textContent?.trim() || '';
-  const desc  = doc.querySelector('meta[name="description"]')?.getAttribute('content')?.trim() || '';
-  return { title, desc };
+  const doc = new DOMParser().parseFromString(html, 'text/html');
+  return {
+    title: doc.querySelector('title')?.textContent?.trim() || '',
+    desc:  doc.querySelector('meta[name="description"]')?.getAttribute('content')?.trim() || '',
+  };
 }
 
 /* ── Renderizar swatches ─────────────────────────────────────────────── */
 let _colorSeleccionado = { primario: null, acento: null, footer: null };
 let _activeRole = null;
 
-function renderSwatches(colores){
+function renderSwatches(colores, roles){
   const cont = document.getElementById('swatch-container');
   cont.innerHTML = '';
   colores.forEach(hex => {
@@ -518,9 +635,17 @@ function renderSwatches(colores){
     div.className = 'swatch';
     div.style.background = hex;
     div.title = hex;
+    // Marcar cuáles fueron auto-asignados
+    if (roles) {
+      if (hex === roles.primario) div.setAttribute('data-rol','primario');
+      else if (hex === roles.acento) div.setAttribute('data-rol','acento');
+      else if (hex === roles.footer) div.setAttribute('data-rol','footer');
+    }
+    const rolLabel = div.getAttribute('data-rol');
     const hexLabel = document.createElement('span');
     hexLabel.className = 'swatch-hex';
-    hexLabel.textContent = hex;
+    hexLabel.textContent = rolLabel ? rolLabel : hex;
+    div.style.outline = rolLabel ? '3px solid #fff' : '';
     div.appendChild(hexLabel);
     div.addEventListener('click', () => asignarColor(hex, div));
     cont.appendChild(div);
@@ -574,6 +699,8 @@ function renderFonts(fuentes){
 }
 
 /* ── Botón Analizar ──────────────────────────────────────────────────── */
+let _layoutDetectado = null; // guardado para reutilizar al crear
+
 document.getElementById('btn-analizar').addEventListener('click', async () => {
   const url = document.getElementById('url-input').value.trim();
   hideAlert('sc-alert-url');
@@ -583,31 +710,82 @@ document.getElementById('btn-analizar').addEventListener('click', async () => {
   document.getElementById('sc-results').style.display = 'none';
 
   try {
+    // 1. Descargar HTML
     const html = await fetchConFallback(url);
+    const meta  = extraerMeta(html);
 
-    const colores = extraerColores(html);
-    const fuentes = extraerFuentes(html);
-    const meta    = extraerMeta(html);
+    // 2. Encontrar URLs de CSS externos
+    const cssUrls = extraerUrlsCSS(html, url);
 
-    renderSwatches(colores);
+    // 3. Descargar CSS externos en paralelo (máx 5)
+    let cssTotal = html; // incluir style tags del HTML
+    if (cssUrls.length) {
+      const cssTextos = await Promise.all(cssUrls.map(u => fetchCSSExterno(u)));
+      cssTotal += '\n' + cssTextos.join('\n');
+    }
+
+    // 4. Análisis profundo del CSS completo
+    const scoreMap = puntuarColores(cssTotal);
+    const tema     = detectarTema(Object.keys(scoreMap).filter(esColorNoGris));
+    const estilo   = detectarEstilo(cssTotal, tema);
+    const roles    = seleccionarRoles(scoreMap, tema);
+    _layoutDetectado = recomendarLayout(estilo, tema);
+
+    // Todos los colores no-grises ordenados por score
+    const coloresOrdenados = Object.entries(scoreMap)
+      .filter(([h]) => esColorNoGris(h))
+      .sort((a,b) => b[1]-a[1])
+      .map(([h]) => h)
+      .slice(0, 24);
+
+    const fuentes = extraerFuentes(cssTotal);
+
+    // 5. Auto-asignar colores detectados a los campos
+    document.getElementById('url-cp').value = roles.primario;
+    document.getElementById('url-ca').value = roles.acento;
+    document.getElementById('url-cf').value = roles.footer;
+    try {
+      document.getElementById('url-cp-picker').value = roles.primario;
+      document.getElementById('url-ca-picker').value = roles.acento;
+      document.getElementById('url-cf-picker').value = roles.footer;
+    } catch(e){}
+
+    // 6. Auto-asignar fuente principal si se encontró
+    if (fuentes.length) {
+      document.getElementById('url-fh').value = fuentes[0];
+      if (fuentes.length > 1) document.getElementById('url-fb').value = fuentes[1];
+    }
+
+    // 7. Renderizar swatches y fuentes
+    renderSwatches(coloresOrdenados, roles);
     renderFonts(fuentes);
+
+    // 8. Meta + badge de estilo detectado
     document.getElementById('meta-title').textContent = meta.title || '—';
     document.getElementById('meta-desc').textContent  = meta.desc  || '—';
 
-    // pre-llenar nombre desde título
-    if (meta.title && !document.getElementById('url-nombre').value){
-      document.getElementById('url-nombre').value = meta.title.slice(0,60);
+    // Mostrar estilo detectado
+    const badgeEl = document.getElementById('estilo-badge');
+    if (badgeEl) {
+      const labels = { dark:'🌑 Oscuro', gradient:'🌈 Gradiente', modern:'⚡ Moderno', dynamic:'✨ Dinámico', clean:'🪟 Limpio' };
+      badgeEl.textContent = `Estilo detectado: ${labels[estilo] || estilo} · CSS analizados: ${cssUrls.length + 1}`;
+      badgeEl.style.display = 'block';
     }
+
+    // 9. Pre-llenar nombre desde título
+    if (meta.title && !document.getElementById('url-nombre').value)
+      document.getElementById('url-nombre').value = meta.title.slice(0, 60);
 
     document.getElementById('sc-results').style.display = 'block';
     _activeRole = 'primario';
 
-    if (!colores.length) showAlert('sc-alert-url','No se detectaron colores no-grises. Prueba con otra URL.','error');
+    if (!coloresOrdenados.length)
+      showAlert('sc-alert-url', 'No se detectaron colores de marca. Ajusta manualmente los colores abajo.', 'warning');
 
   } catch(err){
     const msg = err.name === 'TimeoutError' || err.message?.includes('timed out')
-      ? 'El sitio tardó demasiado en responder. Prueba con otra URL.'
-      : 'No se pudo acceder al sitio (bloqueado por el sitio o CORS). Usa la pestaña "Por Categoría" como alternativa.';
+      ? 'El sitio tardó demasiado. Prueba con otra URL o usa "Por Categoría".'
+      : 'No se pudo acceder al sitio. Algunos sitios bloquean scrapers. Usa la pestaña "Por Categoría" como alternativa.';
     showAlert('sc-alert-url', msg);
   } finally {
     setSpinner('sp-txt','sp-spin', false);
@@ -630,7 +808,7 @@ document.getElementById('btn-crear-url').addEventListener('click', async () => {
     fuente_titulos:  document.getElementById('url-fh').value || 'system-ui, sans-serif',
     fuente_cuerpo:   document.getElementById('url-fb').value || 'system-ui, sans-serif',
     tipo:            document.getElementById('url-tipo').value,
-    layout:          { hero:'split', services:'grid', projects:'masonry', team:'cards' },
+    layout:          _layoutDetectado || { hero:'split', services:'grid', projects:'masonry', team:'cards' },
   };
 
   const btn = document.getElementById('btn-crear-url');
