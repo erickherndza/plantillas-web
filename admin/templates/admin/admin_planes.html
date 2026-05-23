@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Planes · Panel Admin</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='admin.css') }}"/>
+</head>
+<body>
+
+<nav class="admin-navbar">
+  <div class="navbar-brand">
+    <span class="logo-mark sm">PW</span>
+    <span class="navbar-title">Plantillas Web RD</span>
+    <span class="navbar-sep">|</span>
+    <span class="navbar-title">Planes</span>
+  </div>
+  <div class="navbar-actions">
+    <a href="{{ url_for('admin_clientes') }}" class="btn-logout" style="margin-right:8px;">Clientes</a>
+    <a href="{{ url_for('admin_plantillas') }}" class="btn-logout" style="margin-right:8px;">Plantillas</a>
+    <a href="{{ url_for('dashboard') }}" class="btn-logout" style="margin-right:8px;">Dashboard</a>
+    <span class="navbar-user">{{ nombre }}</span>
+    <a href="{{ url_for('logout') }}" class="btn-logout">Cerrar sesión</a>
+  </div>
+</nav>
+
+<main class="admin-main">
+
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% for category, message in messages %}
+      <div class="flash-message flash-{{ category }}">{{ message }}</div>
+    {% endfor %}
+  {% endwith %}
+
+  <div class="page-header" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+    <div>
+      <h1 class="page-title">Gestión de Planes</h1>
+      <p class="page-subtitle">Define los planes de suscripción disponibles para los clientes.</p>
+    </div>
+    <button class="btn-admin-panel" onclick="toggleFormNuevo()">+ Nuevo plan</button>
+  </div>
+
+  <!-- Formulario nuevo plan (colapsable) -->
+  <div id="form-nuevo-plan" style="display:none;margin-bottom:28px;">
+    <div class="form-card">
+      <h3 style="margin-top:0;margin-bottom:16px;font-size:16px;font-weight:700;color:#1e293b;">
+        Crear nuevo plan
+      </h3>
+      <form method="POST" action="{{ url_for('admin_plan_nuevo') }}">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+          <div class="form-group" style="margin-bottom:0;">
+            <label>Clave <span style="color:#64748b;font-size:11px;">(única, sin espacios)</span></label>
+            <input type="text" name="clave" required placeholder="ej: emprendedor"
+                   pattern="[a-z0-9_\-]+" title="Solo minúsculas, números y guiones">
+          </div>
+          <div class="form-group" style="margin-bottom:0;">
+            <label>Nombre</label>
+            <input type="text" name="nombre" required placeholder="ej: Plan Emprendedor">
+          </div>
+        </div>
+        <div class="form-group" style="margin-top:14px;">
+          <label>Descripción</label>
+          <input type="text" name="descripcion" placeholder="Breve descripción del plan">
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;">
+          <div class="form-group" style="margin-bottom:0;">
+            <label>Precio (USD/mes)</label>
+            <input type="number" name="precio" value="0" min="0" step="0.01">
+          </div>
+          <div class="form-group" style="margin-bottom:0;">
+            <label>Tipo de acceso</label>
+            <select name="tipo_acceso" class="form-select">
+              <option value="landing">landing</option>
+              <option value="web5">web5</option>
+              <option value="ambos">ambos</option>
+            </select>
+          </div>
+          <div class="form-group" style="margin-bottom:0;">
+            <label>Max. sitios</label>
+            <input type="number" name="max_sitios" value="1" min="1">
+          </div>
+        </div>
+        <div class="form-actions" style="margin-top:18px;">
+          <button type="button" class="btn-cancelar" onclick="toggleFormNuevo()">Cancelar</button>
+          <button type="submit" class="btn-guardar">Crear plan</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Tabla de planes -->
+  {% if planes %}
+  <div class="table-wrap">
+    <table class="admin-table">
+      <thead>
+        <tr>
+          <th>Clave</th>
+          <th>Nombre</th>
+          <th>Precio</th>
+          <th>Acceso</th>
+          <th>Max. sitios</th>
+          <th>Clientes activos</th>
+          <th>Estado</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for plan in planes %}
+        <tr class="{{ '' if plan.activo else 'row-inactive' }}">
+          <td><code>{{ plan.clave }}</code></td>
+          <td><strong>{{ plan.nombre }}</strong><br>
+            <span style="font-size:12px;color:#6b7280;">{{ plan.descripcion or '' }}</span>
+          </td>
+          <td>
+            {% if plan.precio == 0 %}
+              <span class="badge badge-success">Gratis</span>
+            {% else %}
+              <strong>${{ "%.2f"|format(plan.precio) }}</strong><span style="color:#6b7280;font-size:12px;">/mes</span>
+            {% endif %}
+          </td>
+          <td>
+            <span class="badge {{ 'badge-web5' if plan.tipo_acceso == 'web5' else ('badge-premium' if plan.tipo_acceso == 'ambos' else 'badge-landing') }}">
+              {{ plan.tipo_acceso }}
+            </span>
+          </td>
+          <td style="text-align:center;">{{ plan.max_sitios }}</td>
+          <td style="text-align:center;">
+            <span class="badge {{ 'badge-success' if conteos.get(plan.clave, 0) > 0 else 'badge-muted' }}">
+              {{ conteos.get(plan.clave, 0) }}
+            </span>
+          </td>
+          <td>
+            <span class="badge {{ 'badge-success' if plan.activo else 'badge-muted' }}">
+              {{ 'Activo' if plan.activo else 'Inactivo' }}
+            </span>
+          </td>
+          <td class="cell-actions">
+            <form method="POST"
+                  action="{{ url_for('admin_plan_toggle', plan_id=plan.id) }}"
+                  style="display:inline;"
+                  onsubmit="return confirm('¿{{ 'Desactivar' if plan.activo else 'Activar' }} el plan {{ plan.nombre }}?')">
+              <button type="submit" class="btn-sm {{ 'btn-danger' if plan.activo else 'btn-success' }}">
+                {{ 'Desactivar' if plan.activo else 'Activar' }}
+              </button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="empty-state">
+    <p>No hay planes definidos. <button class="btn-link" onclick="toggleFormNuevo()">Crea el primero.</button></p>
+  </div>
+  {% endif %}
+
+  <!-- Sección de usuarios pendientes -->
+  <div style="margin-top:40px;">
+    <h2 style="font-size:16px;font-weight:700;color:#1e293b;margin-bottom:8px;">
+      Usuarios pendientes de activación
+    </h2>
+    <p style="font-size:13px;color:#64748b;margin-bottom:12px;">
+      Estos usuarios se registraron vía el formulario público y esperan activación.
+      <a href="{{ url_for('admin_usuarios_pendientes') }}" style="color:var(--admin-accent);font-weight:600;">
+        Ver todos los pendientes &rarr;
+      </a>
+    </p>
+  </div>
+
+</main>
+
+<style>
+.table-wrap { overflow-x: auto; margin-top: 24px; }
+.admin-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+.admin-table th { background: #f1f5f9; padding: 10px 14px; text-align: left; font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: .5px; color: #64748b; border-bottom: 2px solid #e2e8f0; }
+.admin-table td { padding: 12px 14px; border-bottom: 1px solid #f1f5f9; vertical-align: middle; }
+.admin-table tr:hover td { background: #f8fafc; }
+.row-inactive td { opacity: .55; }
+.cell-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+.badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; }
+.badge-web5    { background: #ede9fe; color: #6d28d9; }
+.badge-premium { background: #fef9c3; color: #92400e; }
+.badge-landing { background: #dbeafe; color: #1d4ed8; }
+.badge-success { background: #dcfce7; color: #166534; }
+.badge-muted   { background: #f1f5f9; color: #94a3b8; }
+.btn-sm { padding: 5px 12px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; border: 1.5px solid #e2e8f0; background: #fff; color: #374151; text-decoration: none; transition: all .2s; }
+.btn-sm:hover   { background: #f1f5f9; }
+.btn-danger     { border-color: #fecaca; color: #dc2626; background: #fff5f5; }
+.btn-danger:hover { background: #fee2e2; }
+.btn-success    { border-color: #bbf7d0; color: #15803d; background: #f0fdf4; }
+.btn-success:hover { background: #dcfce7; }
+code { background: #f1f5f9; padding: 2px 6px; border-radius: 4px; font-size: 12px; color: #0f172a; }
+.btn-link { background: none; border: none; color: var(--admin-accent, #0bb180); font-weight: 600; cursor: pointer; padding: 0; font-size: inherit; }
+.btn-link:hover { text-decoration: underline; }
+</style>
+
+<script>
+function toggleFormNuevo() {
+  const el = document.getElementById('form-nuevo-plan');
+  el.style.display = el.style.display === 'none' ? 'block' : 'none';
+}
+</script>
+
+</body>
+</html>

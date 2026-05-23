@@ -261,6 +261,48 @@ def init_db():
         except Exception:
             pass
 
+    # ── Tabla planes ─────────────────────────────────────────────────────────
+    conn.executescript("""
+        CREATE TABLE IF NOT EXISTS planes (
+            id          INTEGER PRIMARY KEY AUTOINCREMENT,
+            clave       TEXT UNIQUE NOT NULL,
+            nombre      TEXT NOT NULL,
+            descripcion TEXT DEFAULT '',
+            precio      REAL DEFAULT 0,
+            tipo_acceso TEXT DEFAULT 'landing',
+            max_sitios  INTEGER DEFAULT 1,
+            activo      INTEGER DEFAULT 1
+        );
+    """)
+    conn.commit()
+
+    # Migración: plan_id en clientes (idempotente)
+    try:
+        conn.execute("ALTER TABLE clientes ADD COLUMN plan_id INTEGER REFERENCES planes(id)")
+        conn.commit()
+    except Exception:
+        pass  # ya existe
+
+    # Migración: plan_requerido en plantillas (idempotente)
+    try:
+        conn.execute("ALTER TABLE plantillas ADD COLUMN plan_requerido TEXT DEFAULT 'basico'")
+        conn.commit()
+    except Exception:
+        pass  # ya existe
+
+    # Seed planes si la tabla está vacía
+    _count_planes = conn.execute("SELECT COUNT(*) FROM planes").fetchone()[0]
+    if _count_planes == 0:
+        conn.executemany(
+            "INSERT OR IGNORE INTO planes (clave, nombre, descripcion, precio, tipo_acceso, max_sitios) VALUES (?,?,?,?,?,?)",
+            [
+                ('basico',      'Plan Básico',      'Landing page para tu negocio.',          0,     'landing', 1),
+                ('corporativo', 'Plan Corporativo',  'Sitio web completo de 5 páginas.',       29.99, 'web5',    3),
+                ('premium',     'Plan Premium',      'Landing + web completa, múltiples sitios.', 49.99, 'ambos',   10),
+            ]
+        )
+        conn.commit()
+
     # Seed plantillas base si no existen
     _schema_completo = '{"secciones": ["apariencia", "marca", "hero", "nosotros", "servicios", "proyectos", "equipo", "contacto"]}'
     _plantillas_seed = [
@@ -1099,6 +1141,148 @@ def upsert_estilos(plantilla_id: int, campos: dict):
         conn.execute(f"INSERT INTO plantilla_estilos ({cols}) VALUES ({vals})", list(full.values()))
     conn.commit()
     conn.close()
+
+
+# ── Planes ────────────────────────────────────────────────────────────────────
+
+def listar_planes() -> list:
+    """Todos los planes activos."""
+    conn = get_db()
+    rows = conn.execute("SELECT * FROM planes WHERE activo=1 ORDER BY precio").fetchall()
+    conn.close()
+    return rows
+
+
+def listar_todos_planes() -> list:
+    """Todos los planes (para panel admin)."""
+    conn = get_db()
+    rows = conn.execute("SELECT * FROM planes ORDER BY precio").fetchall()
+    conn.close()
+    return rows
+
+
+def obtener_plan(plan_id: int):
+    """Un plan por id."""
+    conn = get_db()
+    row = conn.execute("SELECT * FROM planes WHERE id=?", (plan_id,)).fetchone()
+    conn.close()
+    return row
+
+
+def obtener_plan_por_clave(clave: str):
+    """Un plan por clave."""
+    conn = get_db()
+    row = conn.execute("SELECT * FROM planes WHERE clave=?", (clave,)).fetchone()
+    conn.close()
+    return row
+
+
+def asignar_plan_cliente(cliente_id: int, plan_id: int):
+    """Actualiza plan_id del cliente."""
+    conn = get_db()
+    conn.execute("UPDATE clientes SET plan_id=? WHERE id=?", (plan_id, cliente_id))
+    conn.commit()
+    conn.close()
+
+
+def plantillas_por_plan(tipo_acceso: str) -> list:
+    """Plantillas que corresponden al tipo de acceso del plan."""
+    conn = get_db()
+    if tipo_acceso == 'ambos':
+        rows = conn.execute(
+            "SELECT * FROM plantillas WHERE activo=1 ORDER BY id"
+        ).fetchall()
+    else:
+        rows = conn.execute(
+            "SELECT * FROM plantillas WHERE activo=1 AND tipo=? ORDER BY id",
+            (tipo_acceso,)
+        ).fetchall()
+    conn.close()
+    return rows
+
+
+def registrar_cliente_publico(email: str, password_hash: str, nombre: str, plan_id: int) -> int:
+    """Registra un usuario vía formulario público. activo=0 — pendiente de activación."""
+    conn = get_db()
+    # Verifica si ya existe por email en usuarios (CMS)
+    existing = conn.execute(
+        "SELECT id FROM usuarios WHERE email=?", (email.lower().strip(),)
+    ).fetchone()
+    if existing:
+        conn.close()
+        raise ValueError('email_exists')
+    cur = conn.execute(
+        "INSERT INTO usuarios (email, password, nombre, activo) VALUES (?, ?, ?, 0)",
+        (email.lower().strip(), password_hash, nombre.strip())
+    )
+    uid = cur.lastrowid
+    conn.commit()
+    conn.close()
+    return uid
+
+
+def activar_usuario(uid: int):
+    """Activa la cuenta de un usuario."""
+    conn = get_db()
+    conn.execute("UPDATE usuarios SET activo=1 WHERE id=?", (uid,))
+    conn.commit()
+    conn.close()
+
+
+def listar_usuarios_pendientes() -> list:
+    """Usuarios con activo=0 pendientes de activación."""
+    conn = get_db()
+    rows = conn.execute(
+        "SELECT * FROM usuarios WHERE activo=0 ORDER BY created_at DESC"
+    ).fetchall()
+    conn.close()
+    return rows
+
+
+def contar_clientes_por_plan() -> dict:
+    """Devuelve {plan_id: count} de usuarios activos por plan (tabla usuarios, campo plan)."""
+    conn = get_db()
+    # contamos por plan desde la tabla usuarios usando la columna 'plan'
+    rows = conn.execute(
+        "SELECT plan, COUNT(*) as n FROM usuarios WHERE activo=1 GROUP BY plan"
+    ).fetchall()
+    conn.close()
+    return {r['plan']: r['n'] for r in rows}
+
+
+def toggle_plan(plan_id: int):
+    """Activa o desactiva un plan."""
+    conn = get_db()
+    conn.execute(
+        "UPDATE planes SET activo = CASE WHEN activo=1 THEN 0 ELSE 1 END WHERE id=?",
+        (plan_id,)
+    )
+    conn.commit()
+    conn.close()
+
+
+def crear_plan(clave: str, nombre: str, descripcion: str,
+               precio: float, tipo_acceso: str, max_sitios: int) -> int:
+    """Crea un plan nuevo."""
+    conn = get_db()
+    cur = conn.execute(
+        "INSERT INTO planes (clave, nombre, descripcion, precio, tipo_acceso, max_sitios) VALUES (?,?,?,?,?,?)",
+        (clave.strip().lower(), nombre.strip(), descripcion.strip(), precio, tipo_acceso, max_sitios)
+    )
+    pid = cur.lastrowid
+    conn.commit()
+    conn.close()
+    return pid
+
+
+def obtener_usuario_por_email_cualquier_estado(email: str):
+    """Busca usuario activo O inactivo (para login con mensaje de pendiente)."""
+    conn = get_db()
+    row = conn.execute(
+        "SELECT * FROM usuarios WHERE email=?", (email.lower().strip(),)
+    ).fetchone()
+    conn.close()
+    return row
 
 
 def get_layout(plantilla_id: int) -> dict:

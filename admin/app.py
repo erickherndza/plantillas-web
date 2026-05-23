@@ -33,6 +33,13 @@ from db import (
     obtener_cliente_por_email, actualizar_email_cliente,
     crear_admin_reset_token, obtener_cliente_por_reset_token,
     invalidar_admin_reset_token, actualizar_password_cliente,
+    # Planes
+    listar_planes, listar_todos_planes, obtener_plan, obtener_plan_por_clave,
+    asignar_plan_cliente, plantillas_por_plan,
+    registrar_cliente_publico, activar_usuario,
+    listar_usuarios_pendientes, contar_clientes_por_plan,
+    toggle_plan, crear_plan,
+    obtener_usuario_por_email_cualquier_estado,
 )
 from parser import (
     extraer_valores, aplicar_cambios,
@@ -793,6 +800,85 @@ def admin_plantilla_toggle(plantilla_id):
 
 
 # ══════════════════════════════════════════════════════════════════════════════
+# Admin — Gestión de Planes
+# ══════════════════════════════════════════════════════════════════════════════
+
+@app.route('/admin/planes')
+@admin_requerido
+def admin_planes():
+    planes  = listar_todos_planes()
+    conteos = contar_clientes_por_plan()
+    return render_template('admin/admin_planes.html',
+                           planes=planes, conteos=conteos,
+                           nombre=session.get('nombre'))
+
+
+@app.route('/admin/planes/nuevo', methods=['POST'])
+@admin_requerido
+def admin_plan_nuevo():
+    clave       = request.form.get('clave', '').strip().lower()
+    nombre      = request.form.get('nombre', '').strip()
+    descripcion = request.form.get('descripcion', '').strip()
+    precio_raw  = request.form.get('precio', '0').strip()
+    tipo_acceso = request.form.get('tipo_acceso', 'landing').strip()
+    max_sitios  = request.form.get('max_sitios', '1').strip()
+
+    if not clave or not nombre:
+        flash('La clave y el nombre son obligatorios.', 'error')
+        return redirect(url_for('admin_planes'))
+
+    try:
+        precio     = float(precio_raw)
+        max_sitios = int(max_sitios)
+    except ValueError:
+        flash('Precio y max_sitios deben ser números.', 'error')
+        return redirect(url_for('admin_planes'))
+
+    if tipo_acceso not in ('landing', 'web5', 'ambos'):
+        tipo_acceso = 'landing'
+
+    try:
+        crear_plan(clave, nombre, descripcion, precio, tipo_acceso, max_sitios)
+        flash(f'Plan "{nombre}" creado correctamente.', 'success')
+    except Exception:
+        flash(f'La clave "{clave}" ya existe.', 'error')
+
+    return redirect(url_for('admin_planes'))
+
+
+@app.route('/admin/planes/<int:plan_id>/toggle', methods=['POST'])
+@admin_requerido
+def admin_plan_toggle(plan_id):
+    plan = obtener_plan(plan_id)
+    if not plan:
+        flash('Plan no encontrado.', 'error')
+    else:
+        toggle_plan(plan_id)
+        estado = 'desactivado' if plan['activo'] else 'activado'
+        flash(f'Plan "{plan["nombre"]}" {estado}.', 'success')
+    return redirect(url_for('admin_planes'))
+
+
+# ── Admin — Activar usuarios pendientes ───────────────────────────────────────
+
+@app.route('/admin/usuarios-pendientes')
+@admin_requerido
+def admin_usuarios_pendientes():
+    pendientes = listar_usuarios_pendientes()
+    return render_template('admin/admin_usuarios_pendientes.html',
+                           pendientes=pendientes,
+                           nombre=session.get('nombre'))
+
+
+@app.route('/admin/usuarios/<int:uid>/activar', methods=['POST'])
+@admin_requerido
+def admin_activar_usuario(uid):
+    activar_usuario(uid)
+    flash('Usuario activado correctamente.', 'success')
+    return redirect(url_for('admin_usuarios_pendientes'))
+
+
+# ══════════════════════════════════════════════════════════════════════════════
 # CMS — Rutas para usuarios finales (registro, login, panel, crear sitio)
 # Session keys: 'uid', 'u_email', 'u_nombre' (distintos de los del admin)
 # ══════════════════════════════════════════════════════════════════════════════
@@ -813,18 +899,21 @@ def usuario_requerido(f):
     return wrapper
 
 
-# ── Registro ──────────────────────────────────────────────────────────────────
+# ── Registro público ──────────────────────────────────────────────────────────
 
 @app.route('/registro', methods=['GET', 'POST'])
 def registro():
     if 'uid' in session:
         return redirect(url_for('mi_panel'))
 
+    planes = listar_planes()
+
     if request.method == 'POST':
-        nombre   = request.form.get('nombre', '').strip()
-        email    = request.form.get('email', '').strip().lower()
-        password = request.form.get('password', '').strip()
-        confirm  = request.form.get('confirm', '').strip()
+        nombre    = request.form.get('nombre', '').strip()
+        email     = request.form.get('email', '').strip().lower()
+        password  = request.form.get('password', '').strip()
+        confirm   = request.form.get('confirm', '').strip()
+        plan_clave = request.form.get('plan_clave', 'basico').strip()
 
         error = None
         if not nombre or not email or not password:
@@ -835,23 +924,32 @@ def registro():
             error = 'La contraseña debe tener al menos 8 caracteres.'
         elif password != confirm:
             error = 'Las contraseñas no coinciden.'
-        elif obtener_usuario_por_email(email):
+        elif obtener_usuario_por_email_cualquier_estado(email):
             error = 'Ya existe una cuenta con ese email.'
 
         if error:
             flash(error, 'error')
         else:
             try:
-                uid = crear_usuario(email, generate_password_hash(password), nombre)
-                session['uid']      = uid
-                session['u_email']  = email
-                session['u_nombre'] = nombre
-                flash(f'Bienvenido, {nombre}. Tu cuenta fue creada.', 'success')
-                return redirect(url_for('crear_sitio'))
-            except Exception:
+                plan_obj = obtener_plan_por_clave(plan_clave)
+                plan_id  = plan_obj['id'] if plan_obj else None
+                uid = registrar_cliente_publico(
+                    email, generate_password_hash(password), nombre,
+                    plan_id or 0
+                )
+                return redirect(url_for('registro_gracias'))
+            except ValueError:
+                flash('Ya existe una cuenta con ese email.', 'error')
+            except Exception as e:
+                log.error('[registro] error: %s', e)
                 flash('Error al crear la cuenta. Intenta de nuevo.', 'error')
 
-    return render_template('registro.html')
+    return render_template('registro.html', planes=planes)
+
+
+@app.route('/registro/gracias')
+def registro_gracias():
+    return render_template('registro_gracias.html')
 
 
 # ── Login usuario ─────────────────────────────────────────────────────────────
@@ -870,8 +968,11 @@ def entrar():
             flash('Demasiados intentos fallidos. Espera 15 minutos.', 'error')
             return render_template('entrar.html')
 
-        usuario = obtener_usuario_por_email(email)
+        usuario = obtener_usuario_por_email_cualquier_estado(email)
         if usuario and check_password_hash(usuario['password'], password):
+            if not usuario['activo']:
+                flash('Tu cuenta está pendiente de activación por el administrador.', 'warning')
+                return render_template('entrar.html')
             _clear_rate(ip)
             session['uid']      = usuario['id']
             session['u_email']  = usuario['email']
@@ -1025,7 +1126,10 @@ def mi_panel():
 @app.route('/crear-sitio', methods=['GET', 'POST'])
 @usuario_requerido
 def crear_sitio():
-    plantillas = listar_plantillas_activas()
+    # Filtrar plantillas según el plan del usuario
+    usuario_actual = obtener_usuario_por_id(session['uid'])
+    plan_tipo = usuario_actual['plan'] if usuario_actual else 'landing'
+    plantillas = plantillas_por_plan(plan_tipo) if plan_tipo else listar_plantillas_activas()
 
     if request.method == 'POST':
         plantilla_id  = request.form.get('plantilla_id', '').strip()

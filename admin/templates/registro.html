@@ -5,16 +5,135 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Crear cuenta · Plantillas Web RD</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='admin.css') }}">
+  <style>
+    /* ── Plan cards ───────────────────────────────────────────────────── */
+    .planes-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 14px;
+      margin-bottom: 24px;
+    }
+    .plan-card {
+      border: 2px solid var(--admin-border, #e2e8f0);
+      border-radius: 12px;
+      padding: 18px 14px;
+      cursor: pointer;
+      transition: border-color .2s, box-shadow .2s;
+      background: #fff;
+      text-align: center;
+      position: relative;
+    }
+    .plan-card:hover {
+      border-color: var(--admin-accent, #0bb180);
+      box-shadow: 0 0 0 3px rgba(11,177,128,.1);
+    }
+    .plan-card.selected {
+      border-color: var(--admin-accent, #0bb180);
+      box-shadow: 0 0 0 4px rgba(11,177,128,.18);
+    }
+    .plan-card input[type="radio"] {
+      position: absolute;
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+    .plan-card .plan-nombre {
+      font-weight: 700;
+      font-size: 15px;
+      color: #1e293b;
+      margin-bottom: 6px;
+    }
+    .plan-card .plan-precio {
+      font-size: 22px;
+      font-weight: 800;
+      color: var(--admin-accent, #0bb180);
+      margin-bottom: 8px;
+    }
+    .plan-card .plan-precio span {
+      font-size: 13px;
+      font-weight: 400;
+      color: #64748b;
+    }
+    .plan-card .plan-desc {
+      font-size: 12px;
+      color: #64748b;
+      line-height: 1.5;
+    }
+    .plan-card .plan-badge {
+      display: inline-block;
+      margin-top: 8px;
+      padding: 2px 10px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      background: #f1f5f9;
+      color: #475569;
+    }
+    /* Steps */
+    .steps-nav {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 24px;
+      justify-content: center;
+    }
+    .step-dot {
+      width: 10px; height: 10px;
+      border-radius: 50%;
+      background: #e2e8f0;
+      transition: background .2s;
+    }
+    .step-dot.active { background: var(--admin-accent, #0bb180); }
+    /* Sections */
+    .step-section { display: none; }
+    .step-section.visible { display: block; }
+    .step-title {
+      font-size: 17px;
+      font-weight: 700;
+      color: #1e293b;
+      margin-bottom: 6px;
+    }
+    .step-subtitle {
+      font-size: 13px;
+      color: #64748b;
+      margin-bottom: 18px;
+    }
+    .btn-next {
+      width: 100%;
+      padding: 13px;
+      background: var(--admin-accent, #0bb180);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      margin-top: 8px;
+      transition: opacity .2s;
+    }
+    .btn-next:hover { opacity: .9; }
+    .btn-back-step {
+      background: none;
+      border: none;
+      color: var(--admin-accent, #0bb180);
+      font-size: 13px;
+      cursor: pointer;
+      padding: 0;
+      margin-bottom: 16px;
+      font-weight: 600;
+    }
+    .btn-back-step:hover { text-decoration: underline; }
+  </style>
 </head>
 <body class="login-body">
 
-  <div class="login-wrap" style="max-width:440px;">
+  <div class="login-wrap" style="max-width:520px;">
     <div class="login-card">
 
       <div class="login-logo">
         <span class="logo-mark">PW</span>
         <div>
-          <p class="logo-title">Crear cuenta gratis</p>
+          <p class="logo-title">Crear cuenta</p>
           <p class="logo-sub">Plantillas Web RD</p>
         </div>
       </div>
@@ -25,28 +144,80 @@
         {% endfor %}
       {% endwith %}
 
-      <form method="POST" action="{{ url_for('registro') }}" class="login-form">
-        <div class="form-group">
-          <label for="nombre">Tu nombre</label>
-          <input type="text" id="nombre" name="nombre" required
-                 autocomplete="name" placeholder="Ej: María González">
+      <!-- Indicador de pasos -->
+      <div class="steps-nav">
+        <div class="step-dot active" id="dot-1"></div>
+        <div class="step-dot" id="dot-2"></div>
+      </div>
+
+      <form method="POST" action="{{ url_for('registro') }}" id="form-registro">
+        <!-- Campo oculto para la clave del plan elegido -->
+        <input type="hidden" name="plan_clave" id="plan_clave_input" value="basico">
+
+        <!-- ── Paso 1: Elegir plan ─────────────────────────────────────── -->
+        <div class="step-section visible" id="step-1">
+          <p class="step-title">Elige tu plan</p>
+          <p class="step-subtitle">Puedes cambiar de plan en cualquier momento.</p>
+
+          <div class="planes-grid">
+            {% for plan in planes %}
+            <div class="plan-card {% if loop.first %}selected{% endif %}"
+                 data-clave="{{ plan.clave }}"
+                 onclick="elegirPlan(this)">
+              <input type="radio" name="_plan_radio" value="{{ plan.clave }}"
+                     {% if loop.first %}checked{% endif %}>
+              <div class="plan-nombre">{{ plan.nombre }}</div>
+              <div class="plan-precio">
+                {% if plan.precio == 0 %}
+                  Gratis
+                {% else %}
+                  ${{ "%.0f"|format(plan.precio) }}<span>/mes</span>
+                {% endif %}
+              </div>
+              <div class="plan-desc">{{ plan.descripcion }}</div>
+              <div class="plan-badge">{{ plan.tipo_acceso }}</div>
+            </div>
+            {% else %}
+            <p style="color:#64748b;font-size:13px;">No hay planes disponibles.</p>
+            {% endfor %}
+          </div>
+
+          <button type="button" class="btn-next" onclick="irAlPaso2()">
+            Continuar &rarr;
+          </button>
         </div>
-        <div class="form-group">
-          <label for="email">Email</label>
-          <input type="email" id="email" name="email" required
-                 autocomplete="email" placeholder="tu@email.com">
+
+        <!-- ── Paso 2: Datos de la cuenta ─────────────────────────────── -->
+        <div class="step-section" id="step-2">
+          <button type="button" class="btn-back-step" onclick="irAlPaso1()">
+            &larr; Volver a elegir plan
+          </button>
+          <p class="step-title">Crea tu cuenta</p>
+          <p class="step-subtitle">Plan seleccionado: <strong id="plan-seleccionado-label">—</strong></p>
+
+          <div class="form-group">
+            <label for="nombre">Tu nombre</label>
+            <input type="text" id="nombre" name="nombre" required
+                   autocomplete="name" placeholder="Ej: María González">
+          </div>
+          <div class="form-group">
+            <label for="email">Email</label>
+            <input type="email" id="email" name="email" required
+                   autocomplete="email" placeholder="tu@email.com">
+          </div>
+          <div class="form-group">
+            <label for="password">Contraseña</label>
+            <input type="password" id="password" name="password" required
+                   autocomplete="new-password" placeholder="Mínimo 8 caracteres">
+          </div>
+          <div class="form-group">
+            <label for="confirm">Confirmar contraseña</label>
+            <input type="password" id="confirm" name="confirm" required
+                   autocomplete="new-password" placeholder="Repite la contraseña">
+          </div>
+
+          <button type="submit" class="btn-next">Crear cuenta</button>
         </div>
-        <div class="form-group">
-          <label for="password">Contraseña</label>
-          <input type="password" id="password" name="password" required
-                 autocomplete="new-password" placeholder="Mínimo 8 caracteres">
-        </div>
-        <div class="form-group">
-          <label for="confirm">Confirmar contraseña</label>
-          <input type="password" id="confirm" name="confirm" required
-                 autocomplete="new-password" placeholder="Repite la contraseña">
-        </div>
-        <button type="submit" class="btn-login">Crear cuenta</button>
       </form>
 
       <p class="login-footer" style="margin-top:16px;">
@@ -56,6 +227,58 @@
 
     </div>
   </div>
+
+  <script>
+    const planesData = {
+      {% for plan in planes %}
+      "{{ plan.clave }}": "{{ plan.nombre }}",
+      {% endfor %}
+    };
+
+    function elegirPlan(card) {
+      document.querySelectorAll('.plan-card').forEach(c => c.classList.remove('selected'));
+      card.classList.add('selected');
+      const clave = card.dataset.clave;
+      document.getElementById('plan_clave_input').value = clave;
+    }
+
+    function irAlPaso2() {
+      const clave = document.getElementById('plan_clave_input').value;
+      document.getElementById('plan-seleccionado-label').textContent = planesData[clave] || clave;
+      document.getElementById('step-1').classList.remove('visible');
+      document.getElementById('step-2').classList.add('visible');
+      document.getElementById('dot-1').classList.remove('active');
+      document.getElementById('dot-2').classList.add('active');
+    }
+
+    function irAlPaso1() {
+      document.getElementById('step-2').classList.remove('visible');
+      document.getElementById('step-1').classList.add('visible');
+      document.getElementById('dot-2').classList.remove('active');
+      document.getElementById('dot-1').classList.add('active');
+    }
+
+    // Si hay errores del servidor, mostrar paso 2 directamente
+    {% with messages = get_flashed_messages() %}
+      {% if messages %}
+      window.addEventListener('DOMContentLoaded', function() {
+        irAlPaso2();
+      });
+      {% endif %}
+    {% endwith %}
+
+    // Validación básica antes de enviar
+    document.getElementById('form-registro').addEventListener('submit', function(e) {
+      const pw  = document.getElementById('password').value;
+      const cf  = document.getElementById('confirm').value;
+      const em  = document.getElementById('email').value;
+      const nm  = document.getElementById('nombre').value.trim();
+      if (!nm) { alert('Ingresa tu nombre.'); e.preventDefault(); return; }
+      if (!em.includes('@')) { alert('Ingresa un email válido.'); e.preventDefault(); return; }
+      if (pw.length < 8) { alert('La contraseña debe tener al menos 8 caracteres.'); e.preventDefault(); return; }
+      if (pw !== cf) { alert('Las contraseñas no coinciden.'); e.preventDefault(); return; }
+    });
+  </script>
 
 </body>
 </html>

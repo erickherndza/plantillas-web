@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cuenta creada · Plantillas Web RD</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='admin.css') }}">
+  <style>
+    .gracias-icon {
+      font-size: 52px;
+      margin-bottom: 16px;
+      display: block;
+      text-align: center;
+    }
+    .gracias-titulo {
+      font-size: 22px;
+      font-weight: 800;
+      color: #1e293b;
+      text-align: center;
+      margin-bottom: 10px;
+    }
+    .gracias-texto {
+      font-size: 14px;
+      color: #64748b;
+      text-align: center;
+      line-height: 1.6;
+      margin-bottom: 28px;
+    }
+    .gracias-card {
+      background: #f0fdf4;
+      border: 1.5px solid #bbf7d0;
+      border-radius: 12px;
+      padding: 20px 24px;
+      margin-bottom: 24px;
+    }
+    .gracias-card ul {
+      margin: 8px 0 0 0;
+      padding-left: 18px;
+      color: #166534;
+      font-size: 13px;
+      line-height: 1.8;
+    }
+    .gracias-card p {
+      color: #15803d;
+      font-weight: 600;
+      margin: 0;
+    }
+    .btn-inicio {
+      display: block;
+      width: 100%;
+      padding: 13px;
+      background: var(--admin-accent, #0bb180);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      text-align: center;
+      text-decoration: none;
+      transition: opacity .2s;
+    }
+    .btn-inicio:hover { opacity: .9; }
+  </style>
+</head>
+<body class="login-body">
+
+  <div class="login-wrap" style="max-width:460px;">
+    <div class="login-card">
+
+      <div class="login-logo">
+        <span class="logo-mark">PW</span>
+        <div>
+          <p class="logo-title">Plantillas Web RD</p>
+          <p class="logo-sub">Tu cuenta está en camino</p>
+        </div>
+      </div>
+
+      <span class="gracias-icon">&#10003;</span>
+      <p class="gracias-titulo">Cuenta creada correctamente</p>
+      <p class="gracias-texto">
+        Tu solicitud fue recibida. Un administrador revisará tu cuenta
+        y la activará en breve.
+      </p>
+
+      <div class="gracias-card">
+        <p>¿Qué sigue?</p>
+        <ul>
+          <li>Recibirás un aviso cuando tu cuenta esté activa.</li>
+          <li>Luego podrás iniciar sesión y crear tu sitio.</li>
+          <li>Si tienes dudas, contáctanos por WhatsApp.</li>
+        </ul>
+      </div>
+
+      <a href="{{ url_for('entrar') }}" class="btn-inicio">
+        Ir al inicio de sesión
+      </a>
+
+      <p class="login-footer" style="margin-top:16px;text-align:center;">
+        <a href="{{ url_for('registro') }}" style="color:var(--admin-accent);">
+          Registrar otra cuenta
+        </a>
+      </p>
+
+    </div>
+  </div>
+
+</body>
+</html>
