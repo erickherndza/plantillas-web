@@ -1,6 +1,6 @@
 from flask import (
     Flask, render_template, render_template_string, request, redirect,
-    url_for, session, flash, jsonify, send_from_directory, abort
+    url_for, session, flash, jsonify, abort
 )
 import json, os, uuid, logging, time, threading
 import smtplib
@@ -35,17 +35,12 @@ from db import (
     invalidar_admin_reset_token, actualizar_password_cliente,
     # Planes
     listar_planes, listar_todos_planes, obtener_plan, obtener_plan_por_clave,
-    asignar_plan_cliente, plantillas_por_plan,
+    asignar_plan_cliente,
     registrar_cliente_publico, activar_usuario,
     listar_usuarios_pendientes, contar_clientes_por_plan,
     toggle_plan, crear_plan,
     obtener_usuario_por_email_cualquier_estado,
 )
-from parser import (
-    extraer_valores, aplicar_cambios,
-    extraer_repeater, reconstruir_seccion, git_push
-)
-
 app = Flask(__name__)
 
 from plantillas_editor import bp as _editor_bp
@@ -272,35 +267,12 @@ def admin_requerido(f):
     return wrapper
 
 
-def plantilla_autorizada(plantilla_id):
-    return plantilla_id in session.get('plantillas', [])
-
-
 init_db()
 logging.basicConfig(level=logging.DEBUG)
 log = logging.getLogger('admin')
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
-
-def _parsear_repeaters_del_form(form, repeaters_schema):
-    """
-    Extrae los datos de repeaters del form.
-    Nombres de campo: rep__<rep_id>__<idx>__<campo_id>
-    Devuelve: { rep_id: [ {campo_id: valor, ...}, ... ] }
-    """
-    resultado = {}
-    for rep_id, rep_conf in repeaters_schema.items():
-        items = {}
-        for key, valor in form.items():
-            partes = key.split('__')
-            if len(partes) == 4 and partes[0] == 'rep' and partes[1] == rep_id:
-                idx      = int(partes[2])
-                campo_id = partes[3]
-                items.setdefault(idx, {})[campo_id] = valor
-        if items:
-            resultado[rep_id] = [items[i] for i in sorted(items)]
-    return resultado
 
 
 # ── Auth ──────────────────────────────────────────────────────────────────────
@@ -416,163 +388,8 @@ def dashboard():
 @app.route('/editor/<plantilla_id>', methods=['GET', 'POST'])
 @login_requerido
 def editor(plantilla_id):
-    if not plantilla_autorizada(plantilla_id):
-        flash('No tienes acceso a esta plantilla', 'error')
-        return redirect(url_for('dashboard'))
-
-    schema    = cargar_schema()
-    plantilla = schema['plantillas'].get(plantilla_id)
-    if not plantilla:
-        flash('Plantilla no encontrada', 'error')
-        return redirect(url_for('dashboard'))
-
-    if request.method == 'POST':
-        # ── Debug: log all form keys received ─────────────────────────────────
-        rep_keys = [k for k in request.form if k.startswith('rep__')]
-        log.debug('[editor POST] plantilla=%s  rep_keys=%d  sample=%s',
-                  plantilla_id, len(rep_keys), rep_keys[:6])
-
-        # ── Campos regulares ──────────────────────────────────────────────────
-        nuevos_valores = {}
-        for seccion, items in plantilla['campos'].items():
-            nuevos_valores[seccion] = {}
-            for campo_id in items:
-                key = f"{seccion}__{campo_id}"
-                nuevos_valores[seccion][campo_id] = request.form.get(key, '')
-
-        exito_campos = aplicar_cambios(
-            plantilla['ruta'], plantilla['campos'], nuevos_valores
-        )
-
-        # ── Repeaters ─────────────────────────────────────────────────────────
-        repeaters_data = _parsear_repeaters_del_form(
-            request.form, plantilla.get('repeaters', {})
-        )
-        log.debug('[editor POST] repeaters_data keys=%s', list(repeaters_data.keys()))
-
-        exito_repeaters = True
-        for rep_id, items in repeaters_data.items():
-            rep_conf = plantilla['repeaters'][rep_id]
-            log.debug('[editor POST] reconstruir_seccion rep_id=%s  items=%d', rep_id, len(items))
-            ok = reconstruir_seccion(
-                plantilla['ruta'],
-                rep_conf['contenedor'],
-                rep_conf['item_selector'],
-                rep_conf['campos'],
-                items
-            )
-            log.debug('[editor POST] reconstruir_seccion rep_id=%s  ok=%s', rep_id, ok)
-            if not ok:
-                exito_repeaters = False
-
-        if exito_campos and exito_repeaters:
-            ok, msg = git_push(f"{session['usuario']} actualizó {plantilla_id}")
-            if ok:
-                flash('¡Cambios publicados! Tu sitio se actualizará en ~30 s.', 'success')
-            else:
-                flash(f'Guardado localmente (git: {msg})', 'warning')
-        else:
-            flash('Error al guardar algunos cambios. Revisa los logs del servidor.', 'error')
-
-        return redirect(url_for('editor', plantilla_id=plantilla_id))
-
-    # ── GET: cargar valores actuales ──────────────────────────────────────────
-    valores   = extraer_valores(plantilla['ruta'], plantilla['campos'])
-    secciones = list(plantilla['campos'].keys())
-
-    repeaters_valores = {}
-    for rep_id, rep_conf in plantilla.get('repeaters', {}).items():
-        repeaters_valores[rep_id] = extraer_repeater(
-            plantilla['ruta'],
-            rep_conf['contenedor'],
-            rep_conf['item_selector'],
-            rep_conf['campos']
-        )
-
-    return render_template('editor.html',
-        plantilla_id=plantilla_id,
-        plantilla=plantilla,
-        valores=valores,
-        secciones=secciones,
-        repeaters_valores=repeaters_valores,
-        usuario=session['usuario'],
-        nombre=session.get('nombre')
-    )
-
-
-# ── Upload de imágenes ────────────────────────────────────────────────────────
-
-@app.route('/upload/<plantilla_id>', methods=['POST'])
-@login_requerido
-def upload_imagen(plantilla_id):
-    if not plantilla_autorizada(plantilla_id):
-        return jsonify({'ok': False, 'error': 'Sin acceso'}), 403
-
-    archivo = request.files.get('imagen')
-    if not archivo or not archivo.filename:
-        return jsonify({'ok': False, 'error': 'Sin archivo'}), 400
-
-    ext = os.path.splitext(archivo.filename)[1].lower()
-    if ext not in {'.png', '.jpg', '.jpeg', '.webp', '.gif'}:
-        return jsonify({'ok': False, 'error': 'Formato no permitido. Usa PNG, JPG o WebP'}), 400
-
-    if not _es_imagen_valida(archivo.stream):
-        return jsonify({'ok': False, 'error': 'El archivo no es una imagen válida'}), 400
-
-    carpeta = os.path.join(UPLOADS_DIR, plantilla_id)
-    os.makedirs(carpeta, exist_ok=True)
-
-    nombre = f"{uuid.uuid4().hex[:10]}{ext}"
-    archivo.save(os.path.join(carpeta, nombre))
-
-    url = url_for('static', filename=f'uploads/{plantilla_id}/{nombre}')
-    return jsonify({'ok': True, 'url': url})
-
-
-# ── Preview (Cloudflare) ──────────────────────────────────────────────────────
-
-@app.route('/preview/<plantilla_id>')
-@login_requerido
-def preview(plantilla_id):
-    if not plantilla_autorizada(plantilla_id):
-        flash('No tienes acceso a esta plantilla', 'error')
-        return redirect(url_for('dashboard'))
-    schema    = cargar_schema()
-    plantilla = schema['plantillas'].get(plantilla_id, {})
-    return redirect(plantilla.get('preview_url', '/'))
-
-
-# ── Preview local (sirve el HTML desde disco, sin necesitar git push) ─────────
-
-@app.route('/local/<plantilla_id>/')
-@app.route('/local/<plantilla_id>')
-@login_requerido
-def preview_local(plantilla_id):
-    if not plantilla_autorizada(plantilla_id):
-        return redirect(url_for('dashboard'))
-    schema    = cargar_schema()
-    plantilla = schema['plantillas'].get(plantilla_id)
-    if not plantilla:
-        return 'Plantilla no encontrada', 404
-    # ruta es relativa a admin/, e.g. '../index.html' → plantillas-web/index.html
-    ruta_abs   = os.path.normpath(os.path.join(BASE, 'admin', plantilla['ruta']))
-    directorio = os.path.dirname(ruta_abs)
-    return send_from_directory(directorio, os.path.basename(ruta_abs))
-
-
-@app.route('/local/<plantilla_id>/<path:filename>')
-@login_requerido
-def site_asset(plantilla_id, filename):
-    """Sirve CSS/JS/imágenes relativos a la carpeta de la plantilla."""
-    if not plantilla_autorizada(plantilla_id):
-        return 'No autorizado', 403
-    schema    = cargar_schema()
-    plantilla = schema['plantillas'].get(plantilla_id)
-    if not plantilla:
-        return 'Plantilla no encontrada', 404
-    ruta_abs   = os.path.normpath(os.path.join(BASE, 'admin', plantilla['ruta']))
-    directorio = os.path.dirname(ruta_abs)
-    return send_from_directory(directorio, filename)
+    flash('El editor legado fue desactivado. Usa el panel de sitios para personalizar tu sitio.', 'warning')
+    return redirect(url_for('mi_panel'))
 
 
 # ── Admin: gestión de clientes ────────────────────────────────────────────────
@@ -1126,10 +943,9 @@ def mi_panel():
 @app.route('/crear-sitio', methods=['GET', 'POST'])
 @usuario_requerido
 def crear_sitio():
-    # Filtrar plantillas según el plan del usuario
-    usuario_actual = obtener_usuario_por_id(session['uid'])
-    plan_tipo = usuario_actual['plan'] if usuario_actual else 'landing'
-    plantillas = plantillas_por_plan(plan_tipo) if plan_tipo else listar_plantillas_activas()
+    # Mostrar todas las plantillas activas en el selector del portal.
+    # El filtro por plan se está ocultando plantillas válidas para el usuario.
+    plantillas = listar_plantillas_activas()
 
     if request.method == 'POST':
         plantilla_id  = request.form.get('plantilla_id', '').strip()
@@ -1569,11 +1385,210 @@ def upload_sitio(sitio_id):
 _PAGINAS_WEB5 = ['nosotros', 'servicios', 'proyectos', 'contacto']
 
 
+def _template_existe(ruta_template: str) -> bool:
+    """Comprueba si existe un template en el árbol de templates."""
+    return os.path.exists(os.path.join(app.root_path, 'templates', ruta_template))
+
+
+def _resolver_template_sitio(sitio, pagina='inicio'):
+    """Resuelve qué template debe renderizar un sitio según su plantilla y la página."""
+    clave = sitio['plantilla_clave']
+    formato = sitio['formato'] if 'formato' in sitio.keys() else 'web5'
+
+    if formato == 'landing':
+        if pagina == 'inicio':
+            ruta = f'sites/{clave}/index.html'
+            if _template_existe(ruta):
+                return ruta
+            return 'sites/_universal/index.html'
+
+        ruta = f'sites/{clave}/{pagina}.html'
+        if _template_existe(ruta):
+            return ruta
+        return 'sites/_universal/index.html'
+
+    if pagina == 'inicio':
+        ruta = f'sites/{clave}/index.html'
+        if _template_existe(ruta):
+            return ruta
+        return 'sites/empresa/inicio.html'
+
+    ruta = f'sites/{clave}/{pagina}.html'
+    if _template_existe(ruta):
+        return ruta
+    return f'sites/empresa/{pagina}.html'
+
+
+def _leer_json_dict(valor):
+    """Normaliza valores JSON guardados en DB a un dict seguro."""
+    if isinstance(valor, dict):
+        return valor
+    if not valor:
+        return {}
+    if isinstance(valor, str):
+        try:
+            parsed = json.loads(valor)
+        except Exception:
+            return {}
+        return parsed if isinstance(parsed, dict) else {}
+    return {}
+
+
+def _defaults_desde_payload(payload: dict, layout=None):
+    """Convierte el payload del scraper en defaults JSON consumibles por el render."""
+    defaults = {}
+    for clave, valor in (
+        ('color_primario', payload.get('color_primario')),
+        ('color_acento', payload.get('color_acento')),
+        ('color_footer_bg', payload.get('color_footer')),
+        ('fuente_titulos', payload.get('fuente_titulos')),
+        ('fuente_cuerpo', payload.get('fuente_cuerpo')),
+        ('hero_titulo', payload.get('hero_titulo')),
+        ('hero_subtitulo', payload.get('hero_subtitulo')),
+        ('hero_cta_texto', payload.get('hero_cta_texto')),
+        ('hero_cta_href', payload.get('hero_cta_href')),
+        ('menu_servicios', payload.get('menu_servicios')),
+        ('menu_proyectos', payload.get('menu_proyectos')),
+        ('menu_equipo', payload.get('menu_equipo')),
+        ('menu_contacto', payload.get('menu_contacto')),
+    ):
+        if valor:
+            defaults[clave] = valor
+    if layout:
+        defaults['layout'] = layout
+    return defaults
+
+
+def _blueprint_to_layout(blueprint=None, fallback=None):
+    """Convierte el blueprint detectado a layout JSON para el render."""
+    layout = fallback if isinstance(fallback, dict) else {
+        'hero': 'split',
+        'services': 'grid',
+        'projects': 'masonry',
+        'team': 'cards',
+    }
+    if isinstance(blueprint, dict):
+        _layout_extra = blueprint.get('layout')
+        if isinstance(_layout_extra, dict):
+            layout = {**layout, **_layout_extra}
+
+    def _normalizar_item(item):
+        if isinstance(item, str):
+            return item.strip().lower()
+        if isinstance(item, dict):
+            for clave in ('tipo', 'nombre', 'section', 'slug', 'id'):
+                valor = item.get(clave)
+                if isinstance(valor, str) and valor.strip():
+                    return valor.strip().lower()
+        return ''
+
+    secciones = []
+    if isinstance(blueprint, dict):
+        for clave in ('secciones', 'sections', 'detected_sections', 'detectedSections', 'items'):
+            valor = blueprint.get(clave)
+            if isinstance(valor, list):
+                secciones = [_normalizar_item(item) for item in valor]
+                break
+    elif isinstance(blueprint, (list, tuple)):
+        secciones = [_normalizar_item(item) for item in blueprint]
+
+    texto = ' '.join([s for s in secciones if s]).lower()
+
+    if any(token in texto for token in ('fullscreen', 'full', 'hero_fullscreen', 'slider')):
+        layout['hero'] = 'fullscreen'
+    elif any(token in texto for token in ('gradient', 'gradiente')):
+        layout['hero'] = 'gradient'
+    elif any(token in texto for token in ('dark', 'oscuro')):
+        layout['hero'] = 'dark'
+    elif any(token in texto for token in ('minimal', 'simple', 'clean')):
+        layout['hero'] = 'minimal'
+    elif any(token in texto for token in ('split', 'dos columnas', 'two column')):
+        layout['hero'] = 'split'
+
+    if any(token in texto for token in ('services_menu', 'menu', 'menu_servicios')):
+        layout['services'] = 'menu'
+    elif any(token in texto for token in ('services_list', 'listado', 'features_strip')):
+        layout['services'] = 'list'
+    elif any(token in texto for token in ('services_cards', 'cards')):
+        layout['services'] = 'cards'
+
+    if any(token in texto for token in ('projects_masonry', 'masonry', 'portfolio', 'galeria')):
+        layout['projects'] = 'masonry'
+    elif any(token in texto for token in ('projects_carousel', 'carousel', 'slider')):
+        layout['projects'] = 'carousel'
+
+    if any(token in texto for token in ('team_grid', 'grid', 'equipo')):
+        layout['team'] = 'grid'
+    elif any(token in texto for token in ('team_minimal', 'minimal')):
+        layout['team'] = 'minimal'
+
+    return layout
+
+
+def _blueprint_to_defaults(payload=None, layout=None, blueprint=None, componentes=None):
+    """Genera defaults JSON ricos a partir del blueprint y componentes opcionales."""
+    payload = payload if isinstance(payload, dict) else {}
+    componentes = componentes if isinstance(componentes, dict) else {}
+
+    secciones = []
+    if isinstance(blueprint, dict):
+        for clave in ('secciones', 'sections', 'detected_sections', 'detectedSections', 'items'):
+            valor = blueprint.get(clave)
+            if isinstance(valor, list):
+                secciones = [item.strip().lower() for item in valor if isinstance(item, str) and item.strip()]
+                break
+    elif isinstance(blueprint, (list, tuple)):
+        secciones = [item.strip().lower() for item in blueprint if isinstance(item, str) and item.strip()]
+
+    defaults = {
+        'color_primario': payload.get('color_primario') or payload.get('color_primary') or '#185FA5',
+        'color_acento': payload.get('color_acento') or payload.get('color_accent') or '#0088CC',
+        'color_footer_bg': payload.get('color_footer') or payload.get('color_secondary') or '#0A0F1E',
+        'color_navbar_bg': payload.get('color_navbar_bg') or payload.get('color_navbar') or payload.get('color_primario') or '#185FA5',
+        'color_texto': payload.get('color_texto') or '#1f2937',
+        'fuente_titulos': payload.get('fuente_titulos') or payload.get('font_heading') or 'system-ui, sans-serif',
+        'fuente_cuerpo': payload.get('fuente_cuerpo') or payload.get('font_body') or 'system-ui, sans-serif',
+        'hero_titulo': payload.get('hero_titulo') or payload.get('titulo_principal') or payload.get('nombre') or 'Mi plantilla',
+        'hero_subtitulo': payload.get('hero_subtitulo') or payload.get('subtitulo_principal') or 'Soluciones profesionales para tu negocio.',
+        'hero_cta_texto': payload.get('hero_cta_texto') or 'Contáctanos',
+        'hero_cta_href': payload.get('hero_cta_href') or '#contacto',
+        'hero_eyebrow': payload.get('hero_eyebrow') or payload.get('eyebrow') or '',
+        'menu_servicios': payload.get('menu_servicios') or 'Servicios',
+        'menu_proyectos': payload.get('menu_proyectos') or 'Proyectos',
+        'menu_equipo': payload.get('menu_equipo') or 'Equipo',
+        'menu_contacto': payload.get('menu_contacto') or 'Contacto',
+        'servicios_descripcion': payload.get('servicios_descripcion') or 'Servicios adaptados a tus necesidades.',
+        'proyectos_descripcion': payload.get('proyectos_descripcion') or 'Una muestra de nuestros trabajos más destacados.',
+        'equipo_descripcion': payload.get('equipo_descripcion') or 'Conoce al equipo que hace posible tu proyecto.',
+        'nosotros_descripcion': payload.get('nosotros_descripcion') or payload.get('descripcion') or '',
+        'comp_whatsapp': '1' if componentes.get('whatsapp') or componentes.get('whatsApp') else '0',
+        'comp_newsletter': '1' if componentes.get('newsletter') else '0',
+        'comp_redes': '1' if componentes.get('redes') or componentes.get('social') else '0',
+        'comp_topbar': '1' if componentes.get('topbar') else '0',
+        'comp_citas': '1' if componentes.get('citas') else '0',
+        'hero_tipo': payload.get('hero_tipo') or (blueprint.get('hero_tipo') if isinstance(blueprint, dict) else None) or (layout.get('hero') if isinstance(layout, dict) else 'static'),
+        '_detected_sections': json.dumps(secciones, ensure_ascii=False),
+    }
+
+    if layout:
+        defaults['layout'] = layout
+
+    return defaults
+
+
 def _contexto_sitio(sitio):
     """Carga config + secciones comunes para cualquier sitio."""
     sid = sitio['id']
+    _estilos = get_estilos(sitio.get('plantilla_id')) if sitio.get('plantilla_id') else {}
+    _defaults = _leer_json_dict(_estilos.get('defaults_json'))
+    _config = dict(get_config_sitio(sid))
+    for _clave, _valor in _defaults.items():
+        if _config.get(_clave) in (None, ''):
+            _config[_clave] = _valor
     return {
-        'config':   get_config_sitio(sid),
+        'config':   _config,
+        'defaults': _defaults,
+        'layout':   _leer_json_dict(_estilos.get('layout_json')),
         'secciones': {
             'servicios':   get_secciones_contenido(sid, 'servicios'),
             'proyectos':   get_secciones_contenido(sid, 'proyectos'),
@@ -1587,30 +1602,11 @@ def _contexto_sitio(sitio):
 @app.route('/s/<slug>/')
 @app.route('/s/<slug>')
 def ver_sitio(slug):
-    import os as _os
     sitio = obtener_sitio_por_slug(slug)
     if not sitio:
         abort(404)
     ctx = _contexto_sitio(sitio)
-    clave  = sitio['plantilla_clave']
-    # Formato: 'landing' = una sola página propia, 'web5' = multi-página empresa
-    formato = sitio['formato'] if 'formato' in sitio.keys() else 'web5'
-    if formato == 'landing':
-        # Verificar si existe un template específico para esta plantilla
-        _tmpl_especifico = f'sites/{clave}/index.html'
-        _tmpl_path = _os.path.join(app.root_path, 'templates', _tmpl_especifico)
-        if _os.path.exists(_tmpl_path):
-            template = _tmpl_especifico
-        else:
-            # Usar template universal con layout dinámico
-            template = 'sites/_universal/index.html'
-            from db import get_layout
-            _pobj = obtener_plantilla_por_id(sitio['plantilla_id']) if sitio.get('plantilla_id') else None
-            _layout = get_layout(_pobj['id']) if _pobj else {}
-            ctx['layout'] = _layout
-    else:
-        # Web completa (web5): sistema multi-página basado en empresa
-        template = 'sites/empresa/inicio.html'
+    template = _resolver_template_sitio(sitio, 'inicio')
     return render_template(template, sitio=sitio, pagina_activa='inicio', **ctx)
 
 
@@ -1621,19 +1617,14 @@ def ver_pagina(slug, pagina):
     sitio = obtener_sitio_por_slug(slug)
     if not sitio:
         abort(404)
-    # Usar el formato real del sitio (no el tipo de la plantilla)
     _formato = sitio['formato'] if 'formato' in sitio.keys() else 'web5'
-    # Sitios landing/universal: redirigir sub-páginas a la sección con ancla
     if _formato != 'web5':
         return redirect(f'/s/{slug}/#{pagina}', 302)
-    # Sitios web5: servir página dedicada
     if pagina not in _PAGINAS_WEB5:
         abort(404)
     ctx = _contexto_sitio(sitio)
-    return render_template(
-        f'sites/empresa/{pagina}.html',
-        sitio=sitio, pagina_activa=pagina, **ctx
-    )
+    template = _resolver_template_sitio(sitio, pagina)
+    return render_template(template, sitio=sitio, pagina_activa=pagina, **ctx)
 
 
 @app.route('/s/<slug>/enviar-contacto', methods=['POST'])
@@ -1925,10 +1916,14 @@ def admin_scraper_crear_url():
     import re as _re
     d = request.get_json(force=True)
 
-    nombre   = d.get('nombre', '').strip()
-    clave    = d.get('clave', '').strip().lower()
-    tipo     = d.get('tipo', 'landing')
-    layout   = d.get('layout', {'hero': 'split', 'services': 'grid', 'projects': 'masonry', 'team': 'cards'})
+    nombre = d.get('nombre', '').strip()
+    clave = d.get('clave', '').strip().lower()
+    tipo = d.get('tipo', 'landing')
+
+    blueprint = d.get('blueprint')
+    componentes = d.get('componentes') or {}
+    layout = _blueprint_to_layout(blueprint, d.get('layout'))
+    defaults = _blueprint_to_defaults(d, layout, blueprint, componentes)
 
     if not nombre or not clave:
         return jsonify(ok=False, error='Nombre y clave son obligatorios.'), 400
@@ -1936,18 +1931,18 @@ def admin_scraper_crear_url():
         return jsonify(ok=False, error='Clave no válida: solo minúsculas, números, guiones.'), 400
 
     try:
-        pid = crear_plantilla(clave, nombre, tipo, f'Creada desde scraper URL', '', '{}')
+        pid = crear_plantilla(clave, nombre, tipo, 'Creada desde scraper URL', '', '{}')
     except Exception:
         return jsonify(ok=False, error=f'La clave "{clave}" ya existe.'), 409
 
     campos_estilos = {
-        'color_primary':   d.get('color_primario', '#185FA5'),
-        'color_accent':    d.get('color_acento',   '#0088CC'),
-        'color_secondary': d.get('color_footer',   '#0A0F1E'),
-        'font_heading':    d.get('fuente_titulos', 'system-ui, sans-serif'),
-        'font_body':       d.get('fuente_cuerpo',  'system-ui, sans-serif'),
+        'color_primary':   defaults.get('color_primario', '#185FA5'),
+        'color_accent':    defaults.get('color_acento', '#0088CC'),
+        'color_secondary': defaults.get('color_footer_bg', '#0A0F1E'),
+        'font_heading':    defaults.get('fuente_titulos', 'system-ui, sans-serif'),
+        'font_body':       defaults.get('fuente_cuerpo', 'system-ui, sans-serif'),
         'layout_json':     json.dumps(layout, ensure_ascii=False),
-        'defaults_json':   '{}',
+        'defaults_json':   json.dumps(defaults, ensure_ascii=False),
     }
     upsert_estilos(pid, campos_estilos)
 
@@ -1974,6 +1969,14 @@ def admin_scraper_crear_categoria():
         return jsonify(ok=False, error='Clave no válida: solo minúsculas, números, guiones.'), 400
 
     cat = _CATEGORIAS[categoria]
+    layout = cat['layout']
+    defaults = _defaults_desde_payload({
+        'color_primario': d.get('color_primario', cat['color_primary']),
+        'color_acento':   d.get('color_acento',   cat['color_accent']),
+        'color_footer':   d.get('color_footer',   cat['color_secondary']),
+        'fuente_titulos': cat['font_heading'],
+        'fuente_cuerpo':  cat['font_body'],
+    }, layout)
 
     try:
         pid = crear_plantilla(clave, nombre, tipo, f'Plantilla {categoria}', '', '{}')
@@ -1987,8 +1990,8 @@ def admin_scraper_crear_categoria():
         'color_secondary': d.get('color_footer',   cat['color_secondary']),
         'font_heading':    cat['font_heading'],
         'font_body':       cat['font_body'],
-        'layout_json':     json.dumps(cat['layout'], ensure_ascii=False),
-        'defaults_json':   '{}',
+        'layout_json':     json.dumps(layout, ensure_ascii=False),
+        'defaults_json':   json.dumps(defaults, ensure_ascii=False),
     }
     upsert_estilos(pid, campos_estilos)
 
