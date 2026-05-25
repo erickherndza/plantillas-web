@@ -1,0 +1,1196 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Scraper / Categoría · Panel Admin</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='admin.css') }}"/>
+  <style>
+    /* ── Tabs ─────────────────────────────────────────────────────── */
+    .sc-tabs { display:flex; gap:0; border-bottom:2px solid #e2e8f0; margin-bottom:32px; }
+    .sc-tab  { padding:12px 28px; font-weight:600; font-size:.95rem; cursor:pointer;
+               border-bottom:3px solid transparent; margin-bottom:-2px; color:#64748b;
+               transition:color .2s,border-color .2s; background:none; border-top:none;
+               border-left:none; border-right:none; }
+    .sc-tab.active { color:#7c3aed; border-bottom-color:#7c3aed; }
+    .sc-panel { display:none; }
+    .sc-panel.active { display:block; }
+
+    /* ── Swatches ─────────────────────────────────────────────────── */
+    .swatch-row { display:flex; flex-wrap:wrap; gap:10px; margin-top:12px; }
+    .swatch { width:48px; height:48px; border-radius:10px; cursor:pointer; border:3px solid transparent;
+              box-shadow:0 2px 8px rgba(0,0,0,.15); transition:transform .15s,border-color .15s;
+              position:relative; }
+    .swatch:hover { transform:scale(1.12); }
+    .swatch.selected { border-color:#7c3aed; }
+    .swatch-hex { position:absolute; bottom:-22px; left:50%; transform:translateX(-50%);
+                  font-size:.65rem; color:#64748b; white-space:nowrap; }
+
+    /* ── Categoría grid ───────────────────────────────────────────── */
+    .cat-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(180px,1fr)); gap:16px; margin-bottom:32px; }
+    .cat-card { background:#fff; border:2px solid #e2e8f0; border-radius:14px; padding:24px 16px;
+                text-align:center; cursor:pointer; transition:border-color .2s,box-shadow .2s,transform .15s; }
+    .cat-card:hover { border-color:#7c3aed; box-shadow:0 4px 20px rgba(124,58,237,.15); transform:translateY(-2px); }
+    .cat-card.selected { border-color:#7c3aed; background:#faf5ff; }
+    .cat-icon { font-size:2.4rem; margin-bottom:10px; }
+    .cat-name { font-weight:700; font-size:.9rem; color:#1e293b; }
+    .cat-hint { font-size:.75rem; color:#64748b; margin-top:4px; }
+
+    /* ── Paleta preview ───────────────────────────────────────────── */
+    .palette-preview { display:flex; gap:8px; margin-top:12px; }
+    .pal-dot { width:32px; height:32px; border-radius:50%; border:2px solid rgba(0,0,0,.1); }
+
+    /* ── Shared form ──────────────────────────────────────────────── */
+    .sc-form-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px 24px; }
+    @media(max-width:600px){ .sc-form-grid { grid-template-columns:1fr; } }
+    .sc-label { font-size:.82rem; font-weight:600; color:#374151; display:block; margin-bottom:5px; }
+    .sc-input  { width:100%; padding:9px 12px; border:1.5px solid #e2e8f0; border-radius:8px;
+                 font-size:.92rem; color:#1e293b; background:#fff; outline:none;
+                 transition:border-color .2s; box-sizing:border-box; }
+    .sc-input:focus { border-color:#7c3aed; }
+    .color-row { display:flex; align-items:center; gap:8px; }
+    .color-row input[type=color] { width:44px; height:36px; padding:2px; border:1.5px solid #e2e8f0;
+                                   border-radius:8px; cursor:pointer; }
+    .color-row input[type=text]  { flex:1; }
+
+    /* ── Result boxes ─────────────────────────────────────────────── */
+    .result-box { background:#f8fafc; border:1.5px solid #e2e8f0; border-radius:12px; padding:20px; margin-top:20px; }
+    .result-title { font-size:.8rem; font-weight:700; color:#64748b; text-transform:uppercase;
+                    letter-spacing:.06em; margin-bottom:10px; }
+    .font-chip { display:inline-block; background:#ede9fe; color:#6d28d9; border-radius:6px;
+                 padding:4px 12px; font-size:.83rem; font-weight:600; margin:3px; cursor:pointer; }
+    .font-chip.selected { background:#7c3aed; color:#fff; }
+
+    /* ── Blueprint / secciones detectadas ────────────────────────── */
+    .blueprint-grid {
+      display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px;
+    }
+    .bp-section {
+      display: flex; align-items: center; gap: 6px;
+      background: #fff; border: 1.5px solid #c4b5fd;
+      border-radius: 8px; padding: 6px 12px;
+      font-size: .82rem; font-weight: 600; color: #5b21b6;
+      cursor: default;
+    }
+    .bp-section .bp-icon { font-size: 1rem; }
+    .bp-section.opcional {
+      border-color: #e2e8f0; color: #94a3b8;
+      background: #f8fafc;
+    }
+    .bp-section .bp-toggle {
+      width: 16px; height: 16px; border-radius: 50%; border: none;
+      cursor: pointer; font-size: .7rem; display: flex; align-items: center;
+      justify-content: center; background: #ede9fe; color: #7c3aed;
+    }
+    .bp-order {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 20px; height: 20px; background: #7c3aed; color: #fff;
+      border-radius: 50%; font-size: .7rem; font-weight: 700;
+    }
+
+    /* ── Componentes opcionales toggles ──────────────────────────── */
+    .comp-toggles { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px; }
+    .comp-toggle {
+      display: flex; align-items: center; gap: 8px;
+      background: #f8fafc; border: 1.5px solid #e2e8f0;
+      border-radius: 8px; padding: 8px 14px;
+      font-size: .85rem; font-weight: 600; color: #374151;
+      cursor: pointer; transition: border-color .2s, background .2s;
+      user-select: none;
+    }
+    .comp-toggle input[type=checkbox] { accent-color: #7c3aed; width: 16px; height: 16px; cursor: pointer; }
+    .comp-toggle.active { border-color: #7c3aed; background: #faf5ff; color: #5b21b6; }
+
+    /* ── Buttons ──────────────────────────────────────────────────── */
+    .btn-scrape  { background:#0ea5e9; color:#fff; border:none; padding:11px 28px; border-radius:10px;
+                   font-weight:700; font-size:.95rem; cursor:pointer; transition:background .2s; }
+    .btn-scrape:hover { background:#0284c7; }
+    .btn-crear   { background:#7c3aed; color:#fff; border:none; padding:13px 36px; border-radius:10px;
+                   font-weight:700; font-size:1rem; cursor:pointer; margin-top:28px;
+                   transition:background .2s; display:inline-flex; align-items:center; gap:8px; }
+    .btn-crear:hover { background:#6d28d9; }
+    .btn-crear:disabled { background:#a78bfa; cursor:not-allowed; }
+
+    /* ── Spinner ──────────────────────────────────────────────────── */
+    .spinner { display:none; width:18px; height:18px; border:3px solid rgba(255,255,255,.35);
+               border-top-color:#fff; border-radius:50%; animation:spin .7s linear infinite; }
+    @keyframes spin { to { transform:rotate(360deg); } }
+
+    /* ── Alerts ───────────────────────────────────────────────────── */
+    .sc-alert { padding:12px 18px; border-radius:10px; font-size:.9rem; font-weight:500;
+                margin-top:16px; display:none; }
+    .sc-alert-error   { background:#fee2e2; color:#991b1b; border:1px solid #fecaca; }
+    .sc-alert-success { background:#dcfce7; color:#166534; border:1px solid #bbf7d0; }
+    .sc-alert-warning { background:#fef3c7; color:#92400e; border:1px solid #fde68a; }
+  </style>
+</head>
+<body>
+
+<nav class="admin-navbar">
+  <div class="navbar-brand">
+    <span class="logo-mark sm">PW</span>
+    <span class="navbar-title">Plantillas Web RD</span>
+  </div>
+  <div class="navbar-actions">
+    <a href="{{ url_for('admin_plantillas') }}" class="btn-logout" style="margin-right:8px;">← Plantillas</a>
+    <a href="{{ url_for('dashboard') }}" class="btn-logout" style="margin-right:8px;">Dashboard</a>
+    <a href="{{ url_for('logout') }}" class="btn-logout">Cerrar sesión</a>
+  </div>
+</nav>
+
+<main class="admin-main">
+  <div class="page-header" style="margin-bottom:28px;">
+    <h1 class="page-title">🌐 Scraper / Creación por Categoría</h1>
+    <p class="page-subtitle">Genera plantillas nuevas analizando un sitio web o eligiendo una categoría de negocio predefinida.</p>
+  </div>
+
+  <!-- ── Tabs ─────────────────────────────────────────────────────── -->
+  <div class="sc-tabs">
+    <button class="sc-tab active" data-tab="scraper">🔍 Scraper por URL</button>
+    <button class="sc-tab"       data-tab="categoria">🏷️ Por Categoría</button>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════════ -->
+  <!-- TAB 1 — Scraper por URL                                        -->
+  <!-- ══════════════════════════════════════════════════════════════ -->
+  <div class="sc-panel active" id="tab-scraper">
+
+    <div style="display:flex;gap:12px;align-items:flex-end;max-width:700px;flex-wrap:wrap;">
+      <div style="flex:1;">
+        <label class="sc-label" for="url-input">URL del sitio a analizar</label>
+        <input id="url-input" class="sc-input" type="url" placeholder="https://ejemplo.com" autocomplete="off"/>
+      </div>
+      <button class="btn-scrape" id="btn-analizar">
+        <span id="sp-txt">Analizar →</span>
+        <span class="spinner" id="sp-spin"></span>
+      </button>
+    </div>
+
+    <div id="sc-alert-url" class="sc-alert sc-alert-error"></div>
+
+    <!-- Resultados del scraper -->
+    <div id="sc-results" style="display:none;">
+
+      <!-- Badge estilo detectado -->
+      <div id="estilo-badge" style="display:none;background:#ede9fe;color:#5b21b6;padding:8px 14px;border-radius:8px;font-size:.85rem;font-weight:600;margin-bottom:12px;"></div>
+
+      <!-- ── NUEVO: Blueprint de secciones detectadas ────────────── -->
+      <div class="result-box">
+        <div class="result-title">📐 Estructura detectada — secciones en orden</div>
+        <div class="blueprint-grid" id="blueprint-container">
+          <span style="color:#94a3b8;font-size:.85rem;">Analizando…</span>
+        </div>
+      </div>
+
+      <!-- ── NUEVO: Componentes opcionales ──────────────────────── -->
+      <div class="result-box" style="margin-top:16px;">
+        <div class="result-title">⚙️ Componentes opcionales</div>
+        <p style="font-size:.82rem;color:#64748b;margin:0 0 8px;">Activa o desactiva según lo que necesita la plantilla:</p>
+        <div class="comp-toggles">
+          <label class="comp-toggle" id="toggle-whatsapp">
+            <input type="checkbox" id="comp-whatsapp" checked>
+            💬 Botón WhatsApp flotante
+          </label>
+          <label class="comp-toggle active" id="toggle-newsletter">
+            <input type="checkbox" id="comp-newsletter" checked>
+            📧 Sección newsletter
+          </label>
+          <label class="comp-toggle active" id="toggle-social">
+            <input type="checkbox" id="comp-social" checked>
+            🔗 Iconos redes sociales
+          </label>
+          <label class="comp-toggle" id="toggle-topbar">
+            <input type="checkbox" id="comp-topbar">
+            📌 Top bar de contacto
+          </label>
+          <label class="comp-toggle" id="toggle-citas">
+            <input type="checkbox" id="comp-citas">
+            📅 Sistema de citas
+          </label>
+        </div>
+        <!-- Hero type -->
+        <div style="margin-top:14px;">
+          <label class="sc-label">Tipo de hero</label>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px;">
+            <label class="comp-toggle active" style="cursor:pointer;">
+              <input type="radio" name="hero-type" value="static" checked> 🖼 Hero estático
+            </label>
+            <label class="comp-toggle" style="cursor:pointer;">
+              <input type="radio" name="hero-type" value="slider"> 🎞 Slider automático
+            </label>
+            <label class="comp-toggle" style="cursor:pointer;">
+              <input type="radio" name="hero-type" value="carousel"> 🎠 Carrusel de cards
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <!-- Colores detectados -->
+      <div class="result-box" style="margin-top:16px;">
+        <div class="result-title">Colores detectados — los enmarcados fueron auto-asignados a su rol</div>
+        <div class="swatch-row" id="swatch-container"></div>
+        <p style="margin:8px 0 0;font-size:.8rem;color:#6b7280;">Haz clic en cualquier swatch para reasignarlo al rol activo (Primario → Acento → Footer)</p>
+      </div>
+
+      <!-- Fuentes detectadas -->
+      <div class="result-box" style="margin-top:16px;">
+        <div class="result-title">Fuentes detectadas</div>
+        <div id="font-container" style="margin-top:4px;"></div>
+      </div>
+
+      <!-- Meta del sitio -->
+      <div class="result-box" style="margin-top:16px;">
+        <div class="result-title">Información del sitio</div>
+        <p style="margin:0;font-size:.9rem;color:#374151;"><strong>Título:</strong> <span id="meta-title">—</span></p>
+        <p style="margin:6px 0 0;font-size:.9rem;color:#374151;"><strong>Descripción:</strong> <span id="meta-desc">—</span></p>
+      </div>
+
+      <!-- Formulario para crear plantilla -->
+      <div style="margin-top:28px;padding-top:24px;border-top:2px solid #e2e8f0;">
+        <h3 style="font-size:1.05rem;font-weight:700;color:#1e293b;margin:0 0 20px;">Crear plantilla desde análisis</h3>
+        <div class="sc-form-grid">
+          <div>
+            <label class="sc-label">Nombre de la plantilla</label>
+            <input id="url-nombre" class="sc-input" type="text" placeholder="Mi plantilla"/>
+          </div>
+          <div>
+            <label class="sc-label">Clave única</label>
+            <input id="url-clave" class="sc-input" type="text" placeholder="mi-plantilla"/>
+          </div>
+          <div>
+            <label class="sc-label">Color primario</label>
+            <div class="color-row">
+              <input type="color" id="url-cp-picker" value="#185FA5"/>
+              <input id="url-cp" class="sc-input" type="text" placeholder="#185FA5" value="#185FA5"/>
+            </div>
+          </div>
+          <div>
+            <label class="sc-label">Color acento</label>
+            <div class="color-row">
+              <input type="color" id="url-ca-picker" value="#0088CC"/>
+              <input id="url-ca" class="sc-input" type="text" placeholder="#0088CC" value="#0088CC"/>
+            </div>
+          </div>
+          <div>
+            <label class="sc-label">Color footer / dark</label>
+            <div class="color-row">
+              <input type="color" id="url-cf-picker" value="#0A0F1E"/>
+              <input id="url-cf" class="sc-input" type="text" placeholder="#0A0F1E" value="#0A0F1E"/>
+            </div>
+          </div>
+          <div>
+            <label class="sc-label">Tipo</label>
+            <select id="url-tipo" class="sc-input">
+              <option value="landing">Landing</option>
+              <option value="web5">Web5</option>
+            </select>
+          </div>
+          <div>
+            <label class="sc-label">Fuente títulos</label>
+            <input id="url-fh" class="sc-input" type="text" placeholder="Montserrat" value="system-ui"/>
+          </div>
+          <div>
+            <label class="sc-label">Fuente cuerpo</label>
+            <input id="url-fb" class="sc-input" type="text" placeholder="Open Sans" value="system-ui"/>
+          </div>
+        </div>
+
+        <div id="sc-alert-crear-url" class="sc-alert"></div>
+
+        <button class="btn-crear" id="btn-crear-url">
+          <span>✦ Crear plantilla</span>
+          <span class="spinner" id="sp-crear-url"></span>
+        </button>
+      </div>
+    </div><!-- /sc-results -->
+  </div><!-- /tab-scraper -->
+
+
+  <!-- ══════════════════════════════════════════════════════════════ -->
+  <!-- TAB 2 — Por Categoría                                          -->
+  <!-- ══════════════════════════════════════════════════════════════ -->
+  <div class="sc-panel" id="tab-categoria">
+
+    <p style="color:#64748b;font-size:.95rem;margin-bottom:20px;">Elige la categoría de negocio — los colores, fuentes y layout se pre-configuran automáticamente.</p>
+
+    <div class="cat-grid">
+      <div class="cat-card" data-cat="clinica">
+        <div class="cat-icon">🏥</div>
+        <div class="cat-name">Clínica / Salud</div>
+        <div class="cat-hint">Azul profesional · Lista servicios</div>
+        <div class="palette-preview" style="justify-content:center;">
+          <div class="pal-dot" style="background:#0077B6;"></div>
+          <div class="pal-dot" style="background:#00B4D8;"></div>
+          <div class="pal-dot" style="background:#03045E;"></div>
+        </div>
+      </div>
+      <div class="cat-card" data-cat="restaurante">
+        <div class="cat-icon">🍽️</div>
+        <div class="cat-name">Restaurante</div>
+        <div class="cat-hint">Cálidos · Carta de menú</div>
+        <div class="palette-preview" style="justify-content:center;">
+          <div class="pal-dot" style="background:#C1440E;"></div>
+          <div class="pal-dot" style="background:#F4A261;"></div>
+          <div class="pal-dot" style="background:#1A0A00;"></div>
+        </div>
+      </div>
+      <div class="cat-card" data-cat="abogados">
+        <div class="cat-icon">⚖️</div>
+        <div class="cat-name">Abogados</div>
+        <div class="cat-hint">Navy / Dorado · Minimal</div>
+        <div class="palette-preview" style="justify-content:center;">
+          <div class="pal-dot" style="background:#1B2A4A;"></div>
+          <div class="pal-dot" style="background:#C9A84C;"></div>
+          <div class="pal-dot" style="background:#0D1B2A;"></div>
+        </div>
+      </div>
+      <div class="cat-card" data-cat="creativo">
+        <div class="cat-icon">🎨</div>
+        <div class="cat-name">Creativo / Diseño</div>
+        <div class="cat-hint">Bold · Masonry projects</div>
+        <div class="palette-preview" style="justify-content:center;">
+          <div class="pal-dot" style="background:#6D28D9;"></div>
+          <div class="pal-dot" style="background:#F59E0B;"></div>
+          <div class="pal-dot" style="background:#1F1135;"></div>
+        </div>
+      </div>
+      <div class="cat-card" data-cat="educacion">
+        <div class="cat-icon">🏫</div>
+        <div class="cat-name">Educación</div>
+        <div class="cat-hint">Naranja / Azul · Cards</div>
+        <div class="palette-preview" style="justify-content:center;">
+          <div class="pal-dot" style="background:#F97316;"></div>
+          <div class="pal-dot" style="background:#3B82F6;"></div>
+          <div class="pal-dot" style="background:#1E3A5F;"></div>
+        </div>
+      </div>
+      <div class="cat-card" data-cat="tecnologia">
+        <div class="cat-icon">💻</div>
+        <div class="cat-name">Tecnología</div>
+        <div class="cat-hint">Cyan / Dark hero · Grid</div>
+        <div class="palette-preview" style="justify-content:center;">
+          <div class="pal-dot" style="background:#06B6D4;"></div>
+          <div class="pal-dot" style="background:#8B5CF6;"></div>
+          <div class="pal-dot" style="background:#030712;"></div>
+        </div>
+      </div>
+      <div class="cat-card" data-cat="inmobiliaria">
+        <div class="cat-icon">🏠</div>
+        <div class="cat-name">Inmobiliaria</div>
+        <div class="cat-hint">Neutros · Masonry · Full hero</div>
+        <div class="palette-preview" style="justify-content:center;">
+          <div class="pal-dot" style="background:#78716C;"></div>
+          <div class="pal-dot" style="background:#D97706;"></div>
+          <div class="pal-dot" style="background:#1C1917;"></div>
+        </div>
+      </div>
+      <div class="cat-card" data-cat="belleza">
+        <div class="cat-icon">💄</div>
+        <div class="cat-name">Belleza / Spa</div>
+        <div class="cat-hint">Rosa / Dorado · Gradient hero</div>
+        <div class="palette-preview" style="justify-content:center;">
+          <div class="pal-dot" style="background:#DB2777;"></div>
+          <div class="pal-dot" style="background:#F59E0B;"></div>
+          <div class="pal-dot" style="background:#4A0E2A;"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Formulario categoría -->
+    <div id="cat-form-wrap" style="display:none;">
+      <div style="background:#faf5ff;border:2px solid #ede9fe;border-radius:14px;padding:28px;">
+        <h3 style="margin:0 0 4px;font-size:1.05rem;color:#1e293b;font-weight:700;">
+          <span id="cat-form-icon"></span> <span id="cat-form-title">Categoría seleccionada</span>
+        </h3>
+        <p id="cat-form-hint" style="margin:0 0 24px;font-size:.85rem;color:#7c3aed;font-weight:500;"></p>
+
+        <div class="sc-form-grid">
+          <div>
+            <label class="sc-label">Nombre de la plantilla</label>
+            <input id="cat-nombre" class="sc-input" type="text"/>
+          </div>
+          <div>
+            <label class="sc-label">Clave única</label>
+            <input id="cat-clave" class="sc-input" type="text"/>
+          </div>
+          <div>
+            <label class="sc-label">Color primario</label>
+            <div class="color-row">
+              <input type="color" id="cat-cp-picker"/>
+              <input id="cat-cp" class="sc-input" type="text"/>
+            </div>
+          </div>
+          <div>
+            <label class="sc-label">Color acento</label>
+            <div class="color-row">
+              <input type="color" id="cat-ca-picker"/>
+              <input id="cat-ca" class="sc-input" type="text"/>
+            </div>
+          </div>
+          <div>
+            <label class="sc-label">Color footer / dark</label>
+            <div class="color-row">
+              <input type="color" id="cat-cf-picker"/>
+              <input id="cat-cf" class="sc-input" type="text"/>
+            </div>
+          </div>
+          <div>
+            <label class="sc-label">Tipo</label>
+            <select id="cat-tipo" class="sc-input">
+              <option value="landing">Landing</option>
+              <option value="web5">Web5</option>
+            </select>
+          </div>
+        </div>
+
+        <div id="sc-alert-crear-cat" class="sc-alert"></div>
+
+        <button class="btn-crear" id="btn-crear-cat">
+          <span>✦ Crear plantilla</span>
+          <span class="spinner" id="sp-crear-cat"></span>
+        </button>
+      </div>
+    </div>
+
+  </div><!-- /tab-categoria -->
+
+</main>
+
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<!-- JavaScript                                                          -->
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<script>
+/* ── Tabs ────────────────────────────────────────────────────────────── */
+document.querySelectorAll('.sc-tab').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.sc-tab').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.sc-panel').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+  });
+});
+
+/* ── Helpers ─────────────────────────────────────────────────────────── */
+function showAlert(id, msg, type='error'){
+  const el = document.getElementById(id);
+  el.textContent = msg;
+  el.className = 'sc-alert sc-alert-' + type;
+  el.style.display = 'block';
+}
+function hideAlert(id){ document.getElementById(id).style.display = 'none'; }
+
+function setSpinner(txtId, spinId, loading){
+  document.getElementById(txtId).style.display = loading ? 'none' : '';
+  document.getElementById(spinId).style.display = loading ? 'inline-block' : 'none';
+}
+
+function syncColorPicker(pickerId, textId){
+  const picker = document.getElementById(pickerId);
+  const text   = document.getElementById(textId);
+  picker.addEventListener('input', () => text.value = picker.value);
+  text.addEventListener('input', () => {
+    if (/^#[0-9a-fA-F]{6}$/.test(text.value)) picker.value = text.value;
+  });
+}
+syncColorPicker('url-cp-picker','url-cp');
+syncColorPicker('url-ca-picker','url-ca');
+syncColorPicker('url-cf-picker','url-cf');
+syncColorPicker('cat-cp-picker','cat-cp');
+syncColorPicker('cat-ca-picker','cat-ca');
+syncColorPicker('cat-cf-picker','cat-cf');
+
+/* auto-slug desde nombre */
+function autoSlug(nameId, slugId){
+  document.getElementById(nameId).addEventListener('input', function(){
+    const slug = this.value.toLowerCase()
+      .normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+      .replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'').slice(0,30);
+    const slugEl = document.getElementById(slugId);
+    if (!slugEl._touched) slugEl.value = slug;
+  });
+  document.getElementById(slugId).addEventListener('input', function(){ this._touched = true; });
+}
+autoSlug('url-nombre','url-clave');
+autoSlug('cat-nombre','cat-clave');
+
+/* ── Toggles de componentes opcionales ───────────────────────────────── */
+document.querySelectorAll('.comp-toggle input[type=checkbox]').forEach(cb => {
+  cb.addEventListener('change', function(){
+    this.closest('.comp-toggle').classList.toggle('active', this.checked);
+  });
+});
+document.querySelectorAll('.comp-toggle input[type=radio]').forEach(r => {
+  r.addEventListener('change', function(){
+    document.querySelectorAll('input[name="hero-type"]').forEach(rb => {
+      rb.closest('.comp-toggle').classList.toggle('active', rb.checked);
+    });
+  });
+});
+
+/* ── SCRAPER — extraer colores del HTML ──────────────────────────────── */
+function esColorNoGris(hex){
+  const r = parseInt(hex.slice(1,3),16);
+  const g = parseInt(hex.slice(3,5),16);
+  const b = parseInt(hex.slice(5,7),16);
+  const max = Math.max(r,g,b), min = Math.min(r,g,b);
+  return (max - min) > 30;
+}
+
+/* ── Fetch con fallback entre 3 proxies CORS ─────────────────────────── */
+async function fetchConFallback(url) {
+  const proxies = [
+    async (u) => {
+      const r = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(u)}`, { signal: AbortSignal.timeout(12000) });
+      if (!r.ok) throw new Error('allorigins ' + r.status);
+      return (await r.json()).contents || '';
+    },
+    async (u) => {
+      const r = await fetch(`https://corsproxy.io/?url=${encodeURIComponent(u)}`, { signal: AbortSignal.timeout(12000) });
+      if (!r.ok) throw new Error('corsproxy ' + r.status);
+      return await r.text();
+    },
+    async (u) => {
+      const r = await fetch(`https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(u)}`, { signal: AbortSignal.timeout(12000) });
+      if (!r.ok) throw new Error('codetabs ' + r.status);
+      return await r.text();
+    },
+  ];
+  let lastErr;
+  for (let i = 0; i < proxies.length; i++) {
+    try {
+      const html = await proxies[i](url);
+      if (html && html.length > 100) return html;
+    } catch(e) { lastErr = e; console.warn(`Proxy ${i+1} falló:`, e.message); }
+  }
+  throw new Error('Todos los proxies fallaron. ' + (lastErr?.message || ''));
+}
+
+function extraerUrlsCSS(html, baseUrl) {
+  const doc = new DOMParser().parseFromString(html, 'text/html');
+  const urls = [];
+  const base = new URL(baseUrl);
+  doc.querySelectorAll('link[rel="stylesheet"]').forEach(el => {
+    const href = el.getAttribute('href');
+    if (!href) return;
+    try {
+      const abs = new URL(href, base).href;
+      if (!abs.includes('fonts.googleapis') && !abs.includes('font-awesome') && !abs.includes('bootstrap.min'))
+        urls.push(abs);
+    } catch(e) {}
+  });
+  return urls.slice(0, 5);
+}
+
+async function fetchCSSExterno(cssUrl) {
+  try {
+    const r = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(cssUrl)}`, { signal: AbortSignal.timeout(8000) });
+    if (!r.ok) return '';
+    return (await r.json()).contents || '';
+  } catch(e) { return ''; }
+}
+
+function extraerColoresDeTexto(texto) {
+  const seen = new Set(), all = [];
+  for (const m of texto.matchAll(/#([0-9a-fA-F]{6})\b/g)) {
+    const h = '#' + m[1].toUpperCase();
+    if (!seen.has(h)) { seen.add(h); all.push(h); }
+  }
+  for (const m of texto.matchAll(/#([0-9a-fA-F]{3})\b/g)) {
+    const c = m[1];
+    const h = '#' + (c[0]+c[0]+c[1]+c[1]+c[2]+c[2]).toUpperCase();
+    if (!seen.has(h)) { seen.add(h); all.push(h); }
+  }
+  for (const m of texto.matchAll(/rgb\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*\)/g)) {
+    const hex = '#' + [m[1],m[2],m[3]].map(n => parseInt(n).toString(16).padStart(2,'0')).join('').toUpperCase();
+    if (!seen.has(hex)) { seen.add(hex); all.push(hex); }
+  }
+  return all;
+}
+
+function puntuarColores(cssTexto) {
+  const reglasMarca = [
+    /background(?:-color)?\s*:\s*([^;}{]+)/gi,
+    /color\s*:\s*([^;}{]+)/gi,
+    /border(?:-color)?\s*:\s*([^;}{]+)/gi,
+    /--[\w-]+\s*:\s*([^;}{]+)/gi,
+    /\.btn[^{]*\{[^}]*background[^:]*:\s*([^;}{]+)/gi,
+    /\.hero[^{]*\{[^}]*background[^:]*:\s*([^;}{]+)/gi,
+    /\.nav[^{]*\{[^}]*background[^:]*:\s*([^;}{]+)/gi,
+    /\.header[^{]*\{[^}]*background[^:]*:\s*([^;}{]+)/gi,
+  ];
+  const score = {};
+  for (const re of reglasMarca) {
+    for (const m of cssTexto.matchAll(re)) {
+      extraerColoresDeTexto(m[1] || '').forEach(c => { score[c] = (score[c] || 0) + 2; });
+    }
+  }
+  extraerColoresDeTexto(cssTexto).forEach(c => { score[c] = score[c] || 1; });
+  return score;
+}
+
+function detectarTema(colores) {
+  const oscuros = colores.filter(h => {
+    const r=parseInt(h.slice(1,3),16), g=parseInt(h.slice(3,5),16), b=parseInt(h.slice(5,7),16);
+    return (0.299*r + 0.587*g + 0.114*b) / 255 < 0.25;
+  });
+  return oscuros.length >= 2 ? 'dark' : 'light';
+}
+
+function detectarEstilo(cssTexto, tema) {
+  const tieneGradiente  = /gradient/i.test(cssTexto);
+  const tieneSombras    = /box-shadow/i.test(cssTexto);
+  const tieneAnimacion  = /animation|transition/i.test(cssTexto);
+  const bordeRedondeado = /border-radius\s*:\s*([1-9][0-9]+)/i.test(cssTexto);
+  if (tema === 'dark' && tieneGradiente) return 'gradient';
+  if (tema === 'dark') return 'dark';
+  if (tieneGradiente && bordeRedondeado) return 'modern';
+  if (tieneSombras && tieneAnimacion) return 'dynamic';
+  return 'clean';
+}
+
+function seleccionarRoles(scoreMap, tema) {
+  const ordenados = Object.entries(scoreMap)
+    .filter(([h]) => esColorNoGris(h))
+    .sort((a,b) => b[1] - a[1])
+    .map(([h]) => h);
+  const isOscuro = h => (0.299*parseInt(h.slice(1,3),16)+0.587*parseInt(h.slice(3,5),16)+0.114*parseInt(h.slice(5,7),16))/255 < 0.3;
+  const isClaro  = h => (0.299*parseInt(h.slice(1,3),16)+0.587*parseInt(h.slice(3,5),16)+0.114*parseInt(h.slice(5,7),16))/255 > 0.7;
+  const primario = ordenados[0] || '#185FA5';
+  const acento   = ordenados.find(h => h !== primario && !isClaro(h)) || '#0088CC';
+  const footer   = ordenados.find(h => isOscuro(h) && h !== primario) || (tema === 'dark' ? '#0D1117' : '#1E293B');
+  return { primario, acento, footer };
+}
+
+function extraerFuentes(html){
+  const fuentes = new Set();
+  for (const m of html.matchAll(/family=([A-Za-z+:0-9,]+)/g))
+    m[1].split(',').forEach(f => fuentes.add(f.split(':')[0].replace(/\+/g,' ').trim()));
+  for (const m of html.matchAll(/font-family\s*:\s*([^;}"']+)/gi)) {
+    const f = m[1].trim().split(',')[0].replace(/['"]/g,'').trim();
+    if (f && f.length < 50 && !['inherit','initial','unset','var('].some(x => f.toLowerCase().startsWith(x)))
+      fuentes.add(f);
+  }
+  return [...fuentes].filter(f => f.length > 2).slice(0, 10);
+}
+
+function extraerMeta(html){
+  const doc = new DOMParser().parseFromString(html, 'text/html');
+  return {
+    title: doc.querySelector('title')?.textContent?.trim() || '',
+    desc:  doc.querySelector('meta[name="description"]')?.getAttribute('content')?.trim() || '',
+  };
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   NUEVO: extractBlueprint — analiza el DOM del HTML descargado
+   y devuelve las secciones reales en orden con su tipo de layout.
+   Esto reemplaza recomendarLayout() que solo usaba el estilo CSS.
+   ════════════════════════════════════════════════════════════════════ */
+function extractBlueprint(html, estilo) {
+  const doc = new DOMParser().parseFromString(html, 'text/html');
+  const sections = [];
+  let order = 1;
+
+  const hasClass = (el, ...patterns) =>
+    patterns.some(p => [...el.classList].some(c => new RegExp(p,'i').test(c)));
+
+  const queryAll = (...selectors) => {
+    for (const s of selectors) {
+      const els = doc.querySelectorAll(s);
+      if (els.length) return [...els];
+    }
+    return [];
+  };
+
+  // ── 1. Top bar ────────────────────────────────────────────────────
+  const topbars = queryAll(
+    '[class*="topbar"],[class*="top-bar"],[class*="header-top"],[class*="pre-header"]'
+  );
+  if (topbars.length) {
+    const txt = topbars[0].textContent;
+    const hasSocial = !!topbars[0].querySelector('a[href*="facebook"],a[href*="instagram"],a[href*="linkedin"]');
+    sections.push({ id:'topbar', order:order++, layout:'flex-row', has_social:hasSocial,
+                    has_phone: /\+?\d[\d\s\-\(\)]{7,}/.test(txt) });
+  }
+
+  // ── 2. Header / Nav ───────────────────────────────────────────────
+  const header = doc.querySelector('header,[class*="site-header"],[class*="main-header"]');
+  if (header) {
+    const navLinks = header.querySelectorAll('a');
+    const hasCTA   = [...navLinks].some(a => /btn|cta|whatsapp|contact/i.test(a.className));
+    sections.push({ id:'header', order:order++, layout:'sticky-logo-nav-cta',
+                    nav_items: navLinks.length, has_cta: hasCTA });
+  }
+
+  // ── 3. Hero ───────────────────────────────────────────────────────
+  const heroEl = doc.querySelector(
+    '[class*="hero"],[class*="banner"],[class*="slider"],[class*="carousel"],[class*="jumbotron"]'
+  );
+  const hasSlider = !!doc.querySelector('[class*="swiper"],[class*="slick"],[class*="owl"],[class*="splide"]');
+  const heroLayout = hasSlider ? 'slider' : (estilo === 'dark' || estilo === 'gradient') ? 'fullscreen-dark' : 'fullscreen-bg';
+  if (heroEl || doc.querySelector('h1')) {
+    const h = heroEl || doc.querySelector('h1')?.closest('section') || doc.querySelector('h1')?.parentElement;
+    sections.push({
+      id: 'hero', order: order++, layout: heroLayout,
+      has_eyebrow: !!(h && h.querySelector('h5,h6,small,[class*="eyebrow"],[class*="subtitle"]')),
+      has_cta: !!(h && h.querySelector('a[class*="btn"],button[class*="btn"]')),
+    });
+  }
+
+  // ── 4. Features strip ─────────────────────────────────────────────
+  const featuresEl = doc.querySelector(
+    '[class*="features"],[class*="feature-strip"],[class*="highlights"],[class*="benefits-strip"]'
+  );
+  if (featuresEl) {
+    const items = featuresEl.querySelectorAll('li,article,[class*="item"],[class*="col"]');
+    const count = Math.min(Math.max(items.length, 3), 4);
+    sections.push({
+      id:'features_strip', order:order++, layout:`grid-${count}col`,
+      item_count: count, has_icons: !!featuresEl.querySelector('svg,img,i,[class*="icon"]'),
+      dark_bg: true,
+    });
+  }
+
+  // ── 5. About ──────────────────────────────────────────────────────
+  const aboutEl = doc.querySelector(
+    '[class*="about"],[class*="quienes"],[class*="nosotros"],[class*="who-we"],[class*="historia"]'
+  );
+  if (aboutEl) {
+    const hasStats = !!aboutEl.querySelector('[class*="stat"],[class*="counter"],[class*="count"],[class*="number"]');
+    sections.push({
+      id:'about', order:order++, layout:'2-col-text-image',
+      has_image: !!aboutEl.querySelector('img'), has_stats: hasStats,
+    });
+  }
+
+  // ── 6. Why us / Beneficios ────────────────────────────────────────
+  const whyEl = doc.querySelector(
+    '[class*="why"],[class*="benefit"],[class*="advantage"],[class*="porque"],[class*="razones"]'
+  );
+  if (whyEl) {
+    const items = whyEl.querySelectorAll('[class*="item"],[class*="card"],[class*="box"]');
+    const count = items.length || 6;
+    sections.push({
+      id:'why_us', order:order++,
+      layout: count >= 6 ? 'grid-3x3-with-image' : 'grid-2col',
+      item_count: count,
+    });
+  }
+
+  // ── 7. Impact / Social proof ──────────────────────────────────────
+  const impactEl = doc.querySelector(
+    '[class*="impact"],[class*="social-proof"],[class*="cta-band"],[class*="community"]'
+  );
+  if (impactEl) {
+    sections.push({ id:'impact', order:order++, layout:'full-width-overlay',
+                    has_cta: !!impactEl.querySelector('a,button') });
+  }
+
+  // ── 8. Services / Portfolio ───────────────────────────────────────
+  const servicesEl = doc.querySelector(
+    '[class*="service"],[class*="services"],[class*="portfolio"],[class*="work"],[class*="projects"]'
+  );
+  if (servicesEl) {
+    const cards = servicesEl.querySelectorAll('article,[class*="card"],[class*="item"]');
+    const count = Math.max(cards.length, 3);
+    const cols  = count >= 4 ? 3 : 2;
+    sections.push({
+      id:'services', order:order++, layout:`cards-grid-${cols}col`,
+      card_count: count, has_image: !!servicesEl.querySelector('img'),
+    });
+  }
+
+  // ── 9. Newsletter ─────────────────────────────────────────────────
+  const nlEl = doc.querySelector('[class*="newsletter"],[class*="subscribe"],[class*="suscri"]');
+  const hasEmailInput = !!doc.querySelector('input[type="email"]');
+  if (nlEl || hasEmailInput) {
+    sections.push({ id:'newsletter', order:order++, layout:'banner-email-input',
+                    position:'before_footer' });
+  }
+
+  // ── 10. Footer ────────────────────────────────────────────────────
+  const footerEl = doc.querySelector('footer');
+  if (footerEl) {
+    const cols = footerEl.querySelectorAll('[class*="col"],[class*="widget"],[class*="block"]');
+    const hasSocial = !!footerEl.querySelector('a[href*="facebook"],a[href*="instagram"],a[href*="linkedin"],a[href*="youtube"]');
+    sections.push({
+      id:'footer', order:order++,
+      layout:`${Math.min(Math.max(cols.length, 2), 4)}-col-grid`,
+      has_social: hasSocial,
+    });
+  }
+
+  // Si no se detectó nada útil, fallback a estructura básica
+  if (sections.filter(s => !['topbar','header','footer'].includes(s.id)).length === 0) {
+    return _blueprintFallback(estilo);
+  }
+
+  return {
+    sections,
+    detected_sections: sections.map(s => s.id),
+    estilo,
+  };
+}
+
+/* Fallback si el DOM no tiene clases semánticas detectables (ej: React/Next.js) */
+function _blueprintFallback(estilo) {
+  const base = ['header','hero','features_strip','about','services','footer'];
+  return {
+    sections: base.map((id, i) => ({ id, order: i+1, layout: 'auto' })),
+    detected_sections: base,
+    estilo,
+    fallback: true,
+  };
+}
+
+/* ── Renderizar blueprint en UI ──────────────────────────────────────── */
+const SECTION_LABELS = {
+  topbar:         { icon:'📌', label:'Top bar' },
+  header:         { icon:'🔝', label:'Header sticky' },
+  hero:           { icon:'🖼',  label:'Hero' },
+  features_strip: { icon:'⚡', label:'Features strip' },
+  about:          { icon:'👥', label:'Nosotros' },
+  why_us:         { icon:'✅', label:'Por qué elegirnos' },
+  impact:         { icon:'💥', label:'Impacto / CTA' },
+  services:       { icon:'🛠',  label:'Servicios' },
+  newsletter:     { icon:'📧', label:'Newsletter' },
+  footer:         { icon:'🔻', label:'Footer' },
+};
+
+function renderBlueprint(blueprint) {
+  const cont = document.getElementById('blueprint-container');
+  cont.innerHTML = '';
+
+  if (!blueprint.sections.length) {
+    cont.innerHTML = '<span style="color:#94a3b8;font-size:.85rem;">No se detectaron secciones estructurales. Se usará layout automático.</span>';
+    return;
+  }
+
+  blueprint.sections.forEach(sec => {
+    const info = SECTION_LABELS[sec.id] || { icon:'📄', label: sec.id };
+    const div  = document.createElement('div');
+    div.className = 'bp-section';
+    div.innerHTML = `
+      <span class="bp-order">${sec.order}</span>
+      <span class="bp-icon">${info.icon}</span>
+      <span>${info.label}</span>
+      <span style="font-size:.72rem;color:#7c3aed;font-weight:400;margin-left:2px;">${sec.layout || ''}</span>
+    `;
+    div.title = JSON.stringify(sec, null, 2);
+    cont.appendChild(div);
+  });
+
+  if (blueprint.fallback) {
+    const warn = document.createElement('p');
+    warn.style.cssText = 'margin:10px 0 0;font-size:.8rem;color:#92400e;';
+    warn.textContent = '⚠ Estructura no detectada (posible sitio JS-rendered). Se usó layout genérico.';
+    cont.appendChild(warn);
+  }
+}
+
+/* ── Renderizar swatches ─────────────────────────────────────────────── */
+let _colorSeleccionado = { primario:null, acento:null, footer:null };
+let _activeRole = null;
+
+function renderSwatches(colores, roles){
+  const cont = document.getElementById('swatch-container');
+  cont.innerHTML = '';
+  colores.forEach(hex => {
+    const div = document.createElement('div');
+    div.className = 'swatch';
+    div.style.background = hex;
+    div.title = hex;
+    if (roles) {
+      if      (hex === roles.primario) div.setAttribute('data-rol','primario');
+      else if (hex === roles.acento)   div.setAttribute('data-rol','acento');
+      else if (hex === roles.footer)   div.setAttribute('data-rol','footer');
+    }
+    const rolLabel = div.getAttribute('data-rol');
+    const hexLabel = document.createElement('span');
+    hexLabel.className = 'swatch-hex';
+    hexLabel.textContent = rolLabel || hex;
+    div.style.outline = rolLabel ? '3px solid #fff' : '';
+    div.appendChild(hexLabel);
+    div.addEventListener('click', () => asignarColor(hex, div));
+    cont.appendChild(div);
+  });
+}
+
+function asignarColor(hex, swatchEl){
+  if (!_activeRole) _activeRole = 'primario';
+  if (_activeRole === 'primario'){
+    document.getElementById('url-cp').value = hex;
+    document.getElementById('url-cp-picker').value = hex;
+    _activeRole = 'acento';
+  } else if (_activeRole === 'acento'){
+    document.getElementById('url-ca').value = hex;
+    document.getElementById('url-ca-picker').value = hex;
+    _activeRole = 'footer';
+  } else {
+    document.getElementById('url-cf').value = hex;
+    document.getElementById('url-cf-picker').value = hex;
+    _activeRole = 'primario';
+  }
+  document.querySelectorAll('.swatch').forEach(s => s.classList.remove('selected'));
+  swatchEl.classList.add('selected');
+}
+
+function renderFonts(fuentes){
+  const cont = document.getElementById('font-container');
+  cont.innerHTML = '';
+  if (!fuentes.length){
+    cont.innerHTML = '<span style="color:#94a3b8;font-size:.85rem;">No se detectaron fuentes específicas.</span>';
+    return;
+  }
+  fuentes.forEach((f,i) => {
+    const chip = document.createElement('span');
+    chip.className = 'font-chip';
+    chip.textContent = f;
+    chip.addEventListener('click', () => {
+      document.querySelectorAll('.font-chip').forEach(c => c.classList.remove('selected'));
+      chip.classList.add('selected');
+      if (i % 2 === 0) document.getElementById('url-fh').value = f;
+      else             document.getElementById('url-fb').value = f;
+    });
+    cont.appendChild(chip);
+  });
+  if (fuentes[0]) document.getElementById('url-fh').value = fuentes[0];
+  if (fuentes[1]) document.getElementById('url-fb').value = fuentes[1];
+}
+
+/* ── Botón Analizar ──────────────────────────────────────────────────── */
+let _blueprintDetectado = null; // ← NUEVO: guardamos el blueprint completo
+
+document.getElementById('btn-analizar').addEventListener('click', async () => {
+  const url = document.getElementById('url-input').value.trim();
+  hideAlert('sc-alert-url');
+  if (!url){ showAlert('sc-alert-url','Ingresa una URL válida.'); return; }
+
+  setSpinner('sp-txt','sp-spin', true);
+  document.getElementById('sc-results').style.display = 'none';
+  document.getElementById('blueprint-container').innerHTML = '<span style="color:#94a3b8;font-size:.85rem;">Analizando estructura…</span>';
+
+  try {
+    const html   = await fetchConFallback(url);
+    const meta   = extraerMeta(html);
+    const cssUrls = extraerUrlsCSS(html, url);
+
+    let cssTotal = html;
+    if (cssUrls.length) {
+      const cssTextos = await Promise.all(cssUrls.map(u => fetchCSSExterno(u)));
+      cssTotal += '\n' + cssTextos.join('\n');
+    }
+
+    const scoreMap = puntuarColores(cssTotal);
+    const tema     = detectarTema(Object.keys(scoreMap).filter(esColorNoGris));
+    const estilo   = detectarEstilo(cssTotal, tema);
+    const roles    = seleccionarRoles(scoreMap, tema);
+
+    // ── NUEVO: extraer blueprint real del DOM ─────────────────────
+    _blueprintDetectado = extractBlueprint(html, estilo);
+    renderBlueprint(_blueprintDetectado);
+    // ─────────────────────────────────────────────────────────────
+
+    const coloresOrdenados = Object.entries(scoreMap)
+      .filter(([h]) => esColorNoGris(h))
+      .sort((a,b) => b[1]-a[1])
+      .map(([h]) => h)
+      .slice(0, 24);
+
+    const fuentes = extraerFuentes(cssTotal);
+
+    document.getElementById('url-cp').value = roles.primario;
+    document.getElementById('url-ca').value = roles.acento;
+    document.getElementById('url-cf').value = roles.footer;
+    try {
+      document.getElementById('url-cp-picker').value = roles.primario;
+      document.getElementById('url-ca-picker').value = roles.acento;
+      document.getElementById('url-cf-picker').value = roles.footer;
+    } catch(e){}
+
+    if (fuentes.length) {
+      document.getElementById('url-fh').value = fuentes[0];
+      if (fuentes.length > 1) document.getElementById('url-fb').value = fuentes[1];
+    }
+
+    renderSwatches(coloresOrdenados, roles);
+    renderFonts(fuentes);
+
+    document.getElementById('meta-title').textContent = meta.title || '—';
+    document.getElementById('meta-desc').textContent  = meta.desc  || '—';
+
+    const badgeEl = document.getElementById('estilo-badge');
+    if (badgeEl) {
+      const labels = { dark:'🌑 Oscuro', gradient:'🌈 Gradiente', modern:'⚡ Moderno', dynamic:'✨ Dinámico', clean:'🪟 Limpio' };
+      const secciones = _blueprintDetectado.detected_sections.length;
+      badgeEl.textContent = `Estilo: ${labels[estilo]||estilo} · ${secciones} secciones detectadas · ${cssUrls.length+1} CSS analizados`;
+      badgeEl.style.display = 'block';
+    }
+
+    if (meta.title && !document.getElementById('url-nombre').value)
+      document.getElementById('url-nombre').value = meta.title.slice(0, 60);
+
+    document.getElementById('sc-results').style.display = 'block';
+    _activeRole = 'primario';
+
+    if (!coloresOrdenados.length)
+      showAlert('sc-alert-url', 'No se detectaron colores de marca. Ajusta manualmente los colores abajo.', 'warning');
+
+  } catch(err){
+    const msg = err.name === 'TimeoutError' || err.message?.includes('timed out')
+      ? 'El sitio tardó demasiado. Prueba con otra URL o usa "Por Categoría".'
+      : 'No se pudo acceder al sitio. Algunos sitios bloquean scrapers. Usa la pestaña "Por Categoría" como alternativa.';
+    showAlert('sc-alert-url', msg);
+  } finally {
+    setSpinner('sp-txt','sp-spin', false);
+  }
+});
+
+/* ── Crear desde URL ─────────────────────────────────────────────────── */
+document.getElementById('btn-crear-url').addEventListener('click', async () => {
+  hideAlert('sc-alert-crear-url');
+  const nombre = document.getElementById('url-nombre').value.trim();
+  const clave  = document.getElementById('url-clave').value.trim();
+  if (!nombre || !clave){ showAlert('sc-alert-crear-url','Nombre y clave son obligatorios.'); return; }
+
+  // ── Leer componentes opcionales ───────────────────────────────────
+  const heroType   = document.querySelector('input[name="hero-type"]:checked')?.value || 'static';
+  const componentes = {
+    whatsapp:    document.getElementById('comp-whatsapp').checked,
+    newsletter:  document.getElementById('comp-newsletter').checked,
+    social:      document.getElementById('comp-social').checked,
+    topbar:      document.getElementById('comp-topbar').checked,
+    citas:       document.getElementById('comp-citas').checked,
+    hero_type:   heroType,
+  };
+
+  // ── Construir payload completo con blueprint ───────────────────────
+  const payload = {
+    nombre,
+    clave,
+    color_primario:  document.getElementById('url-cp').value,
+    color_acento:    document.getElementById('url-ca').value,
+    color_footer:    document.getElementById('url-cf').value,
+    fuente_titulos:  document.getElementById('url-fh').value || 'system-ui, sans-serif',
+    fuente_cuerpo:   document.getElementById('url-fb').value || 'system-ui, sans-serif',
+    tipo:            document.getElementById('url-tipo').value,
+    // NUEVO: blueprint completo en vez del layout genérico
+    blueprint:       _blueprintDetectado || null,
+    componentes,
+  };
+
+  const btn = document.getElementById('btn-crear-url');
+  btn.disabled = true;
+  document.getElementById('sp-crear-url').style.display = 'inline-block';
+
+  try {
+    const r = await fetch('/admin/scraper/crear-desde-url', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify(payload)
+    });
+    const d = await r.json();
+    if (d.ok){
+      showAlert('sc-alert-crear-url', '✅ Plantilla creada correctamente. Redirigiendo…', 'success');
+      setTimeout(() => window.location.href = d.redirect, 1200);
+    } else {
+      showAlert('sc-alert-crear-url', d.error || 'Error al crear la plantilla.');
+      btn.disabled = false;
+    }
+  } catch(e){
+    showAlert('sc-alert-crear-url','Error de red. Intenta de nuevo.');
+    btn.disabled = false;
+  } finally {
+    document.getElementById('sp-crear-url').style.display = 'none';
+  }
+});
+
+/* ── Categorías predefinidas ─────────────────────────────────────────── */
+const CAT_DATA = {
+  clinica:      { nombre:'Clínica / Salud',    icon:'🏥', hint:'Azul profesional · Montserrat / Open Sans',    cp:'#0077B6', ca:'#00B4D8', cf:'#03045E' },
+  restaurante:  { nombre:'Restaurante',        icon:'🍽️', hint:'Cálidos · Playfair Display / Lato',           cp:'#C1440E', ca:'#F4A261', cf:'#1A0A00' },
+  abogados:     { nombre:'Abogados',           icon:'⚖️',  hint:'Navy / Dorado · Cormorant Garamond',          cp:'#1B2A4A', ca:'#C9A84C', cf:'#0D1B2A' },
+  creativo:     { nombre:'Creativo / Diseño',  icon:'🎨', hint:'Bold · Space Grotesk / Inter',                cp:'#6D28D9', ca:'#F59E0B', cf:'#1F1135' },
+  educacion:    { nombre:'Educación',          icon:'🏫', hint:'Naranja / Azul · Nunito / Open Sans',         cp:'#F97316', ca:'#3B82F6', cf:'#1E3A5F' },
+  tecnologia:   { nombre:'Tecnología',         icon:'💻', hint:'Cyan / Dark · Space Grotesk / Inter',         cp:'#06B6D4', ca:'#8B5CF6', cf:'#030712' },
+  inmobiliaria: { nombre:'Inmobiliaria',       icon:'🏠', hint:'Neutros / Ámbar · Cormorant Garamond / Lato', cp:'#78716C', ca:'#D97706', cf:'#1C1917' },
+  belleza:      { nombre:'Belleza / Spa',      icon:'💄', hint:'Rosa / Dorado · Playfair Display / Lato',     cp:'#DB2777', ca:'#F59E0B', cf:'#4A0E2A' },
+};
+
+document.querySelectorAll('.cat-card').forEach(card => {
+  card.addEventListener('click', () => {
+    document.querySelectorAll('.cat-card').forEach(c => c.classList.remove('selected'));
+    card.classList.add('selected');
+    const cat = CAT_DATA[card.dataset.cat];
+    if (!cat) return;
+    document.getElementById('cat-form-icon').textContent  = cat.icon;
+    document.getElementById('cat-form-title').textContent = cat.nombre;
+    document.getElementById('cat-form-hint').textContent  = cat.hint;
+    const setColor = (pickId, txtId, val) => {
+      document.getElementById(pickId).value = val;
+      document.getElementById(txtId).value  = val;
+    };
+    setColor('cat-cp-picker','cat-cp', cat.cp);
+    setColor('cat-ca-picker','cat-ca', cat.ca);
+    setColor('cat-cf-picker','cat-cf', cat.cf);
+    document.getElementById('cat-nombre').value = cat.nombre;
+    const slug = cat.nombre.toLowerCase()
+      .normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+      .replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'').slice(0,30);
+    document.getElementById('cat-clave').value = slug;
+    document.getElementById('cat-clave')._touched = true;
+    document.getElementById('cat-form-wrap').style.display = 'block';
+    document.getElementById('cat-form-wrap').scrollIntoView({ behavior:'smooth', block:'nearest' });
+    hideAlert('sc-alert-crear-cat');
+  });
+});
+
+syncColorPicker('cat-cp-picker','cat-cp');
+syncColorPicker('cat-ca-picker','cat-ca');
+syncColorPicker('cat-cf-picker','cat-cf');
+
+/* ── Crear desde categoría ───────────────────────────────────────────── */
+document.getElementById('btn-crear-cat').addEventListener('click', async () => {
+  hideAlert('sc-alert-crear-cat');
+  const nombre = document.getElementById('cat-nombre').value.trim();
+  const clave  = document.getElementById('cat-clave').value.trim();
+  const selectedCard = document.querySelector('.cat-card.selected');
+  if (!selectedCard){ showAlert('sc-alert-crear-cat','Selecciona una categoría.'); return; }
+  if (!nombre || !clave){ showAlert('sc-alert-crear-cat','Nombre y clave son obligatorios.'); return; }
+
+  const payload = {
+    categoria: selectedCard.dataset.cat,
+    nombre, clave,
+    color_primario: document.getElementById('cat-cp').value,
+    color_acento:   document.getElementById('cat-ca').value,
+    color_footer:   document.getElementById('cat-cf').value,
+    tipo:           document.getElementById('cat-tipo').value,
+  };
+
+  const btn = document.getElementById('btn-crear-cat');
+  btn.disabled = true;
+  document.getElementById('sp-crear-cat').style.display = 'inline-block';
+
+  try {
+    const r = await fetch('/admin/scraper/crear-desde-categoria', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify(payload)
+    });
+    const d = await r.json();
+    if (d.ok){
+      showAlert('sc-alert-crear-cat', '✅ Plantilla creada correctamente. Redirigiendo…', 'success');
+      setTimeout(() => window.location.href = d.redirect, 1200);
+    } else {
+      showAlert('sc-alert-crear-cat', d.error || 'Error al crear la plantilla.');
+      btn.disabled = false;
+    }
+  } catch(e){
+    showAlert('sc-alert-crear-cat','Error de red. Intenta de nuevo.');
+    btn.disabled = false;
+  } finally {
+    document.getElementById('sp-crear-cat').style.display = 'none';
+  }
+});
+</script>
+
+</body>
+</html>
