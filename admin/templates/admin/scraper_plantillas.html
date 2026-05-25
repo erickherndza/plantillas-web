@@ -61,6 +61,16 @@
                  padding:4px 12px; font-size:.83rem; font-weight:600; margin:3px; cursor:pointer; }
     .font-chip.selected { background:#7c3aed; color:#fff; }
 
+    .sc-structure-grid { display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; }
+    .sc-structure-chip { display:inline-flex; align-items:center; gap:6px; padding:6px 10px;
+                         border-radius:999px; background:#ede9fe; color:#5b21b6;
+                         font-weight:700; font-size:.8rem; }
+    .sc-toggle-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:12px; margin-top:12px; }
+    .sc-toggle { display:flex; align-items:center; gap:10px; padding:12px 14px; border:1.5px solid #e2e8f0;
+                 border-radius:12px; background:#fff; font-size:.9rem; color:#1e293b; }
+    .sc-toggle input { width:18px; height:18px; accent-color:#7c3aed; }
+    .sc-hero-type { margin-top:12px; }
+
     /* ── Buttons ──────────────────────────────────────────────────── */
     .btn-scrape  { background:#0ea5e9; color:#fff; border:none; padding:11px 28px; border-radius:10px;
                    font-weight:700; font-size:.95rem; cursor:pointer; transition:background .2s; }
@@ -151,6 +161,24 @@
         <div class="result-title">Información del sitio</div>
         <p style="margin:0;font-size:.9rem;color:#374151;"><strong>Título:</strong> <span id="meta-title">—</span></p>
         <p style="margin:6px 0 0;font-size:.9rem;color:#374151;"><strong>Descripción:</strong> <span id="meta-desc">—</span></p>
+      </div>
+
+      <!-- Estructura detectada -->
+      <div class="result-box" style="margin-top:16px;">
+        <div class="result-title">Estructura detectada</div>
+        <div id="blueprint-summary" class="sc-structure-grid"></div>
+        <div class="sc-toggle-grid" id="component-toggle-grid"></div>
+        <div class="sc-hero-type">
+          <label class="sc-label" for="url-hero-tipo">Tipo de hero</label>
+          <select id="url-hero-tipo" class="sc-input">
+            <option value="static">Static</option>
+            <option value="split">Split</option>
+            <option value="gradient">Gradient</option>
+            <option value="fullscreen">Fullscreen</option>
+            <option value="dark">Dark</option>
+            <option value="minimal">Minimal</option>
+          </select>
+        </div>
       </div>
 
       <!-- Formulario para crear plantilla -->
@@ -698,8 +726,145 @@ function renderFonts(fuentes){
   if (fuentes[1]) document.getElementById('url-fb').value = fuentes[1];
 }
 
+function getDefaultLayout(){
+  return { hero:'split', services:'grid', projects:'masonry', team:'cards' };
+}
+
+function getDefaultBlueprint(){
+  return {
+    layout: getDefaultLayout(),
+    secciones: ['hero', 'services', 'projects', 'team'],
+    componentes: { whatsapp:false, newsletter:false, redes:false, topbar:false, citas:false },
+    hero_tipo: 'static'
+  };
+}
+
+function renderBlueprintControls(blueprint){
+  const summary = document.getElementById('blueprint-summary');
+  const toggles = document.getElementById('component-toggle-grid');
+  const heroTipo = document.getElementById('url-hero-tipo');
+
+  summary.innerHTML = '';
+  blueprint.secciones.forEach(section => {
+    const chip = document.createElement('span');
+    chip.className = 'sc-structure-chip';
+    chip.textContent = section;
+    summary.appendChild(chip);
+  });
+
+  toggles.innerHTML = '';
+  Object.entries(blueprint.componentes).forEach(([key, checked]) => {
+    const wrap = document.createElement('label');
+    wrap.className = 'sc-toggle';
+    const input = document.createElement('input');
+    input.type = 'checkbox';
+    input.checked = !!checked;
+    input.id = 'toggle-' + key;
+    const text = document.createElement('span');
+    text.textContent = {
+      whatsapp:'WhatsApp',
+      newsletter:'Newsletter',
+      redes:'Redes',
+      topbar:'Topbar',
+      citas:'Citas'
+    }[key] || key;
+    wrap.appendChild(input);
+    wrap.appendChild(text);
+    toggles.appendChild(wrap);
+  });
+
+  heroTipo.value = blueprint.hero_tipo || 'static';
+}
+
+function extractBlueprint(html, estilo){
+  const doc = new DOMParser().parseFromString(html, 'text/html');
+  const texto = (doc.body?.textContent || '').toLowerCase();
+  const secciones = [];
+  const componentes = { whatsapp:false, newsletter:false, redes:false, topbar:false, citas:false };
+  const addSection = (section) => { if (!secciones.includes(section)) secciones.push(section); };
+  const hasSelector = (selector) => !!doc.querySelector(selector);
+  const hasText = (pattern) => pattern.test(texto);
+  const hasAttrLike = (attr, pattern) => Array.from(doc.querySelectorAll(`[${attr}]`)).some((el) => pattern.test((el.getAttribute(attr) || '').toLowerCase()));
+  const hasAnyAttr = (attrs, pattern) => attrs.some((attr) => hasAttrLike(attr, pattern));
+  const findClass = (...keywords) => Array.from(doc.querySelectorAll('[class*="hero"], [class*="service"], [class*="project"], [class*="team"], [class*="feature"], [class*="benefit"], [class*="gallery"], [class*="portfolio"], [class*="footer"], [class*="header"], [class*="topbar"], [class*="newsletter"], [class*="contact"], [class*="about"], [class*="impact"], [class*="why"], [class*="quote"], [class*="testimonial"], [class*="cta"]'))
+    .some((el) => keywords.some((kw) => (el.getAttribute('class') || '').toLowerCase().includes(kw)));
+
+  if (hasSelector('header, .site-header, .topbar, [id*="topbar"], [class*="topbar"]') || hasAnyAttr(['data-section','aria-label','id','class'], /(topbar|header|navbar|menu)/)) {
+    addSection('topbar');
+    componentes.topbar = true;
+  }
+  if (hasSelector('header, .site-header, nav, .navbar, [class*="header"], [id*="header"]') || hasAnyAttr(['data-section','aria-label','id','class'], /(header|navbar|nav)/)) addSection('header');
+  if (hasSelector('[class*="hero"], [id*="hero"], [aria-label*="hero"], [data-section*="hero"], [data-name*="hero"], [role*="banner"]') || hasAnyAttr(['data-section','aria-label','id','class'], /(hero|headline|banner)/)) addSection('hero');
+  if (hasSelector('[class*="feature"], [id*="feature"], [class*="benefit"], [id*="benefit"], [class*="highlights"], [id*="highlights"], [class*="beneficios"], [id*="beneficios"]') || hasAnyAttr(['data-section','aria-label','id','class'], /(feature|benefit|highlights|beneficios)/)) addSection('features_strip');
+  if (hasSelector('[class*="service"], [id*="service"], [class*="servicio"], [id*="servicio"], [class*="servicios"], [id*="servicios"]') || hasAnyAttr(['data-section','aria-label','id','class'], /(service|servicio|servicios)/)) addSection('services');
+  if (hasSelector('[class*="project"], [id*="project"], [class*="portfolio"], [id*="portfolio"], [class*="galeria"], [id*="galeria"], [class*="proyectos"], [id*="proyectos"]') || hasAnyAttr(['data-section','aria-label','id','class'], /(project|portfolio|galeria|proyectos)/)) addSection('projects');
+  if (hasSelector('[class*="team"], [id*="team"], [class*="equipo"], [id*="equipo"], [class*="staff"], [id*="staff"]') || hasAnyAttr(['data-section','aria-label','id','class'], /(team|equipo|staff)/)) addSection('team');
+  if (hasSelector('footer, [class*="footer"], [id*="footer"]') || hasAnyAttr(['data-section','aria-label','id','class'], /(footer|pie)/)) addSection('footer');
+
+  if (hasText(/(newsletter|suscribete|suscríbete|boletín|mailing)/) || hasSelector('[class*="newsletter"], [id*="newsletter"], form[action*="newsletter"], input[type="email"]') || hasAnyAttr(['data-section','aria-label','id','class'], /(newsletter|boletin|subscribe|mailing)/)) {
+    addSection('newsletter');
+    componentes.newsletter = true;
+  }
+  if (hasText(/(about|nosotros|sobre nosotros|quiénes somos|quienes somos)/) || hasSelector('[class*="about"], [id*="about"], [class*="nosotros"], [id*="nosotros"]') || hasAnyAttr(['data-section','aria-label','id','class'], /(about|nosotros|sobre nosotros|quienes somos)/)) addSection('about');
+  if (hasText(/(why|por qué|beneficio|ventaja|diferencia|porque)/) || hasSelector('[class*="why"], [id*="why"], [class*="benefit"], [id*="benefit"]') || hasAnyAttr(['data-section','aria-label','id','class'], /(why|benefit|ventaja|diferencia|porque)/)) addSection('why_us');
+  if (hasText(/(impacto|estadística|métricas|números|proyectos entregados|clientes|testimonios|testimonials)/) || hasSelector('[class*="impact"], [id*="impact"], [class*="testimonial"], [id*="testimonial"], [class*="quote"], [id*="quote"]') || hasAnyAttr(['data-section','aria-label','id','class'], /(impact|estadistica|metricas|testimonial|quote|clientes)/)) addSection('impact');
+  if (hasText(/(whatsapp|wa\.me|api\.whatsapp|wa\.link)/) || hasAnyAttr(['href','data-href','aria-label','title'], /(whatsapp|wa\.me|api\.whatsapp|wa\.link)/)) componentes.whatsapp = true;
+  if (hasText(/(facebook|instagram|linkedin|twitter|youtube|tiktok|github|behance|dribbble|redes|social)/) || hasAnyAttr(['href','data-href','aria-label','title'], /(facebook|instagram|linkedin|twitter|youtube|tiktok|github|behance|dribbble|social|redes)/)) componentes.redes = true;
+  if (hasText(/(agenda|cita|reservar|book|calendar|appointment|turno|contacto)/) || hasAnyAttr(['href','data-href','aria-label','title'], /(agenda|cita|reservar|book|calendar|appointment|turno|contacto)/)) componentes.citas = true;
+
+  const layout = { ...(_layoutDetectado || getDefaultLayout()), ...(_blueprintDetectado?.layout || {}) };
+  if (findClass('service-card', 'servicio-card', 'service-grid', 'services-grid', 'services-list', 'menu-services')) layout.services = 'cards';
+  if (findClass('services-list', 'service-list', 'listado-servicios', 'menu-services')) layout.services = 'list';
+  if (findClass('services-menu', 'menu-servicios', 'services-menu')) layout.services = 'menu';
+  if (findClass('project-grid', 'projects-grid', 'gallery-grid', 'portfolio-grid')) layout.projects = 'grid';
+  if (findClass('project-masonry', 'masonry', 'portfolio-masonry')) layout.projects = 'masonry';
+  if (findClass('project-carousel', 'carousel', 'slider-projects')) layout.projects = 'carousel';
+  if (findClass('team-grid', 'equipo-grid', 'team-cards')) layout.team = 'grid';
+  if (findClass('team-minimal', 'team-minimal')) layout.team = 'minimal';
+  if (secciones.includes('features_strip')) layout.services = 'list';
+
+  const heroHints = {
+    dark: /dark|oscuro|night|black/i,
+    gradient: /gradient|gradiente|sunset|purple/i,
+    fullscreen: /fullscreen|full-screen|cover|slider|carousel|parallax/i,
+    minimal: /minimal|simple|clean|compact/i,
+    split: /split|two-column|two column|layout-split/i,
+  };
+
+  let hero_tipo = 'static';
+  for (const [tipo, regla] of Object.entries(heroHints)) {
+    if (regla.test(html)) {
+      hero_tipo = tipo;
+      break;
+    }
+  }
+  const heroMap = { dark:'dark', gradient:'gradient', dynamic:'fullscreen', modern:'split', clean:'minimal' };
+  if (!hero_tipo || hero_tipo === 'static') {
+    hero_tipo = heroMap[estilo] || 'static';
+  }
+
+  return {
+    layout,
+    secciones: secciones.length ? secciones : ['hero', 'services', 'projects', 'team'],
+    componentes,
+    hero_tipo
+  };
+}
+
+function readComponentState(){
+  return {
+    whatsapp: !!document.getElementById('toggle-whatsapp')?.checked,
+    newsletter: !!document.getElementById('toggle-newsletter')?.checked,
+    redes: !!document.getElementById('toggle-redes')?.checked,
+    topbar: !!document.getElementById('toggle-topbar')?.checked,
+    citas: !!document.getElementById('toggle-citas')?.checked,
+  };
+}
+
 /* ── Botón Analizar ──────────────────────────────────────────────────── */
 let _layoutDetectado = null; // guardado para reutilizar al crear
+let _blueprintDetectado = getDefaultBlueprint();
+renderBlueprintControls(_blueprintDetectado);
 
 document.getElementById('btn-analizar').addEventListener('click', async () => {
   const url = document.getElementById('url-input').value.trim();
@@ -756,9 +921,11 @@ document.getElementById('btn-analizar').addEventListener('click', async () => {
       if (fuentes.length > 1) document.getElementById('url-fb').value = fuentes[1];
     }
 
-    // 7. Renderizar swatches y fuentes
+    // 7. Renderizar swatches, fuentes y blueprint
     renderSwatches(coloresOrdenados, roles);
     renderFonts(fuentes);
+    _blueprintDetectado = extractBlueprint(html, estilo);
+    renderBlueprintControls(_blueprintDetectado);
 
     // 8. Meta + badge de estilo detectado
     document.getElementById('meta-title').textContent = meta.title || '—';
@@ -808,7 +975,14 @@ document.getElementById('btn-crear-url').addEventListener('click', async () => {
     fuente_titulos:  document.getElementById('url-fh').value || 'system-ui, sans-serif',
     fuente_cuerpo:   document.getElementById('url-fb').value || 'system-ui, sans-serif',
     tipo:            document.getElementById('url-tipo').value,
-    layout:          _layoutDetectado || { hero:'split', services:'grid', projects:'masonry', team:'cards' },
+    layout:          _blueprintDetectado?.layout || _layoutDetectado || getDefaultLayout(),
+    blueprint: {
+      layout: _blueprintDetectado?.layout || _layoutDetectado || getDefaultLayout(),
+      secciones: _blueprintDetectado?.secciones || ['hero', 'services', 'projects', 'team'],
+      hero_tipo: document.getElementById('url-hero-tipo').value,
+    },
+    componentes: readComponentState(),
+    hero_tipo: document.getElementById('url-hero-tipo').value,
   };
 
   const btn = document.getElementById('btn-crear-url');

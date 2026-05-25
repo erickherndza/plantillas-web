@@ -1187,15 +1187,32 @@ def asignar_plan_cliente(cliente_id: int, plan_id: int):
 
 def plantillas_por_plan(tipo_acceso: str) -> list:
     """Plantillas que corresponden al tipo de acceso del plan."""
+    plan = str(tipo_acceso or '').strip().lower()
+    plan_map = {
+        'basico': 'landing',
+        'basic': 'landing',
+        'landing': 'landing',
+        'corporativo': 'web5',
+        'corporate': 'web5',
+        'web5': 'web5',
+        'premium': 'ambos',
+        'ambos': 'ambos',
+    }
+    tipo = plan_map.get(plan)
+
     conn = get_db()
-    if tipo_acceso == 'ambos':
+    if tipo == 'ambos':
         rows = conn.execute(
             "SELECT * FROM plantillas WHERE activo=1 ORDER BY id"
         ).fetchall()
-    else:
+    elif tipo in ('landing', 'web5'):
         rows = conn.execute(
             "SELECT * FROM plantillas WHERE activo=1 AND tipo=? ORDER BY id",
-            (tipo_acceso,)
+            (tipo,)
+        ).fetchall()
+    else:
+        rows = conn.execute(
+            "SELECT * FROM plantillas WHERE activo=1 ORDER BY id"
         ).fetchall()
     conn.close()
     return rows

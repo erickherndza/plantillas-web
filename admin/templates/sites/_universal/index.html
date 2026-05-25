@@ -36,6 +36,43 @@
   {% if config.get('css_personalizado') %}<style>{{ config.get('css_personalizado') }}</style>{% endif %}
 </head>
 <body>
+{% set _defaults = defaults if defaults is defined else {} %}
+{% set _detected_sections = [] %}
+{% if _defaults.get('_detected_sections') %}
+  {% set _detected_sections = _defaults.get('_detected_sections') | from_json %}
+{% endif %}
+{% set _topbar_enabled = _defaults.get('comp_topbar') in [1, '1', True, 'true', 'yes'] %}
+{% set _social_enabled = _defaults.get('comp_redes') in [1, '1', True, 'true', 'yes'] %}
+{% set _newsletter_enabled = _defaults.get('comp_newsletter') in [1, '1', True, 'true', 'yes'] %}
+{% set _whatsapp_enabled = _defaults.get('comp_whatsapp') in [1, '1', True, 'true', 'yes'] %}
+{% set _show_topbar = _topbar_enabled or ('topbar' in _detected_sections) or ('header' in _detected_sections) %}
+{% set _show_social = _social_enabled %}
+{% set _show_newsletter = _newsletter_enabled or ('newsletter' in _detected_sections) %}
+{% set _show_whatsapp = _whatsapp_enabled %}
+{% set _wa_number = config.get('whatsapp_number') or config.get('contacto_telefono') or '' %}
+
+{% if _show_topbar %}
+<div style="background:#0f172a;color:#fff;padding:8px 0;">
+  <div class="container" style="display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap;font-size:13px;">
+    <div style="display:flex;gap:12px;flex-wrap:wrap;">
+      {% if config.get('contacto_telefono') %}
+      <span style="opacity:.9;">📞 {{ config.get('contacto_telefono') }}</span>
+      {% endif %}
+      {% if config.get('contacto_email') %}
+      <span style="opacity:.9;">✉ {{ config.get('contacto_email') }}</span>
+      {% endif %}
+    </div>
+    {% if _show_social %}
+    <div style="display:flex;gap:10px;">
+      {% if config.get('instagram_url') %}<a href="{{ config.get('instagram_url') }}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:999px;background:rgba(255,255,255,.08);font-weight:800;">IG</a>{% endif %}
+      {% if config.get('facebook_url') %}<a href="{{ config.get('facebook_url') }}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:999px;background:rgba(255,255,255,.08);font-weight:800;">FB</a>{% endif %}
+      {% if config.get('linkedin_url') %}<a href="{{ config.get('linkedin_url') }}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:999px;background:rgba(255,255,255,.08);font-weight:800;">IN</a>{% endif %}
+      {% if config.get('youtube_url') %}<a href="{{ config.get('youtube_url') }}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:999px;background:rgba(255,255,255,.08);font-weight:800;">YT</a>{% endif %}
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endif %}
 
 <!-- NAVBAR -->
 <nav class="lb-nav">
@@ -78,9 +115,68 @@
 </nav>
 
 <!-- HERO — variante dinámica -->
-{% set _layout = layout if layout is defined else {} %}
+{% set _defaults_layout = defaults.get('layout') if defaults is defined and defaults.get('layout') else {} %}
+{% set _layout = _defaults_layout if _defaults_layout else (layout if layout is defined else {}) %}
 {% set _hero_var = _layout.get('hero', 'fullscreen') %}
 {% include 'sites/_universal/sections/hero_' + _hero_var + '.html' ignore missing %}
+
+{% if 'features_strip' in _detected_sections %}
+<section class="lb-section" style="padding-top:24px;">
+  <div class="container">
+    <div class="lb-section-header fade-up">
+      <p class="lb-section-eyebrow">Destacados</p>
+      <h2 class="lb-section-title">Lo mejor de tu propuesta</h2>
+      <p class="lb-section-sub">Un diseño modular que mantiene la identidad visual del sitio y agrega una estructura de valor clara.</p>
+    </div>
+    <div class="lb-cards-grid">
+      <div class="lb-card fade-up">
+        <div class="lb-card-icon">⚡</div>
+        <h3 class="lb-card-title">Estrategia rápida</h3>
+        <p class="lb-card-desc">Presenta tu valor con una estructura corta, visual y persuasiva.</p>
+      </div>
+      <div class="lb-card fade-up">
+        <div class="lb-card-icon">🎯</div>
+        <h3 class="lb-card-title">Foco comercial</h3>
+        <p class="lb-card-desc">Destaca los beneficios clave para que el visitante actúe sin perder tiempo.</p>
+      </div>
+      <div class="lb-card fade-up">
+        <div class="lb-card-icon">📈</div>
+        <h3 class="lb-card-title">Escalabilidad</h3>
+        <p class="lb-card-desc">Plantilla lista para evolucionar con más secciones, contenido y conversiones.</p>
+      </div>
+    </div>
+  </div>
+</section>
+{% endif %}
+
+{% if 'impact' in _detected_sections %}
+<section class="lb-section alt" style="padding-top:20px;padding-bottom:20px;">
+  <div class="container">
+    <div class="lb-section-header fade-up">
+      <p class="lb-section-eyebrow">Impacto</p>
+      <h2 class="lb-section-title">Resultados que generan confianza</h2>
+      <p class="lb-section-sub">Un bloque de métricas ayuda a resumir la propuesta y dar peso visual al mensaje principal.</p>
+    </div>
+    <div class="lb-cards-grid">
+      <div class="lb-card fade-up" style="background:var(--c-primary);color:#fff;">
+        <p style="font-size:12px;opacity:.85;text-transform:uppercase;letter-spacing:.08em;">Clientes</p>
+        <h3 style="font-size:28px;font-weight:900;margin:10px 0;">150+</h3>
+        <p style="font-size:14px;line-height:1.7;opacity:.9;">Confianza construida a partir de proyectos reales y resultados consistentes.</p>
+      </div>
+      <div class="lb-card fade-up" style="background:var(--c-dark);color:#fff;">
+        <p style="font-size:12px;opacity:.85;text-transform:uppercase;letter-spacing:.08em;">Proceso</p>
+        <h3 style="font-size:28px;font-weight:900;margin:10px 0;">4 pasos</h3>
+        <p style="font-size:14px;line-height:1.7;opacity:.9;">Diagnóstico, propuesta, ejecución y soporte para un lanzamiento fluido.</p>
+      </div>
+      <div class="lb-card fade-up" style="background:var(--c-accent);color:#fff;">
+        <p style="font-size:12px;opacity:.85;text-transform:uppercase;letter-spacing:.08em;">Crecimiento</p>
+        <h3 style="font-size:28px;font-weight:900;margin:10px 0;">+35%</h3>
+        <p style="font-size:14px;line-height:1.7;opacity:.9;">Mayor conversión cuando el sitio comunica el valor y el siguiente paso con claridad.</p>
+      </div>
+    </div>
+  </div>
+</section>
+{% endif %}
 
 <div class="sections-wrapper">
 
@@ -271,6 +367,24 @@
   </div>
 </footer>
 
+{% if _show_newsletter %}
+<section class="lb-section" style="padding-top:8px;">
+  <div class="container">
+    <div style="background:linear-gradient(135deg, var(--c-primary), var(--c-dark)); color:#fff; border-radius:24px; padding:28px; display:grid; grid-template-columns:1.2fr 1fr; gap:24px; align-items:center;">
+      <div>
+        <p class="lb-section-eyebrow" style="color:#fff;">Newsletter</p>
+        <h2 class="lb-section-title" style="color:#fff; margin-bottom:10px;">Recibe ideas y novedades útiles</h2>
+        <p style="font-size:15px; line-height:1.7; opacity:.92;">Mantén a tu audiencia conectada con consejos, lanzamientos o promociones relevantes.</p>
+      </div>
+      <form style="display:flex;gap:12px;flex-wrap:wrap;justify-content:flex-end;">
+        <input type="email" placeholder="Tu email" style="flex:1; min-width:220px; padding:12px 14px; border-radius:999px; border:none; outline:none; font:inherit;">
+        <button type="submit" class="lb-form-btn" style="padding:12px 24px; border-radius:999px;">Suscribirme</button>
+      </form>
+    </div>
+  </div>
+</section>
+{% endif %}
+
 <!-- Lightbox -->
 <div id="lb-lightbox" class="lb-lightbox">
   <button class="lb-lbox-close">×</button>
@@ -290,5 +404,11 @@
   );
   document.querySelectorAll('.fade-up').forEach(el => obs.observe(el));
 </script>
+{% if _show_whatsapp and _wa_number %}
+<a href="https://wa.me/{{ _wa_number|replace(' ', '')|replace('(', '')|replace(')', '')|replace('-', '') }}" target="_blank" rel="noopener" style="position:fixed;right:18px;bottom:18px;z-index:9999;background:var(--c-accent);color:#fff;padding:14px 18px;border-radius:999px;box-shadow:0 12px 30px rgba(0,0,0,.2);font-weight:800;display:flex;gap:10px;align-items:center;text-decoration:none;">
+  <span>💬</span>
+  <span>WhatsApp</span>
+</a>
+{% endif %}
 </body>
 </html>
