@@ -1145,6 +1145,14 @@ def crear_sitio():
                 }
                 # El tema de la plantilla sobreescribe los defaults base
                 _config_base.update(_defaults_tema)
+
+                # Para plantillas creadas por scraper/wizard, los defaults JSON
+                # dejan su huella inicial en el sitio recién creado.
+                if _pe and _clave not in _temas:
+                    _defaults_scraper = _leer_json_dict(_pe.get('defaults_json'))
+                    if _defaults_scraper:
+                        _config_base.update(_defaults_scraper)
+
                 set_config_sitio_bulk(sitio_id, _config_base)
 
                 # Secciones de contenido por defecto — varían según la plantilla
@@ -1494,6 +1502,8 @@ def _blueprint_to_layout(blueprint=None, fallback=None):
 
     texto = ' '.join([s for s in secciones if s]).lower()
 
+    # Solo sobrescribe el layout si hay una intención explícita del blueprint.
+    # Eso evita que secciones como 'features_strip' cambien el layout de servicios.
     if any(token in texto for token in ('fullscreen', 'full', 'hero_fullscreen', 'slider')):
         layout['hero'] = 'fullscreen'
     elif any(token in texto for token in ('gradient', 'gradiente')):
@@ -1505,19 +1515,21 @@ def _blueprint_to_layout(blueprint=None, fallback=None):
     elif any(token in texto for token in ('split', 'dos columnas', 'two column')):
         layout['hero'] = 'split'
 
-    if any(token in texto for token in ('services_menu', 'menu', 'menu_servicios')):
+    if any(token in texto for token in ('services_menu', 'menu_servicios')):
         layout['services'] = 'menu'
-    elif any(token in texto for token in ('services_list', 'listado', 'features_strip')):
+    elif any(token in texto for token in ('services_list', 'listado')):
         layout['services'] = 'list'
     elif any(token in texto for token in ('services_cards', 'cards')):
         layout['services'] = 'cards'
 
     if any(token in texto for token in ('projects_masonry', 'masonry', 'portfolio', 'galeria')):
         layout['projects'] = 'masonry'
-    elif any(token in texto for token in ('projects_carousel', 'carousel', 'slider')):
+    elif any(token in texto for token in ('projects_carousel', 'carousel')):
         layout['projects'] = 'carousel'
+    elif any(token in texto for token in ('projects_grid', 'grid')):
+        layout['projects'] = 'grid'
 
-    if any(token in texto for token in ('team_grid', 'grid', 'equipo')):
+    if any(token in texto for token in ('team_grid', 'grid')):
         layout['team'] = 'grid'
     elif any(token in texto for token in ('team_minimal', 'minimal')):
         layout['team'] = 'minimal'
