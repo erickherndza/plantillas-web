@@ -98,3 +98,4 @@ para renderizar las secciones correctas. Si el generador no lee `defaults_json`,
 el siguiente paso es actualizarlo para que use estos datos.
 
 Ese es el siguiente fix — pero primero valida que los datos llegan correctos a la DB.
+y luego adapta el archivo app_scraper_fix.py al archivo plantillas_editor.py
