@@ -1576,10 +1576,21 @@ def _blueprint_to_defaults(payload=None, layout=None, blueprint=None, componente
     return defaults
 
 
+def _normalizar_sitio(sitio):
+    """Convierte filas SQLite en dict para que el código use una interfaz uniforme."""
+    if isinstance(sitio, dict):
+        return sitio
+    if hasattr(sitio, 'keys') and hasattr(sitio, '__getitem__'):
+        return dict(sitio)
+    return {}
+
+
 def _contexto_sitio(sitio):
     """Carga config + secciones comunes para cualquier sitio."""
-    sid = sitio['id']
-    _estilos = get_estilos(sitio.get('plantilla_id')) if sitio.get('plantilla_id') else {}
+    sitio_dict = _normalizar_sitio(sitio)
+    sid = sitio_dict.get('id')
+    plantilla_id = sitio_dict.get('plantilla_id')
+    _estilos = get_estilos(plantilla_id) if plantilla_id else {}
     _defaults = _leer_json_dict(_estilos.get('defaults_json'))
     _config = dict(get_config_sitio(sid))
     for _clave, _valor in _defaults.items():
