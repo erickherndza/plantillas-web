@@ -1170,6 +1170,38 @@ def crear_sitio():
 
                 set_config_sitio_bulk(sitio_id, _config_base)
 
+                # ── Blueprint scraper: configuración inteligente ──────────────────────────
+                _estilos_p   = get_estilos(int(plantilla_id)) if plantilla_id else {}
+                _defaults_raw = (_estilos_p or {}).get('defaults_json', '{}')
+                try:
+                    _defaults_bp = json.loads(_defaults_raw) if _defaults_raw else {}
+                except Exception:
+                    _defaults_bp = {}
+
+                _blueprint  = _defaults_bp.get('_blueprint')
+                _tipo_web   = _defaults_bp.get('_tipo_web', formato)
+
+                if _blueprint and isinstance(_blueprint, dict) and _blueprint.get('sections'):
+                    from blueprint_generator import blueprint_to_config, blueprint_to_secciones
+                    _comp = {k: _defaults_bp.get(f'comp_{k}', False)
+                             for k in ['whatsapp','newsletter','social','topbar','citas']}
+                    _comp['hero_type'] = _defaults_bp.get('hero_tipo', 'static')
+
+                    _cfg = blueprint_to_config(
+                        _blueprint, _estilos_p, nombre_sitio, slug,
+                        tipo=_tipo_web, componentes=_comp
+                    )
+                    _secc = blueprint_to_secciones(_blueprint, tipo=_tipo_web)
+
+                    set_config_sitio_bulk(sitio_id, _cfg)
+                    for _sn, _si in _secc.items():
+                        if _si:
+                            set_secciones_contenido(sitio_id, _sn, _si)
+
+                    flash(f'Sitio "{nombre_sitio}" creado con estructura personalizada.', 'success')
+                    return redirect(url_for('mi_panel'))
+                # ─────────────────────────────────────────────────────────────────────────
+
                 # Secciones de contenido por defecto — varían según la plantilla
                 if _clave == 'doctores':
                     set_secciones_contenido(sitio_id, 'servicios', [
@@ -2060,6 +2092,24 @@ def ver_pagina(slug, pagina):
     if pagina not in _PAGINAS_WEB5:
         abort(404)
     ctx = _contexto_sitio(sitio)
+
+    # Enriquecer contexto de página con blueprint si existe
+    _cfg_sitio     = get_config_sitio(sitio['id'])
+    _blueprint_raw = _cfg_sitio.get('_blueprint') if _cfg_sitio else None
+
+    if _blueprint_raw:
+        try:
+            import json as _j
+            _bp = _j.loads(_blueprint_raw) if isinstance(_blueprint_raw, str) else _blueprint_raw
+            from blueprint_generator import get_web5_page_context, blueprint_to_secciones
+            from db import get_estilos as _get_estilos
+            _estilos = _get_estilos(sitio['plantilla_id']) or {}
+            _secc    = blueprint_to_secciones(_bp, tipo='web5')
+            _page_ctx = get_web5_page_context(pagina, _bp, ctx.get('cfg', {}), _secc)
+            ctx.update(_page_ctx)
+        except Exception:
+            pass
+
     template = _resolver_template_sitio(sitio, pagina)
     return render_template(template, sitio=sitio, pagina_activa=pagina, **ctx)
 
@@ -2489,37 +2539,55 @@ def admin_scraper_crear_url():
     import re as _re
     d = request.get_json(force=True)
 
-    nombre = d.get('nombre', '').strip()
-    clave = d.get('clave', '').strip().lower()
-    tipo = d.get('tipo', 'landing')
-
-    blueprint = d.get('blueprint')
-    componentes = d.get('componentes') or {}
-    layout = _blueprint_to_layout(blueprint, d.get('layout'))
-    defaults = _blueprint_to_defaults(d, layout, blueprint, componentes)
+    nombre      = d.get('nombre', '').strip()
+    clave       = d.get('clave', '').strip().lower()
+    tipo        = d.get('tipo', 'landing')
+    blueprint   = d.get('blueprint')
+    componentes = d.get('componentes', {})
 
     if not nombre or not clave:
         return jsonify(ok=False, error='Nombre y clave son obligatorios.'), 400
     if not _re.match(r'^[a-z][a-z0-9_-]{1,29}$', clave):
-        return jsonify(ok=False, error='Clave no válida: solo minúsculas, números, guiones.'), 400
+        return jsonify(ok=False, error='Clave no válida.'), 400
 
     try:
         pid = crear_plantilla(clave, nombre, tipo, 'Creada desde scraper URL', '', '{}')
     except Exception:
         return jsonify(ok=False, error=f'La clave "{clave}" ya existe.'), 409
 
+    defaults = {
+        '_blueprint':   blueprint,
+        '_tipo_web':    tipo,
+        '_componentes': componentes,
+        'hero_tipo':        componentes.get('hero_type', 'static'),
+        'comp_whatsapp':    componentes.get('whatsapp', False),
+        'comp_newsletter':  componentes.get('newsletter', True),
+        'comp_social':      componentes.get('social', True),
+        'comp_topbar':      componentes.get('topbar', False),
+        'comp_citas':       componentes.get('citas', False),
+    } if blueprint else {'_tipo_web': tipo}
+
+    layout = {
+        'hero':          componentes.get('hero_type', 'fullscreen'),
+        'services':      'grid',
+        'projects':      'masonry',
+        'team':          'cards',
+        'tipo_web':      tipo,
+        'section_order': blueprint.get('detected_sections', []) if blueprint else [],
+    }
+
     campos_estilos = {
-        'color_primary':   defaults.get('color_primario', '#185FA5'),
-        'color_accent':    defaults.get('color_acento', '#0088CC'),
-        'color_secondary': defaults.get('color_footer_bg', '#0A0F1E'),
-        'font_heading':    defaults.get('fuente_titulos', 'system-ui, sans-serif'),
-        'font_body':       defaults.get('fuente_cuerpo', 'system-ui, sans-serif'),
-        'layout_json':     json.dumps(layout, ensure_ascii=False),
-        'defaults_json':   json.dumps(defaults, ensure_ascii=False),
+        'color_primary':   d.get('color_primario', '#185FA5'),
+        'color_accent':    d.get('color_acento',   '#0088CC'),
+        'color_secondary': d.get('color_footer',   '#0A0F1E'),
+        'font_heading':    d.get('fuente_titulos', 'system-ui, sans-serif'),
+        'font_body':       d.get('fuente_cuerpo',  'system-ui, sans-serif'),
+        'layout_json':     json.dumps(layout,    ensure_ascii=False),
+        'defaults_json':   json.dumps(defaults,  ensure_ascii=False),
     }
     upsert_estilos(pid, campos_estilos)
 
-    flash(f'Plantilla "{nombre}" creada desde scraper.', 'success')
+    flash(f'Plantilla "{nombre}" creada desde scraper ({tipo}).', 'success')
     return jsonify(ok=True, pid=pid, redirect=url_for('admin_plantillas'))
 
 
