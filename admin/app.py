@@ -2547,8 +2547,21 @@ def admin_scraper_crear_url():
 
     if not nombre or not clave:
         return jsonify(ok=False, error='Nombre y clave son obligatorios.'), 400
+
+    # Sanear clave: quitar acentos, reemplazar espacios/especiales por guión,
+    # asegurar que empieza con letra, límite 30 chars
+    import unicodedata as _ud
+    clave = _ud.normalize('NFD', clave)
+    clave = ''.join(c for c in clave if _ud.category(c) != 'Mn')
+    clave = _re.sub(r'[^a-z0-9]+', '-', clave).strip('-')[:30]
+    if not clave:
+        clave = 'plantilla'
+    if not clave[0].isalpha():          # empieza con número → prefijo 'p-'
+        clave = 'p-' + clave
+    clave = clave[:30]
+
     if not _re.match(r'^[a-z][a-z0-9_-]{1,29}$', clave):
-        return jsonify(ok=False, error='Clave no válida.'), 400
+        return jsonify(ok=False, error=f'Clave generada inválida: "{clave}". Escríbela manualmente.'), 400
 
     try:
         pid = crear_plantilla(clave, nombre, tipo, 'Creada desde scraper URL', '', '{}')
