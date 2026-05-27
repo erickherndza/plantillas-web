@@ -93,6 +93,23 @@
                 {{ 'Desactivar' if p.activo else 'Activar' }}
               </button>
             </form>
+            <span class="btn-separator" aria-hidden="true"></span>
+            {% if conteos[p.id] == 0 %}
+            <button type="button"
+                    class="btn-sm btn-eliminar"
+                    data-pid="{{ p.id }}"
+                    data-nombre="{{ p.nombre }}"
+                    onclick="abrirModalEliminar(this)">
+              Eliminar
+            </button>
+            {% else %}
+            <button type="button"
+                    class="btn-sm btn-eliminar-disabled"
+                    title="{{ conteos[p.id] }} sitio(s) usan esta plantilla — no se puede eliminar"
+                    disabled>
+              Eliminar
+            </button>
+            {% endif %}
           </td>
         </tr>
         {% endfor %}
@@ -114,7 +131,7 @@
 .admin-table td { padding: 12px 14px; border-bottom: 1px solid #f1f5f9; vertical-align: middle; }
 .admin-table tr:hover td { background: #f8fafc; }
 .row-inactive td { opacity: .55; }
-.cell-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+.cell-actions { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
 .badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; }
 .badge-web5    { background: #ede9fe; color: #6d28d9; }
 .badge-landing { background: #dbeafe; color: #1d4ed8; }
@@ -127,7 +144,135 @@
 .btn-success    { border-color: #bbf7d0; color: #15803d; background: #f0fdf4; }
 .btn-success:hover { background: #dcfce7; }
 code { background: #f1f5f9; padding: 2px 6px; border-radius: 4px; font-size: 12px; color: #0f172a; }
+
+/* Separador visual entre acciones de gestión y acción destructiva */
+.btn-separator {
+  display: inline-block;
+  width: 1px;
+  height: 22px;
+  background: #e2e8f0;
+  margin: 0 2px;
+  vertical-align: middle;
+}
+
+/* Botón eliminar — rojo sólido para que destaque como acción destructiva */
+.btn-eliminar {
+  border-color: #fca5a5;
+  color: #b91c1c;
+  background: #fef2f2;
+}
+.btn-eliminar:hover {
+  background: #fee2e2;
+  border-color: #f87171;
+}
+
+/* Botón eliminar deshabilitado cuando hay sitios activos */
+.btn-eliminar-disabled {
+  border-color: #e2e8f0;
+  color: #94a3b8;
+  background: #f8fafc;
+  cursor: not-allowed;
+  opacity: .7;
+}
+
+/* Modal de confirmación */
+.modal-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, .45);
+  z-index: 1000;
+  align-items: center;
+  justify-content: center;
+}
+.modal-overlay.activo { display: flex; }
+.modal-box {
+  background: #fff;
+  border-radius: 12px;
+  padding: 32px;
+  max-width: 440px;
+  width: 90%;
+  box-shadow: 0 20px 60px rgba(0,0,0,.18);
+}
+.modal-box h2 {
+  margin: 0 0 8px;
+  font-size: 18px;
+  color: #0f172a;
+}
+.modal-box p {
+  margin: 0 0 24px;
+  color: #64748b;
+  font-size: 14px;
+  line-height: 1.5;
+}
+.modal-acciones {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+}
+.modal-acciones .btn-cancelar {
+  padding: 9px 20px;
+  border-radius: 7px;
+  border: 1.5px solid #e2e8f0;
+  background: #fff;
+  color: #374151;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.modal-acciones .btn-cancelar:hover { background: #f1f5f9; }
+.modal-acciones .btn-confirmar-eliminar {
+  padding: 9px 20px;
+  border-radius: 7px;
+  border: none;
+  background: #dc2626;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.modal-acciones .btn-confirmar-eliminar:hover { background: #b91c1c; }
 </style>
+
+<!-- Modal de confirmación de eliminación -->
+<div class="modal-overlay" id="modal-eliminar" role="dialog" aria-modal="true" aria-labelledby="modal-titulo">
+  <div class="modal-box">
+    <h2 id="modal-titulo">Eliminar plantilla</h2>
+    <p id="modal-texto">Esta accion no se puede deshacer.</p>
+    <div class="modal-acciones">
+      <button type="button" class="btn-cancelar" onclick="cerrarModal()">Cancelar</button>
+      <form id="form-eliminar" method="POST" style="display:inline;">
+        <button type="submit" class="btn-confirmar-eliminar">Si, eliminar</button>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+function abrirModalEliminar(btn) {
+  var pid    = btn.getAttribute('data-pid');
+  var nombre = btn.getAttribute('data-nombre');
+  document.getElementById('modal-texto').textContent =
+    'Vas a eliminar la plantilla "' + nombre + '". Esta accion no se puede deshacer.';
+  document.getElementById('form-eliminar').action =
+    '/admin/plantillas/' + pid + '/eliminar';
+  document.getElementById('modal-eliminar').classList.add('activo');
+}
+
+function cerrarModal() {
+  document.getElementById('modal-eliminar').classList.remove('activo');
+}
+
+// Cerrar modal al hacer click fuera del cuadro
+document.getElementById('modal-eliminar').addEventListener('click', function(e) {
+  if (e.target === this) cerrarModal();
+});
+
+// Cerrar modal con Escape
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') cerrarModal();
+});
+</script>
 
 </body>
 </html>

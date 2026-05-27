@@ -15,7 +15,7 @@ from db import (
     # CMS multi-usuario
     listar_plantillas_activas, listar_todas_plantillas,
     obtener_plantilla_por_id, crear_plantilla, actualizar_plantilla,
-    toggle_plantilla, contar_sitios_por_plantilla,
+    toggle_plantilla, contar_sitios_por_plantilla, eliminar_plantilla,
     crear_usuario, obtener_usuario_por_email, obtener_usuario_por_id,
     slug_disponible, crear_sitio as db_crear_sitio, obtener_sitios_usuario, obtener_sitio_por_id,
     obtener_sitio_por_slug,
@@ -613,6 +613,21 @@ def admin_plantilla_toggle(plantilla_id):
         toggle_plantilla(plantilla_id)
         estado = 'desactivada' if p['activo'] else 'activada'
         flash(f'Plantilla "{p["nombre"]}" {estado}.', 'success')
+    return redirect(url_for('admin_plantillas'))
+
+
+@app.route('/admin/plantillas/<int:plantilla_id>/eliminar', methods=['POST'])
+@admin_requerido
+def admin_plantilla_eliminar(plantilla_id):
+    p = obtener_plantilla_por_id(plantilla_id)
+    if not p:
+        flash('Plantilla no encontrada.', 'error')
+        return redirect(url_for('admin_plantillas'))
+    ok, motivo = eliminar_plantilla(plantilla_id)
+    if ok:
+        flash(f'Plantilla "{p["nombre"]}" eliminada correctamente.', 'success')
+    else:
+        flash(f'No se pudo eliminar "{p["nombre"]}": {motivo}', 'error')
     return redirect(url_for('admin_plantillas'))
 
 

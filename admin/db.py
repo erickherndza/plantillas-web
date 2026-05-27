@@ -525,6 +525,30 @@ def contar_sitios_por_plantilla(plantilla_id: int) -> int:
     return row['n'] if row else 0
 
 
+def eliminar_plantilla(plantilla_id: int) -> tuple[bool, str]:
+    """Elimina una plantilla solo si no tiene sitios activos ni inactivos.
+
+    Devuelve (True, '') si se eliminó, o (False, mensaje_error) si no se puede.
+    """
+    n = contar_sitios_por_plantilla(plantilla_id)
+    if n > 0:
+        return False, f'No se puede eliminar: {n} sitio(s) usa(n) esta plantilla.'
+    # También verificar sitios inactivos para no dejar huérfanos
+    conn = get_db()
+    row = conn.execute(
+        "SELECT COUNT(*) as n FROM sitios WHERE plantilla_id=?",
+        (plantilla_id,)
+    ).fetchone()
+    total = row['n'] if row else 0
+    if total > 0:
+        conn.close()
+        return False, f'No se puede eliminar: {total} sitio(s) (incluyendo inactivos) usa(n) esta plantilla.'
+    conn.execute("DELETE FROM plantillas WHERE id = ?", (plantilla_id,))
+    conn.commit()
+    conn.close()
+    return True, ''
+
+
 def listar_mensajes_sitio(sitio_id: int, solo_no_leidos: bool = False) -> list:
     """Devuelve los mensajes de contacto de un sitio."""
     conn = get_db()
