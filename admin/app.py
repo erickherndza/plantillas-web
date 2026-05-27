@@ -1443,38 +1443,187 @@ def _leer_json_dict(valor):
 
 
 def _defaults_desde_payload(payload: dict, layout=None):
-    """Convierte el payload del scraper en defaults JSON consumibles por el render."""
+    """Convierte el payload del scraper en defaults JSON consumibles por el render.
+
+    Versión mejorada: incluye tokens mobile-first, secciones detectadas,
+    colores derivados, componentes inferidos y metadata de layout.
+    """
+    # ── Colores base ──────────────────────────────────────────────────────────
+    color_primario  = payload.get('color_primario') or '#185FA5'
+    color_acento    = payload.get('color_acento')   or '#0088CC'
+    color_footer    = payload.get('color_footer')   or '#0A0F1E'
+    color_navbar    = payload.get('color_navbar_bg') or color_primario
+    color_texto     = payload.get('color_texto')     or '#1f2937'
+    color_texto_inv = payload.get('color_texto_inverso') or '#ffffff'
+
+    # ── Detectar si el tema es oscuro para ajustar contraste ─────────────────
+    def _es_oscuro(hex_color: str) -> bool:
+        try:
+            h = hex_color.lstrip('#')
+            if len(h) == 3:
+                h = ''.join(c * 2 for c in h)
+            r, g, b = int(h[0:2], 16), int(h[2:4], 16), int(h[4:6], 16)
+            luminancia = (0.299 * r + 0.587 * g + 0.114 * b) / 255
+            return luminancia < 0.5
+        except Exception:
+            return False
+
+    tema_oscuro = _es_oscuro(color_primario)
+
     defaults = {}
+
+    # ── Campos básicos (igual que antes, sin romper compatibilidad) ───────────
     for clave, valor in (
-        ('color_primario', payload.get('color_primario')),
-        ('color_acento', payload.get('color_acento')),
-        ('color_footer_bg', payload.get('color_footer')),
-        ('fuente_titulos', payload.get('fuente_titulos')),
-        ('fuente_cuerpo', payload.get('fuente_cuerpo')),
-        ('hero_titulo', payload.get('hero_titulo')),
-        ('hero_subtitulo', payload.get('hero_subtitulo')),
-        ('hero_cta_texto', payload.get('hero_cta_texto')),
-        ('hero_cta_href', payload.get('hero_cta_href')),
-        ('menu_servicios', payload.get('menu_servicios')),
-        ('menu_proyectos', payload.get('menu_proyectos')),
-        ('menu_equipo', payload.get('menu_equipo')),
-        ('menu_contacto', payload.get('menu_contacto')),
+        ('color_primario',   color_primario),
+        ('color_acento',     color_acento),
+        ('color_footer_bg',  color_footer),
+        ('color_navbar_bg',  color_navbar),
+        ('color_texto',      color_texto),
+        ('color_texto_inverso', color_texto_inv),
+        ('fuente_titulos',   payload.get('fuente_titulos')),
+        ('fuente_cuerpo',    payload.get('fuente_cuerpo')),
+        ('hero_titulo',      payload.get('hero_titulo')),
+        ('hero_subtitulo',   payload.get('hero_subtitulo')),
+        ('hero_cta_texto',   payload.get('hero_cta_texto')),
+        ('hero_cta_href',    payload.get('hero_cta_href')),
+        ('hero_eyebrow',     payload.get('hero_eyebrow')),
+        ('menu_servicios',   payload.get('menu_servicios')),
+        ('menu_proyectos',   payload.get('menu_proyectos')),
+        ('menu_equipo',      payload.get('menu_equipo')),
+        ('menu_contacto',    payload.get('menu_contacto')),
+        ('nombre_empresa',   payload.get('nombre_empresa') or payload.get('nombre')),
+        ('tagline',          payload.get('tagline')),
+        ('descripcion',      payload.get('descripcion') or payload.get('nosotros_descripcion')),
+        ('logo_url',         payload.get('logo_url')),
+        ('telefono',         payload.get('telefono')),
+        ('email',            payload.get('email')),
+        ('direccion',        payload.get('direccion')),
+        ('ciudad',           payload.get('ciudad')),
+        ('horario',          payload.get('horario')),
     ):
         if valor:
             defaults[clave] = valor
+
+    # ── Tokens mobile-first ───────────────────────────────────────────────────
+    # Breakpoints y comportamientos responsivos por sección
+    mobile_bp = payload.get('mobile_breakpoints') or {}
+    defaults['mobile_nav']      = mobile_bp.get('nav', 'hamburger')       # hamburger | bottom_bar | drawer
+    defaults['mobile_hero']     = mobile_bp.get('hero', 'stack')           # stack | fullscreen | centered | full_bleed
+    defaults['mobile_services'] = mobile_bp.get('services', 'accordion')   # accordion | swipe_cards | grid_2col
+    defaults['mobile_team']     = mobile_bp.get('team', 'swipe_cards')     # swipe_cards | grid_2col | list
+    defaults['mobile_gallery']  = mobile_bp.get('gallery', 'swipe_cards')  # swipe_cards | masonry_2col | grid
+
+    # ── Spacing y tipografía responsiva ──────────────────────────────────────
+    defaults['font_size_hero_mobile']   = payload.get('font_size_hero_mobile', '2.2rem')
+    defaults['font_size_hero_desktop']  = payload.get('font_size_hero_desktop', '4rem')
+    defaults['font_size_h2_mobile']     = payload.get('font_size_h2_mobile', '1.6rem')
+    defaults['font_size_h2_desktop']    = payload.get('font_size_h2_desktop', '2.4rem')
+    defaults['section_padding_mobile']  = payload.get('section_padding_mobile', '3rem 1.25rem')
+    defaults['section_padding_desktop'] = payload.get('section_padding_desktop', '6rem 2rem')
+
+    # ── Secciones detectadas / habilitadas ────────────────────────────────────
+    secciones_activas = payload.get('secciones_activas') or payload.get('secciones') or []
+    if not secciones_activas and layout:
+        # Inferir secciones activas desde el layout
+        secciones_activas = ['hero', 'servicios', 'contacto']
+        if layout.get('projects'):
+            secciones_activas.append('proyectos')
+        if layout.get('team'):
+            secciones_activas.append('equipo')
+
+    defaults['secciones_activas'] = json.dumps(secciones_activas, ensure_ascii=False)
+
+    # Visibilidad individual de cada sección
+    for sec in ('hero', 'servicios', 'proyectos', 'equipo', 'testimonios',
+                'galeria', 'nosotros', 'precios', 'faq', 'mapa', 'ctas_flotantes'):
+        defaults[f'sec_{sec}'] = '1' if (
+            not secciones_activas or sec in secciones_activas
+        ) else '0'
+    # Hero siempre visible
+    defaults['sec_hero'] = '1'
+
+    # ── Componentes opcionales ────────────────────────────────────────────────
+    comp = payload.get('componentes') or {}
+    defaults['comp_whatsapp']   = '1' if comp.get('whatsapp')  or comp.get('whatsApp')  else '0'
+    defaults['comp_newsletter'] = '1' if comp.get('newsletter')                          else '0'
+    defaults['comp_redes']      = '1' if comp.get('redes')     or comp.get('social')    else '0'
+    defaults['comp_topbar']     = '1' if comp.get('topbar')                              else '0'
+    defaults['comp_citas']      = '1' if comp.get('citas')                               else '0'
+    defaults['comp_chat']       = '1' if comp.get('chat')                                else '0'
+    defaults['comp_cookies']    = '1' if comp.get('cookies',  True)                      else '0'
+    defaults['comp_back_top']   = '1' if comp.get('back_top', True)                      else '0'
+
+    # ── Hero avanzado ─────────────────────────────────────────────────────────
+    defaults['hero_tipo']          = payload.get('hero_tipo') or (layout.get('hero') if layout else 'static')
+    defaults['hero_overlay_opac']  = payload.get('hero_overlay_opacity', '0.55')
+    defaults['hero_alineacion']    = payload.get('hero_alineacion', 'left')   # left | center | right
+    defaults['hero_imagen_url']    = payload.get('hero_imagen_url', '')
+    defaults['hero_video_url']     = payload.get('hero_video_url', '')
+    defaults['hero_badge_texto']   = payload.get('hero_badge_texto', '')
+    defaults['hero_cta2_texto']    = payload.get('hero_cta2_texto', '')
+    defaults['hero_cta2_href']     = payload.get('hero_cta2_href', '')
+
+    # ── Navbar ────────────────────────────────────────────────────────────────
+    defaults['navbar_sticky']      = '1' if payload.get('navbar_sticky', True) else '0'
+    defaults['navbar_transparente']= '1' if payload.get('navbar_transparente', defaults['hero_tipo'] == 'fullscreen') else '0'
+    defaults['navbar_logo_pos']    = payload.get('navbar_logo_pos', 'left')  # left | center
+
+    # ── Features de landing page (persuasión / conversión) ───────────────────
+    features = payload.get('features') or []
+    feature_map = {
+        'booking':            'comp_citas',
+        'team_profiles':      'sec_equipo',
+        'service_list':       'sec_servicios',
+        'testimonials':       'sec_testimonios',
+        'portfolio_masonry':  'sec_proyectos',
+        'gallery':            'sec_galeria',
+        'pricing_table':      'sec_precios',
+        'faq':                'sec_faq',
+        'map':                'sec_mapa',
+        'newsletter':         'comp_newsletter',
+    }
+    for feat in features:
+        mapped = feature_map.get(feat)
+        if mapped:
+            defaults[mapped] = '1'
+
+    # ── SEO básico ────────────────────────────────────────────────────────────
+    defaults['meta_titulo']       = payload.get('meta_titulo') or defaults.get('hero_titulo', '')
+    defaults['meta_descripcion']  = payload.get('meta_descripcion') or defaults.get('descripcion', '')
+    defaults['og_imagen']         = payload.get('og_imagen') or defaults.get('hero_imagen_url', '')
+
+    # ── Tema ──────────────────────────────────────────────────────────────────
+    defaults['tema_oscuro']        = '1' if tema_oscuro else '0'
+    defaults['hero_texto_color']   = '#ffffff' if (tema_oscuro or defaults['hero_tipo'] in ('dark', 'fullscreen', 'gradient')) else color_texto
+
+    # ── Layout JSON ───────────────────────────────────────────────────────────
     if layout:
         defaults['layout'] = layout
+
     return defaults
 
 
 def _blueprint_to_layout(blueprint=None, fallback=None):
-    """Convierte el blueprint detectado a layout JSON para el render."""
+    """Convierte el blueprint detectado a layout JSON para el render.
+
+    Versión mejorada: detecta variantes de sección más granulares,
+    soporta tokens mobile-first y toma decisiones contextuales de layout.
+    """
     layout = fallback if isinstance(fallback, dict) else {
         'hero': 'split',
         'services': 'grid',
         'projects': 'masonry',
         'team': 'cards',
+        # Nuevos slots
+        'testimonials': 'carousel',
+        'pricing': 'cards',
+        'faq': 'accordion',
+        'gallery': 'masonry',
+        'cta': 'centered',
+        'features': 'grid_3col',
+        'footer': 'columns',
     }
+
     if isinstance(blueprint, dict):
         _layout_extra = blueprint.get('layout')
         if isinstance(_layout_extra, dict):
@@ -1502,85 +1651,335 @@ def _blueprint_to_layout(blueprint=None, fallback=None):
 
     texto = ' '.join([s for s in secciones if s]).lower()
 
-    # Solo sobrescribe el layout si hay una intención explícita del blueprint.
-    # Eso evita que secciones como 'features_strip' cambien el layout de servicios.
-    if any(token in texto for token in ('fullscreen', 'full', 'hero_fullscreen', 'slider')):
+    # ── Hero ──────────────────────────────────────────────────────────────────
+    if any(t in texto for t in ('fullscreen', 'full', 'hero_fullscreen', 'slider', 'video_bg')):
         layout['hero'] = 'fullscreen'
-    elif any(token in texto for token in ('gradient', 'gradiente')):
+    elif any(t in texto for t in ('gradient', 'gradiente', 'hero_gradient')):
         layout['hero'] = 'gradient'
-    elif any(token in texto for token in ('dark', 'oscuro')):
+    elif any(t in texto for t in ('dark', 'oscuro', 'hero_dark')):
         layout['hero'] = 'dark'
-    elif any(token in texto for token in ('minimal', 'simple', 'clean')):
+    elif any(t in texto for t in ('minimal', 'simple', 'clean', 'hero_minimal')):
         layout['hero'] = 'minimal'
-    elif any(token in texto for token in ('split', 'dos columnas', 'two column')):
+    elif any(t in texto for t in ('split', 'dos columnas', 'two column', 'hero_split')):
         layout['hero'] = 'split'
+    elif any(t in texto for t in ('centered', 'centrado', 'hero_centered')):
+        layout['hero'] = 'centered'
 
-    if any(token in texto for token in ('services_menu', 'menu_servicios')):
+    # ── Servicios ─────────────────────────────────────────────────────────────
+    if any(t in texto for t in ('services_menu', 'menu_servicios', 'menu')):
         layout['services'] = 'menu'
-    elif any(token in texto for token in ('services_list', 'listado')):
+    elif any(t in texto for t in ('services_list', 'listado', 'lista')):
         layout['services'] = 'list'
-    elif any(token in texto for token in ('services_cards', 'cards')):
+    elif any(t in texto for t in ('services_cards', 'cards', 'tarjetas')):
         layout['services'] = 'cards'
+    elif any(t in texto for t in ('services_accordion', 'accordion', 'acordeon')):
+        layout['services'] = 'accordion'
+    elif any(t in texto for t in ('services_tabs', 'tabs', 'pestanas')):
+        layout['services'] = 'tabs'
+    elif any(t in texto for t in ('services_grid', 'grid_servicios')):
+        layout['services'] = 'grid'
 
-    if any(token in texto for token in ('projects_masonry', 'masonry', 'portfolio', 'galeria')):
+    # ── Proyectos / Portafolio ────────────────────────────────────────────────
+    if any(t in texto for t in ('projects_masonry', 'masonry', 'portfolio', 'galeria')):
         layout['projects'] = 'masonry'
-    elif any(token in texto for token in ('projects_carousel', 'carousel')):
+    elif any(t in texto for t in ('projects_carousel', 'carousel', 'carrusel')):
         layout['projects'] = 'carousel'
-    elif any(token in texto for token in ('projects_grid', 'grid')):
+    elif any(t in texto for t in ('projects_grid', 'grid_proyectos')):
         layout['projects'] = 'grid'
+    elif any(t in texto for t in ('projects_list', 'lista_proyectos')):
+        layout['projects'] = 'list'
 
-    if any(token in texto for token in ('team_grid', 'grid')):
+    # ── Equipo ────────────────────────────────────────────────────────────────
+    if any(t in texto for t in ('team_grid', 'grid_equipo')):
         layout['team'] = 'grid'
-    elif any(token in texto for token in ('team_minimal', 'minimal')):
+    elif any(t in texto for t in ('team_minimal', 'minimal_team')):
         layout['team'] = 'minimal'
+    elif any(t in texto for t in ('team_carousel', 'carousel_equipo')):
+        layout['team'] = 'carousel'
+    elif any(t in texto for t in ('team_cards', 'cards_equipo')):
+        layout['team'] = 'cards'
+
+    # ── Testimonios ───────────────────────────────────────────────────────────
+    if any(t in texto for t in ('testimonios_grid', 'reviews_grid')):
+        layout['testimonials'] = 'grid'
+    elif any(t in texto for t in ('testimonios_carousel', 'reviews_carousel')):
+        layout['testimonials'] = 'carousel'
+    elif any(t in texto for t in ('testimonios_masonry', 'reviews_masonry')):
+        layout['testimonials'] = 'masonry'
+
+    # ── Precios ───────────────────────────────────────────────────────────────
+    if any(t in texto for t in ('pricing_table', 'tabla_precios')):
+        layout['pricing'] = 'table'
+    elif any(t in texto for t in ('pricing_toggle', 'precios_toggle')):
+        layout['pricing'] = 'toggle'
+
+    # ── Features strip ────────────────────────────────────────────────────────
+    if any(t in texto for t in ('features_strip', 'highlights', 'icon_features')):
+        layout['features'] = 'strip'
+    elif any(t in texto for t in ('features_grid', 'ventajas_grid')):
+        layout['features'] = 'grid_3col'
+
+    # ── Footer ────────────────────────────────────────────────────────────────
+    if any(t in texto for t in ('footer_minimal', 'footer_simple')):
+        layout['footer'] = 'minimal'
+    elif any(t in texto for t in ('footer_columns', 'footer_columnas', 'footer_full')):
+        layout['footer'] = 'columns'
+
+    # ── CTA flotante ──────────────────────────────────────────────────────────
+    if any(t in texto for t in ('cta_sticky', 'cta_flotante', 'sticky_bar')):
+        layout['cta'] = 'sticky_bar'
+    elif any(t in texto for t in ('cta_centered', 'cta_centrado')):
+        layout['cta'] = 'centered'
+
+    # ── Número de columnas mobile para grids ─────────────────────────────────
+    layout['mobile_cols_services']  = 1
+    layout['mobile_cols_projects']  = 2
+    layout['mobile_cols_team']      = 2
+    layout['mobile_cols_features']  = 2
 
     return layout
 
 
 def _blueprint_to_defaults(payload=None, layout=None, blueprint=None, componentes=None):
-    """Genera defaults JSON ricos a partir del blueprint y componentes opcionales."""
-    payload = payload if isinstance(payload, dict) else {}
+    """Genera defaults JSON ricos a partir del blueprint y componentes opcionales.
+
+    Versión mejorada: extrae secciones, comportamientos mobile-first,
+    tokens de diseño, features habilitadas y metadata de conversión.
+    """
+    payload     = payload     if isinstance(payload,     dict) else {}
     componentes = componentes if isinstance(componentes, dict) else {}
 
+    # ── Extraer lista de secciones desde el blueprint ─────────────────────────
     secciones = []
     if isinstance(blueprint, dict):
         for clave in ('secciones', 'sections', 'detected_sections', 'detectedSections', 'items'):
             valor = blueprint.get(clave)
             if isinstance(valor, list):
-                secciones = [item.strip().lower() for item in valor if isinstance(item, str) and item.strip()]
+                secciones = [
+                    (item.strip().lower() if isinstance(item, str) else
+                     next((item.get(k, '') for k in ('tipo', 'nombre', 'section', 'slug', 'id')
+                           if isinstance(item.get(k), str) and item.get(k).strip()), ''))
+                    for item in valor
+                ]
+                secciones = [s for s in secciones if s]
                 break
     elif isinstance(blueprint, (list, tuple)):
-        secciones = [item.strip().lower() for item in blueprint if isinstance(item, str) and item.strip()]
+        secciones = [item.strip().lower() for item in blueprint
+                     if isinstance(item, str) and item.strip()]
+
+    # ── Features del blueprint ────────────────────────────────────────────────
+    features_bp = []
+    if isinstance(blueprint, dict):
+        features_bp = blueprint.get('features') or []
+    features_all = list(set(
+        (payload.get('features') or []) + features_bp
+    ))
+
+    # ── Colores con fallback inteligente ──────────────────────────────────────
+    color_primario = (payload.get('color_primario') or payload.get('color_primary') or '#185FA5')
+    color_acento   = (payload.get('color_acento')   or payload.get('color_accent')  or '#0088CC')
+    color_footer   = (payload.get('color_footer')   or payload.get('color_secondary') or '#0A0F1E')
+    color_navbar   = (payload.get('color_navbar_bg') or payload.get('color_navbar') or color_primario)
+    color_texto    = payload.get('color_texto') or '#1f2937'
+
+    # Detectar luminancia para tema oscuro
+    def _lum(hex_c):
+        try:
+            h = hex_c.lstrip('#')
+            if len(h) == 3: h = ''.join(c*2 for c in h)
+            r,g,b = int(h[0:2],16), int(h[2:4],16), int(h[4:6],16)
+            return (0.299*r + 0.587*g + 0.114*b) / 255
+        except Exception:
+            return 0.5
+
+    tema_oscuro = _lum(color_primario) < 0.45
+
+    # ── Hero tipo ─────────────────────────────────────────────────────────────
+    hero_tipo = (
+        payload.get('hero_tipo')
+        or (blueprint.get('hero_tipo') if isinstance(blueprint, dict) else None)
+        or (layout.get('hero') if isinstance(layout, dict) else 'static')
+    )
+
+    # ── Mobile breakpoints desde categoría o blueprint ────────────────────────
+    mobile_bp = (
+        (blueprint.get('mobile_breakpoints') if isinstance(blueprint, dict) else None)
+        or payload.get('mobile_breakpoints')
+        or {}
+    )
 
     defaults = {
-        'color_primario': payload.get('color_primario') or payload.get('color_primary') or '#185FA5',
-        'color_acento': payload.get('color_acento') or payload.get('color_accent') or '#0088CC',
-        'color_footer_bg': payload.get('color_footer') or payload.get('color_secondary') or '#0A0F1E',
-        'color_navbar_bg': payload.get('color_navbar_bg') or payload.get('color_navbar') or payload.get('color_primario') or '#185FA5',
-        'color_texto': payload.get('color_texto') or '#1f2937',
-        'fuente_titulos': payload.get('fuente_titulos') or payload.get('font_heading') or 'system-ui, sans-serif',
-        'fuente_cuerpo': payload.get('fuente_cuerpo') or payload.get('font_body') or 'system-ui, sans-serif',
-        'hero_titulo': payload.get('hero_titulo') or payload.get('titulo_principal') or payload.get('nombre') or 'Mi plantilla',
-        'hero_subtitulo': payload.get('hero_subtitulo') or payload.get('subtitulo_principal') or 'Soluciones profesionales para tu negocio.',
-        'hero_cta_texto': payload.get('hero_cta_texto') or 'Contáctanos',
-        'hero_cta_href': payload.get('hero_cta_href') or '#contacto',
-        'hero_eyebrow': payload.get('hero_eyebrow') or payload.get('eyebrow') or '',
-        'menu_servicios': payload.get('menu_servicios') or 'Servicios',
-        'menu_proyectos': payload.get('menu_proyectos') or 'Proyectos',
-        'menu_equipo': payload.get('menu_equipo') or 'Equipo',
-        'menu_contacto': payload.get('menu_contacto') or 'Contacto',
-        'servicios_descripcion': payload.get('servicios_descripcion') or 'Servicios adaptados a tus necesidades.',
-        'proyectos_descripcion': payload.get('proyectos_descripcion') or 'Una muestra de nuestros trabajos más destacados.',
-        'equipo_descripcion': payload.get('equipo_descripcion') or 'Conoce al equipo que hace posible tu proyecto.',
+        # Identidad
+        'nombre_empresa':       payload.get('nombre_empresa') or payload.get('nombre') or '',
+        'tagline':              payload.get('tagline') or '',
+        'descripcion':          payload.get('descripcion') or payload.get('nosotros_descripcion') or '',
+        'logo_url':             payload.get('logo_url') or '',
+        'favicon_url':          payload.get('favicon_url') or '',
+
+        # Colores
+        'color_primario':       color_primario,
+        'color_acento':         color_acento,
+        'color_footer_bg':      color_footer,
+        'color_navbar_bg':      color_navbar,
+        'color_texto':          color_texto,
+        'color_texto_inverso':  payload.get('color_texto_inverso') or '#ffffff',
+        'tema_oscuro':          '1' if tema_oscuro else '0',
+
+        # Tipografía
+        'fuente_titulos':       payload.get('fuente_titulos') or payload.get('font_heading') or 'system-ui, sans-serif',
+        'fuente_cuerpo':        payload.get('fuente_cuerpo')  or payload.get('font_body')    or 'system-ui, sans-serif',
+        'font_weight_heading':  payload.get('font_weight_heading') or '700',
+        'font_size_base':       payload.get('font_size_base') or '16px',
+
+        # Tipografía responsive
+        'font_size_hero_mobile':   payload.get('font_size_hero_mobile',   '2.2rem'),
+        'font_size_hero_desktop':  payload.get('font_size_hero_desktop',  '4rem'),
+        'font_size_h2_mobile':     payload.get('font_size_h2_mobile',     '1.6rem'),
+        'font_size_h2_desktop':    payload.get('font_size_h2_desktop',    '2.4rem'),
+        'section_padding_mobile':  payload.get('section_padding_mobile',  '3rem 1.25rem'),
+        'section_padding_desktop': payload.get('section_padding_desktop', '6rem 2rem'),
+
+        # Hero
+        'hero_titulo':          payload.get('hero_titulo') or payload.get('titulo_principal') or payload.get('nombre') or 'Mi plantilla',
+        'hero_subtitulo':       payload.get('hero_subtitulo') or payload.get('subtitulo_principal') or 'Soluciones profesionales para tu negocio.',
+        'hero_eyebrow':         payload.get('hero_eyebrow') or payload.get('eyebrow') or '',
+        'hero_badge_texto':     payload.get('hero_badge_texto') or '',
+        'hero_cta_texto':       payload.get('hero_cta_texto') or 'Contáctanos',
+        'hero_cta_href':        payload.get('hero_cta_href') or '#contacto',
+        'hero_cta2_texto':      payload.get('hero_cta2_texto') or '',
+        'hero_cta2_href':       payload.get('hero_cta2_href') or '',
+        'hero_tipo':            hero_tipo,
+        'hero_overlay_opac':    payload.get('hero_overlay_opacity') or '0.55',
+        'hero_alineacion':      payload.get('hero_alineacion') or 'left',
+        'hero_imagen_url':      payload.get('hero_imagen_url') or '',
+        'hero_video_url':       payload.get('hero_video_url') or '',
+        'hero_texto_color':     '#ffffff' if (tema_oscuro or hero_tipo in ('dark','fullscreen','gradient')) else color_texto,
+
+        # Navbar
+        'navbar_sticky':        '1' if payload.get('navbar_sticky',   True)  else '0',
+        'navbar_transparente':  '1' if payload.get('navbar_transparente', hero_tipo == 'fullscreen') else '0',
+        'navbar_logo_pos':      payload.get('navbar_logo_pos', 'left'),
+
+        # Nav items
+        'menu_servicios':       payload.get('menu_servicios') or 'Servicios',
+        'menu_proyectos':       payload.get('menu_proyectos') or 'Proyectos',
+        'menu_equipo':          payload.get('menu_equipo')    or 'Equipo',
+        'menu_contacto':        payload.get('menu_contacto')  or 'Contacto',
+        'menu_nosotros':        payload.get('menu_nosotros')  or 'Nosotros',
+
+        # Contacto / footer
+        'telefono':             payload.get('telefono') or '',
+        'email':                payload.get('email') or '',
+        'direccion':            payload.get('direccion') or '',
+        'ciudad':               payload.get('ciudad') or '',
+        'horario':              payload.get('horario') or '',
+        'whatsapp_numero':      payload.get('whatsapp_numero') or payload.get('telefono') or '',
+
+        # Redes sociales
+        'facebook_url':         payload.get('facebook_url') or '',
+        'instagram_url':        payload.get('instagram_url') or '',
+        'twitter_url':          payload.get('twitter_url') or '',
+        'linkedin_url':         payload.get('linkedin_url') or '',
+        'tiktok_url':           payload.get('tiktok_url') or '',
+
+        # Descripciones de sección
+        'servicios_titulo':     payload.get('servicios_titulo') or 'Nuestros Servicios',
+        'servicios_descripcion':payload.get('servicios_descripcion') or 'Servicios adaptados a tus necesidades.',
+        'proyectos_titulo':     payload.get('proyectos_titulo') or 'Nuestros Proyectos',
+        'proyectos_descripcion':payload.get('proyectos_descripcion') or 'Una muestra de nuestros trabajos más destacados.',
+        'equipo_titulo':        payload.get('equipo_titulo') or 'Nuestro Equipo',
+        'equipo_descripcion':   payload.get('equipo_descripcion') or 'Conoce al equipo que hace posible tu proyecto.',
+        'nosotros_titulo':      payload.get('nosotros_titulo') or 'Sobre Nosotros',
         'nosotros_descripcion': payload.get('nosotros_descripcion') or payload.get('descripcion') or '',
-        'comp_whatsapp': '1' if componentes.get('whatsapp') or componentes.get('whatsApp') else '0',
-        'comp_newsletter': '1' if componentes.get('newsletter') else '0',
-        'comp_redes': '1' if componentes.get('redes') or componentes.get('social') else '0',
-        'comp_topbar': '1' if componentes.get('topbar') else '0',
-        'comp_citas': '1' if componentes.get('citas') else '0',
-        'hero_tipo': payload.get('hero_tipo') or (blueprint.get('hero_tipo') if isinstance(blueprint, dict) else None) or (layout.get('hero') if isinstance(layout, dict) else 'static'),
-        '_detected_sections': json.dumps(secciones, ensure_ascii=False),
+        'testimonios_titulo':   payload.get('testimonios_titulo') or 'Lo que dicen de nosotros',
+        'precios_titulo':       payload.get('precios_titulo') or 'Nuestros Planes',
+
+        # Mobile-first: comportamientos por sección
+        'mobile_nav':           mobile_bp.get('nav',      'hamburger'),
+        'mobile_hero':          mobile_bp.get('hero',     'stack'),
+        'mobile_services':      mobile_bp.get('services', 'accordion'),
+        'mobile_team':          mobile_bp.get('team',     'swipe_cards'),
+        'mobile_gallery':       mobile_bp.get('gallery',  'swipe_cards'),
+        'mobile_cols_services': str(mobile_bp.get('cols_services', 1)),
+        'mobile_cols_projects': str(mobile_bp.get('cols_projects', 2)),
+        'mobile_cols_team':     str(mobile_bp.get('cols_team',     2)),
+
+        # SEO
+        'meta_titulo':          payload.get('meta_titulo') or payload.get('hero_titulo') or '',
+        'meta_descripcion':     payload.get('meta_descripcion') or payload.get('descripcion') or '',
+        'og_imagen':            payload.get('og_imagen') or payload.get('hero_imagen_url') or '',
+
+        # Secciones detectadas (raw para debugging)
+        '_detected_sections':   json.dumps(secciones, ensure_ascii=False),
     }
+
+    # ── Visibilidad de secciones ──────────────────────────────────────────────
+    sec_defaults = {
+        'sec_hero':        '1',  # siempre
+        'sec_servicios':   '1',
+        'sec_proyectos':   '0',
+        'sec_equipo':      '0',
+        'sec_testimonios': '0',
+        'sec_galeria':     '0',
+        'sec_nosotros':    '0',
+        'sec_precios':     '0',
+        'sec_faq':         '0',
+        'sec_mapa':        '0',
+        'sec_ctas_flotantes': '0',
+    }
+    # Activar según secciones detectadas
+    sec_map = {
+        'servicios': 'sec_servicios', 'services': 'sec_servicios',
+        'proyectos': 'sec_proyectos', 'projects': 'sec_proyectos',  'portfolio': 'sec_proyectos',
+        'equipo':    'sec_equipo',    'team':     'sec_equipo',
+        'testimonios': 'sec_testimonios', 'testimonials': 'sec_testimonios', 'reviews': 'sec_testimonios',
+        'galeria':   'sec_galeria',   'gallery':  'sec_galeria',
+        'nosotros':  'sec_nosotros',  'about':    'sec_nosotros',
+        'precios':   'sec_precios',   'pricing':  'sec_precios',   'planes': 'sec_precios',
+        'faq':       'sec_faq',       'faqs':     'sec_faq',
+        'mapa':      'sec_mapa',      'map':      'sec_mapa',      'ubicacion': 'sec_mapa',
+    }
+    for sec in secciones:
+        key = sec_map.get(sec)
+        if key:
+            sec_defaults[key] = '1'
+    # Activar secciones inferidas por features
+    feature_sec_map = {
+        'booking':           'comp_citas',
+        'team_profiles':     'sec_equipo',
+        'service_list':      'sec_servicios',
+        'testimonials':      'sec_testimonios',
+        'portfolio_masonry': 'sec_proyectos',
+        'gallery':           'sec_galeria',
+        'pricing_table':     'sec_precios',
+        'faq':               'sec_faq',
+        'map':               'sec_mapa',
+        'newsletter':        'comp_newsletter',
+    }
+    for feat in features_all:
+        mapped = feature_sec_map.get(feat)
+        if mapped and mapped in sec_defaults:
+            sec_defaults[mapped] = '1'
+
+    defaults.update(sec_defaults)
+
+    # ── Componentes opcionales ────────────────────────────────────────────────
+    defaults['comp_whatsapp']   = '1' if (componentes.get('whatsapp') or componentes.get('whatsApp')
+                                          or 'whatsapp' in features_all) else '0'
+    defaults['comp_newsletter'] = '1' if (componentes.get('newsletter')
+                                          or 'newsletter' in features_all) else '0'
+    defaults['comp_redes']      = '1' if (componentes.get('redes') or componentes.get('social')) else '0'
+    defaults['comp_topbar']     = '1' if componentes.get('topbar')   else '0'
+    defaults['comp_citas']      = '1' if (componentes.get('citas')
+                                          or 'booking' in features_all) else '0'
+    defaults['comp_chat']       = '1' if componentes.get('chat')     else '0'
+    defaults['comp_cookies']    = '1' if componentes.get('cookies', True) else '0'
+    defaults['comp_back_top']   = '1' if componentes.get('back_top', True) else '0'
+
+    # ── Secciones activas serializada (para templates) ────────────────────────
+    secciones_activas = [k.replace('sec_', '') for k, v in sec_defaults.items()
+                         if k.startswith('sec_') and v == '1']
+    defaults['secciones_activas'] = json.dumps(secciones_activas, ensure_ascii=False)
 
     if layout:
         defaults['layout'] = layout
@@ -1915,14 +2314,128 @@ def admin_plantilla_wizard():
 # ══════════════════════════════════════════════════════════════════════════════
 
 _CATEGORIAS = {
-    'clinica':      {'color_primary':'#0077B6','color_accent':'#00B4D8','color_secondary':'#03045E','font_heading':'Montserrat','font_body':'Open Sans','layout':{'hero':'split','services':'list','projects':'grid','team':'cards'}},
-    'restaurante':  {'color_primary':'#C1440E','color_accent':'#F4A261','color_secondary':'#1A0A00','font_heading':'Playfair Display','font_body':'Lato','layout':{'hero':'fullscreen','services':'menu','projects':'masonry','team':'minimal'}},
-    'abogados':     {'color_primary':'#1B2A4A','color_accent':'#C9A84C','color_secondary':'#0D1B2A','font_heading':'Cormorant Garamond','font_body':'Source Sans Pro','layout':{'hero':'minimal','services':'list','projects':'grid','team':'cards'}},
-    'creativo':     {'color_primary':'#6D28D9','color_accent':'#F59E0B','color_secondary':'#1F1135','font_heading':'Space Grotesk','font_body':'Inter','layout':{'hero':'gradient','services':'cards','projects':'masonry','team':'grid'}},
-    'educacion':    {'color_primary':'#F97316','color_accent':'#3B82F6','color_secondary':'#1E3A5F','font_heading':'Nunito','font_body':'Open Sans','layout':{'hero':'split','services':'cards','projects':'grid','team':'grid'}},
-    'tecnologia':   {'color_primary':'#06B6D4','color_accent':'#8B5CF6','color_secondary':'#030712','font_heading':'Space Grotesk','font_body':'Inter','layout':{'hero':'dark','services':'grid','projects':'masonry','team':'minimal'}},
-    'inmobiliaria': {'color_primary':'#78716C','color_accent':'#D97706','color_secondary':'#1C1917','font_heading':'Cormorant Garamond','font_body':'Lato','layout':{'hero':'fullscreen','services':'list','projects':'masonry','team':'cards'}},
-    'belleza':      {'color_primary':'#DB2777','color_accent':'#F59E0B','color_secondary':'#4A0E2A','font_heading':'Playfair Display','font_body':'Lato','layout':{'hero':'gradient','services':'cards','projects':'grid','team':'minimal'}},
+    # ── Salud ──────────────────────────────────────────────────────────────────
+    'clinica': {
+        'color_primary': '#0077B6', 'color_accent': '#00B4D8',
+        'color_secondary': '#03045E', 'font_heading': 'Montserrat', 'font_body': 'Open Sans',
+        'layout': {'hero': 'split', 'services': 'list', 'projects': 'grid', 'team': 'cards'},
+        'secciones': ['hero', 'servicios', 'equipo', 'testimonios', 'citas', 'contacto'],
+        'mobile_breakpoints': {'hero': 'stack', 'nav': 'hamburger', 'services': 'accordion'},
+        'componentes': {'citas': True, 'whatsapp': True, 'topbar': True},
+        'hero_tipo': 'split',
+        'features': ['booking', 'team_profiles', 'service_list', 'testimonials'],
+    },
+    'restaurante': {
+        'color_primary': '#C1440E', 'color_accent': '#F4A261',
+        'color_secondary': '#1A0A00', 'font_heading': 'Playfair Display', 'font_body': 'Lato',
+        'layout': {'hero': 'fullscreen', 'services': 'menu', 'projects': 'masonry', 'team': 'minimal'},
+        'secciones': ['hero', 'menu', 'galeria', 'ubicacion', 'reservas', 'contacto'],
+        'mobile_breakpoints': {'hero': 'fullscreen', 'nav': 'bottom_bar', 'menu': 'accordion'},
+        'componentes': {'whatsapp': True, 'redes': True},
+        'hero_tipo': 'fullscreen',
+        'features': ['menu_display', 'gallery', 'map', 'reservations'],
+    },
+    'abogados': {
+        'color_primary': '#1B2A4A', 'color_accent': '#C9A84C',
+        'color_secondary': '#0D1B2A', 'font_heading': 'Cormorant Garamond', 'font_body': 'Source Sans Pro',
+        'layout': {'hero': 'minimal', 'services': 'list', 'projects': 'grid', 'team': 'cards'},
+        'secciones': ['hero', 'areas_practica', 'equipo', 'casos', 'testimonios', 'contacto'],
+        'mobile_breakpoints': {'hero': 'centered', 'nav': 'hamburger', 'services': 'accordion'},
+        'componentes': {'whatsapp': True, 'topbar': True},
+        'hero_tipo': 'minimal',
+        'features': ['practice_areas', 'attorney_profiles', 'case_results', 'contact_form'],
+    },
+    'creativo': {
+        'color_primary': '#6D28D9', 'color_accent': '#F59E0B',
+        'color_secondary': '#1F1135', 'font_heading': 'Space Grotesk', 'font_body': 'Inter',
+        'layout': {'hero': 'gradient', 'services': 'cards', 'projects': 'masonry', 'team': 'grid'},
+        'secciones': ['hero', 'portafolio', 'servicios', 'proceso', 'testimonios', 'contacto'],
+        'mobile_breakpoints': {'hero': 'full_bleed', 'nav': 'hamburger', 'portfolio': 'swipe_carousel'},
+        'componentes': {'redes': True, 'whatsapp': True},
+        'hero_tipo': 'gradient',
+        'features': ['portfolio_masonry', 'process_steps', 'testimonials', 'contact_form'],
+    },
+    'educacion': {
+        'color_primary': '#F97316', 'color_accent': '#3B82F6',
+        'color_secondary': '#1E3A5F', 'font_heading': 'Nunito', 'font_body': 'Open Sans',
+        'layout': {'hero': 'split', 'services': 'cards', 'projects': 'grid', 'team': 'grid'},
+        'secciones': ['hero', 'cursos', 'docentes', 'metodologia', 'testimonios', 'inscripcion'],
+        'mobile_breakpoints': {'hero': 'stack', 'nav': 'hamburger', 'courses': 'swipe_cards'},
+        'componentes': {'newsletter': True, 'whatsapp': True, 'topbar': True},
+        'hero_tipo': 'split',
+        'features': ['course_catalog', 'instructor_profiles', 'enrollment_cta', 'testimonials'],
+    },
+    'tecnologia': {
+        'color_primary': '#06B6D4', 'color_accent': '#8B5CF6',
+        'color_secondary': '#030712', 'font_heading': 'Space Grotesk', 'font_body': 'Inter',
+        'layout': {'hero': 'dark', 'services': 'grid', 'projects': 'masonry', 'team': 'minimal'},
+        'secciones': ['hero', 'soluciones', 'tecnologias', 'proyectos', 'equipo', 'contacto'],
+        'mobile_breakpoints': {'hero': 'full_bleed', 'nav': 'hamburger', 'solutions': 'swipe_cards'},
+        'componentes': {'redes': True, 'topbar': True},
+        'hero_tipo': 'dark',
+        'features': ['solutions_grid', 'tech_stack', 'case_studies', 'team_minimal'],
+    },
+    'inmobiliaria': {
+        'color_primary': '#78716C', 'color_accent': '#D97706',
+        'color_secondary': '#1C1917', 'font_heading': 'Cormorant Garamond', 'font_body': 'Lato',
+        'layout': {'hero': 'fullscreen', 'services': 'list', 'projects': 'masonry', 'team': 'cards'},
+        'secciones': ['hero', 'propiedades', 'servicios', 'agentes', 'testimonios', 'contacto'],
+        'mobile_breakpoints': {'hero': 'fullscreen', 'nav': 'hamburger', 'properties': 'swipe_cards'},
+        'componentes': {'whatsapp': True, 'redes': True},
+        'hero_tipo': 'fullscreen',
+        'features': ['property_listings', 'agent_profiles', 'map_search', 'contact_form'],
+    },
+    'belleza': {
+        'color_primary': '#DB2777', 'color_accent': '#F59E0B',
+        'color_secondary': '#4A0E2A', 'font_heading': 'Playfair Display', 'font_body': 'Lato',
+        'layout': {'hero': 'gradient', 'services': 'cards', 'projects': 'grid', 'team': 'minimal'},
+        'secciones': ['hero', 'servicios', 'galeria', 'equipo', 'precios', 'reservas'],
+        'mobile_breakpoints': {'hero': 'full_bleed', 'nav': 'hamburger', 'services': 'swipe_cards'},
+        'componentes': {'citas': True, 'whatsapp': True, 'redes': True, 'topbar': True},
+        'hero_tipo': 'gradient',
+        'features': ['service_menu', 'gallery', 'booking', 'pricing_table'],
+    },
+    # ── Nuevas categorías ──────────────────────────────────────────────────────
+    'gym_fitness': {
+        'color_primary': '#EF4444', 'color_accent': '#F97316',
+        'color_secondary': '#0F0F0F', 'font_heading': 'Oswald', 'font_body': 'Roboto',
+        'layout': {'hero': 'dark', 'services': 'cards', 'projects': 'grid', 'team': 'cards'},
+        'secciones': ['hero', 'clases', 'entrenadores', 'membresias', 'galeria', 'contacto'],
+        'mobile_breakpoints': {'hero': 'full_bleed', 'nav': 'bottom_bar', 'classes': 'swipe_cards'},
+        'componentes': {'citas': True, 'whatsapp': True, 'topbar': True},
+        'hero_tipo': 'dark',
+        'features': ['class_schedule', 'trainer_profiles', 'membership_plans', 'gallery'],
+    },
+    'veterinaria': {
+        'color_primary': '#16A34A', 'color_accent': '#FCD34D',
+        'color_secondary': '#052E16', 'font_heading': 'Nunito', 'font_body': 'Open Sans',
+        'layout': {'hero': 'split', 'services': 'cards', 'projects': 'grid', 'team': 'cards'},
+        'secciones': ['hero', 'servicios', 'equipo', 'citas', 'galeria', 'contacto'],
+        'mobile_breakpoints': {'hero': 'stack', 'nav': 'hamburger', 'services': 'accordion'},
+        'componentes': {'citas': True, 'whatsapp': True},
+        'hero_tipo': 'split',
+        'features': ['service_list', 'vet_profiles', 'booking', 'gallery'],
+    },
+    'transporte': {
+        'color_primary': '#1D4ED8', 'color_accent': '#FBBF24',
+        'color_secondary': '#0F172A', 'font_heading': 'Barlow Condensed', 'font_body': 'Barlow',
+        'layout': {'hero': 'fullscreen', 'services': 'grid', 'projects': 'grid', 'team': 'minimal'},
+        'secciones': ['hero', 'servicios', 'flota', 'cobertura', 'cotizacion', 'contacto'],
+        'mobile_breakpoints': {'hero': 'fullscreen', 'nav': 'hamburger', 'fleet': 'swipe_cards'},
+        'componentes': {'whatsapp': True, 'topbar': True},
+        'hero_tipo': 'fullscreen',
+        'features': ['fleet_display', 'coverage_map', 'quote_form', 'contact_form'],
+    },
+    'ecommerce': {
+        'color_primary': '#7C3AED', 'color_accent': '#10B981',
+        'color_secondary': '#1E1B4B', 'font_heading': 'DM Sans', 'font_body': 'DM Sans',
+        'layout': {'hero': 'gradient', 'services': 'grid', 'projects': 'masonry', 'team': 'minimal'},
+        'secciones': ['hero', 'productos_destacados', 'categorias', 'ofertas', 'resenas', 'footer'],
+        'mobile_breakpoints': {'hero': 'stack', 'nav': 'bottom_bar', 'products': 'swipe_cards'},
+        'componentes': {'whatsapp': True, 'redes': True, 'newsletter': True},
+        'hero_tipo': 'gradient',
+        'features': ['product_grid', 'category_nav', 'promo_banner', 'reviews'],
+    },
 }
 
 
@@ -1931,6 +2444,28 @@ _CATEGORIAS = {
 def admin_scraper():
     return render_template('admin/scraper_plantillas.html',
                            nombre=session.get('nombre'))
+
+
+@app.route('/admin/scraper/categorias')
+@admin_requerido
+def admin_scraper_categorias():
+    """Devuelve el catálogo completo de categorías con metadatos para el frontend."""
+    resultado = {}
+    for slug, cat in _CATEGORIAS.items():
+        resultado[slug] = {
+            'color_primary':   cat['color_primary'],
+            'color_accent':    cat['color_accent'],
+            'color_secondary': cat['color_secondary'],
+            'font_heading':    cat['font_heading'],
+            'font_body':       cat['font_body'],
+            'layout':          cat['layout'],
+            'secciones':       cat.get('secciones', []),
+            'mobile_breakpoints': cat.get('mobile_breakpoints', {}),
+            'componentes':     cat.get('componentes', {}),
+            'hero_tipo':       cat.get('hero_tipo', 'split'),
+            'features':        cat.get('features', []),
+        }
+    return jsonify(categorias=resultado)
 
 
 @app.route('/admin/scraper/crear-desde-url', methods=['POST'])
@@ -1985,7 +2520,8 @@ def admin_scraper_crear_categoria():
     tipo      = d.get('tipo', 'landing')
 
     if categoria not in _CATEGORIAS:
-        return jsonify(ok=False, error=f'Categoría "{categoria}" no reconocida.'), 400
+        return jsonify(ok=False, error=f'Categoría "{categoria}" no reconocida. '
+                       f'Disponibles: {", ".join(_CATEGORIAS.keys())}'), 400
     if not nombre or not clave:
         return jsonify(ok=False, error='Nombre y clave son obligatorios.'), 400
     if not _re.match(r'^[a-z][a-z0-9_-]{1,29}$', clave):
@@ -1993,20 +2529,35 @@ def admin_scraper_crear_categoria():
 
     cat = _CATEGORIAS[categoria]
     layout = cat['layout']
-    defaults = _defaults_desde_payload({
-        'color_primario': d.get('color_primario', cat['color_primary']),
-        'color_acento':   d.get('color_acento',   cat['color_accent']),
-        'color_footer':   d.get('color_footer',   cat['color_secondary']),
-        'fuente_titulos': cat['font_heading'],
-        'fuente_cuerpo':  cat['font_body'],
-    }, layout)
+
+    # Construir payload enriquecido desde la categoría + overrides del usuario
+    payload_cat = {
+        'color_primario':     d.get('color_primario', cat['color_primary']),
+        'color_acento':       d.get('color_acento',   cat['color_accent']),
+        'color_footer':       d.get('color_footer',   cat['color_secondary']),
+        'fuente_titulos':     cat['font_heading'],
+        'fuente_cuerpo':      cat['font_body'],
+        # Nuevos campos mobile-first y de secciones desde la categoría
+        'secciones_activas':  cat.get('secciones', []),
+        'mobile_breakpoints': cat.get('mobile_breakpoints', {}),
+        'componentes':        cat.get('componentes', {}),
+        'hero_tipo':          cat.get('hero_tipo', layout.get('hero', 'split')),
+        'features':           cat.get('features', []),
+        # Pasar cualquier override del usuario
+        **{k: v for k, v in d.items() if k not in (
+            'categoria', 'nombre', 'clave', 'tipo',
+            'color_primario', 'color_acento', 'color_footer',
+        )},
+    }
+
+    defaults = _defaults_desde_payload(payload_cat, layout)
 
     try:
-        pid = crear_plantilla(clave, nombre, tipo, f'Plantilla {categoria}', '', '{}')
+        pid = crear_plantilla(clave, nombre, tipo,
+                              f'Plantilla {categoria} — generada desde categoría', '', '{}')
     except Exception:
         return jsonify(ok=False, error=f'La clave "{clave}" ya existe.'), 409
 
-    # Permitir override de colores si el usuario los ajustó en el formulario
     campos_estilos = {
         'color_primary':   d.get('color_primario', cat['color_primary']),
         'color_accent':    d.get('color_acento',   cat['color_accent']),
@@ -2018,7 +2569,7 @@ def admin_scraper_crear_categoria():
     }
     upsert_estilos(pid, campos_estilos)
 
-    flash(f'Plantilla "{nombre}" ({categoria}) creada.', 'success')
+    flash(f'Plantilla "{nombre}" ({categoria}) creada con layout mobile-first.', 'success')
     return jsonify(ok=True, pid=pid, redirect=url_for('admin_plantillas'))
 
 
