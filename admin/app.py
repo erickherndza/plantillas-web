@@ -1664,6 +1664,13 @@ def _defaults_desde_payload(payload: dict, layout=None):
     defaults['meta_descripcion']  = payload.get('meta_descripcion') or defaults.get('descripcion', '')
     defaults['og_imagen']         = payload.get('og_imagen') or defaults.get('hero_imagen_url', '')
 
+    # ── Scraper mejorado — señales de estilo y nav ───────────────────────────
+    defaults['nav_style']          = payload.get('nav_style',      'standard')
+    defaults['content_layout']     = payload.get('content_layout', 'standard')
+    defaults['font_scale']         = payload.get('font_scale',     'medium')
+    defaults['tagline_style']      = payload.get('tagline_style',  'descriptive')
+    defaults['has_promo_grid']     = '1' if payload.get('has_promo_grid') else '0'
+
     # ── Tema ──────────────────────────────────────────────────────────────────
     defaults['tema_oscuro']        = '1' if tema_oscuro else '0'
     defaults['hero_texto_color']   = '#ffffff' if (tema_oscuro or defaults['hero_tipo'] in ('dark', 'fullscreen', 'gradient')) else color_texto

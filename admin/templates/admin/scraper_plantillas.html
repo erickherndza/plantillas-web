@@ -578,30 +578,210 @@ function detectarTema(colores) {
   return oscuros.length >= 2 ? 'dark' : 'light';
 }
 
-/* ── Detectar estilo visual dominante ────────────────────────────────── */
-function detectarEstilo(cssTexto, tema) {
-  const tieneGradiente = /gradient/i.test(cssTexto);
-  const tieneSombras   = /box-shadow/i.test(cssTexto);
-  const tieneAnimacion = /animation|transition/i.test(cssTexto);
-  const bordeRedondeado = /border-radius\s*:\s*([1-9][0-9]+)/i.test(cssTexto);
+/* ── Detector de estilo de nav ───────────────────────────────────────── */
+function detectarNavStyle(html) {
+  const doc      = new DOMParser().parseFromString(html, 'text/html');
+  const nav      = doc.querySelector('nav, header');
+  if (!nav) return { style: 'standard', items: 0, has_search: false, has_cart: false, has_cta: false };
 
+  const links    = nav.querySelectorAll('a');
+  const hasCart  = !!nav.querySelector('[class*="cart"],[class*="bag"],[href*="cart"]');
+  const hasSearch= !!nav.querySelector('[class*="search"],[type="search"],input[placeholder*="search" i],input[placeholder*="buscar" i]');
+  const hasCTA   = !!nav.querySelector('[class*="btn"],[class*="cta"],[class*="button"]');
+  const hasDrop  = !!nav.querySelector('[class*="dropdown"],[class*="submenu"],[class*="mega"]');
+
+  let style = 'standard';
+  if (links.length >= 8 && !hasDrop)   style = 'flat-minimal';
+  if (hasDrop && links.length >= 10)   style = 'mega-menu';
+  if (hasDrop)                          style = 'dropdown';
+  if (links.length <= 5 && !hasDrop)   style = 'minimal';
+
+  return {
+    style,
+    items:        links.length,
+    has_search:   hasSearch,
+    has_cart:     hasCart,
+    has_cta:      hasCTA,
+    has_dropdown: hasDrop,
+  };
+}
+
+/* ── Detector de tipografía avanzado ─────────────────────────────────── */
+function detectarTipografia(cssTexto, html) {
+  const doc = new DOMParser().parseFromString(html, 'text/html');
+
+  let heroFontSize = 'medium';
+  const headEl = doc.querySelector('h1') || doc.querySelector('h2');
+  if (headEl) {
+    const words = (headEl.textContent || '').trim().split(/\s+/).length;
+    if (words <= 3)  heroFontSize = 'display-xl';
+    else if (words <= 6)  heroFontSize = 'display';
+    else if (words >= 12) heroFontSize = 'small';
+  }
+
+  const h2Text = (doc.querySelector('h2')?.textContent || '').trim();
+  let taglineStyle = 'descriptive';
+  if (h2Text.split(' ').length <= 2) taglineStyle = 'minimal';
+  else if (h2Text.split(' ').length <= 4) taglineStyle = 'punchy';
+
+  const boldMatches  = (cssTexto.match(/font-weight\s*:\s*(700|800|900|bold)/gi) || []).length;
+  const lightMatches = (cssTexto.match(/font-weight\s*:\s*(300|200|100|light)/gi) || []).length;
+  const weightStyle  = boldMatches > lightMatches ? 'bold-dominant' : lightMatches > boldMatches ? 'light-dominant' : 'balanced';
+
+  return {
+    hero_font_size:   heroFontSize,
+    tagline_style:    taglineStyle,
+    weight_style:     weightStyle,
+    uses_system_font: /system-ui|-apple-system|BlinkMacSystemFont|SF Pro/i.test(cssTexto),
+    uses_google_font: /fonts\.googleapis\.com/i.test(html),
+  };
+}
+
+/* ── Detector de layout de contenido ─────────────────────────────────── */
+function detectarContentLayout(html) {
+  const doc     = new DOMParser().parseFromString(html, 'text/html');
+  const layouts = [];
+
+  const heroEls = doc.querySelectorAll('[class*="hero"],[class*="banner"]');
+  if (heroEls.length >= 3) {
+    layouts.push({ type: 'multi-hero', count: heroEls.length });
+  }
+
+  const promoCards = doc.querySelectorAll('article,[class*="promo"],[class*="editorial"]');
+  if (promoCards.length >= 4) {
+    const withImg   = [...promoCards].filter(c => c.querySelector('img')).length;
+    const with2CTAs = [...promoCards].filter(c => c.querySelectorAll('a').length >= 2).length;
+    layouts.push({
+      type:        'promo-grid',
+      count:       promoCards.length,
+      image_ratio: Math.round((withImg / promoCards.length) * 100),
+      dual_cta:    with2CTAs > promoCards.length / 2,
+    });
+  }
+
+  const carouselEls = doc.querySelectorAll('[class*="carousel"],[class*="slider"],[class*="swiper"]');
+  if (carouselEls.length) {
+    layouts.push({ type: 'entertainment-carousel', count: carouselEls.length });
+  }
+
+  const productCards = doc.querySelectorAll('[class*="card"],[class*="product"],[class*="item"]');
+  if (productCards.length >= 3) {
+    const imgCards = [...productCards].filter(c => c.querySelector('img'));
+    const imgRatio = imgCards.length / productCards.length;
+    if (imgRatio > 0.6) {
+      layouts.push({
+        type:      'product-grid',
+        count:     productCards.length,
+        img_ratio: Math.round(imgRatio * 100),
+        cols:      productCards.length >= 6 ? 3 : 2,
+      });
+    }
+  }
+
+  const gridEls = doc.querySelectorAll('[class*="grid"],[class*="columns"],[class*="row"]');
+  gridEls.forEach(el => {
+    const children = [...el.children].filter(c => c.tagName !== 'SCRIPT');
+    if (children.length >= 2 && children.length <= 4) {
+      layouts.push({ type: `${children.length}-col-section`, count: children.length });
+    }
+  });
+
+  return {
+    layouts,
+    primary_layout:    layouts[0]?.type || 'standard',
+    spacing_style:     layouts.some(l => l.type === 'multi-hero') ? 'airy' : 'standard',
+    is_image_dominant: layouts.some(l => (l.img_ratio || 0) > 60),
+  };
+}
+
+/* ── Detectar estilo visual dominante ────────────────────────────────── */
+function detectarEstilo(cssTexto, tema, html) {
+  const doc = new DOMParser().parseFromString(html, 'text/html');
+
+  const tieneGradiente    = /gradient/i.test(cssTexto);
+  const tieneSombras      = /box-shadow/i.test(cssTexto);
+  const tieneBlur         = /blur\(|backdrop-filter/i.test(cssTexto);
+  const bordeRedondeado   = /border-radius\s*:\s*([2-9][0-9]+|1[0-9][0-9]+)/i.test(cssTexto);
+  const espaciadoGeneroso = /padding\s*:\s*([6-9][0-9]|1[0-9][0-9])/i.test(cssTexto);
+  const sinSombras        = !tieneSombras;
+
+  const navItems        = doc.querySelectorAll('nav a, header a').length;
+  const tieneCart       = !!doc.querySelector('[class*="cart"],[class*="bag"],[href*="cart"],[href*="shop"]');
+  const tienePricing    = !!doc.querySelector('[class*="pricing"],[class*="price"],[class*="plan"]');
+  const tienePortafolio = !!doc.querySelector('[class*="portfolio"],[class*="masonry"],[class*="gallery"]');
+  const tieneHeroMultiple = doc.querySelectorAll('[class*="hero"],[class*="banner"]').length > 2;
+  const tieneEditorial  = doc.querySelectorAll('article,[class*="editorial"],[class*="promo"]').length >= 4;
+  const cardConImagen   = doc.querySelectorAll('[class*="card"] img').length >= 3;
+
+  if (tema === 'light' && sinSombras && espaciadoGeneroso && navItems >= 8 && !tieneGradiente) return 'apple-minimal';
+  if (tieneCart && cardConImagen)        return 'ecommerce';
+  if (tieneEditorial && tieneHeroMultiple) return 'editorial';
+  if (tienePricing)                      return 'saas';
+  if (tienePortafolio)                   return 'portfolio';
   if (tema === 'dark' && tieneGradiente) return 'gradient';
-  if (tema === 'dark') return 'dark';
+  if (tema === 'dark' && tieneBlur)      return 'glassmorphism';
+  if (tema === 'dark')                   return 'dark';
   if (tieneGradiente && bordeRedondeado) return 'modern';
-  if (tieneSombras && tieneAnimacion) return 'dynamic';
+  if (tieneSombras)                      return 'dynamic';
   return 'clean';
 }
 
 /* ── Recomendar layout según estilo ──────────────────────────────────── */
-function recomendarLayout(estilo, tema) {
-  const layouts = {
-    'dark':     { hero:'dark',       services:'grid',  projects:'masonry', team:'minimal' },
-    'gradient': { hero:'gradient',   services:'cards', projects:'masonry', team:'grid'    },
-    'modern':   { hero:'split',      services:'cards', projects:'masonry', team:'grid'    },
-    'dynamic':  { hero:'fullscreen', services:'grid',  projects:'carousel', team:'cards'  },
-    'clean':    { hero:'minimal',    services:'list',  projects:'grid',    team:'cards'   },
+function recomendarLayout(estilo, tema, navData, contentLayout, tipografia) {
+  navData       = navData       || { style: 'standard', items: 5, has_cart: false };
+  contentLayout = contentLayout || { primary_layout: 'standard', spacing_style: 'standard' };
+  tipografia    = tipografia    || { hero_font_size: 'medium', tagline_style: 'descriptive' };
+
+  const layout = {};
+
+  const heroMap = {
+    'apple-minimal': 'fullscreen', 'editorial': 'fullscreen',
+    'ecommerce':     'split',      'saas':      'split',
+    'portfolio':     'fullscreen', 'dark':      'dark',
+    'gradient':      'gradient',   'glassmorphism': 'dark',
+    'modern':        'gradient',   'dynamic':   'fullscreen',
+    'clean':         'split',
   };
-  return layouts[estilo] || layouts['clean'];
+  layout.hero = heroMap[estilo] || 'fullscreen';
+  if (contentLayout.layouts?.some(l => l.type === 'multi-hero' && l.count >= 3)) layout.hero = 'slider';
+
+  const productLayout = contentLayout.layouts?.find(l => l.type === 'product-grid');
+  if (productLayout) {
+    layout.services = productLayout.cols === 3 ? 'grid' : 'cards';
+  } else {
+    const serviceMap = {
+      'apple-minimal': 'editorial-cards', 'editorial': 'editorial-cards',
+      'ecommerce': 'grid', 'saas': 'cards', 'portfolio': 'masonry', 'clean': 'list',
+    };
+    layout.services = serviceMap[estilo] || 'grid';
+  }
+
+  const portMap = {
+    'apple-minimal': 'editorial-2col', 'editorial': 'masonry',
+    'ecommerce': 'grid', 'portfolio': 'masonry', 'saas': 'grid', 'dark': 'masonry',
+  };
+  layout.projects = portMap[estilo] || 'masonry';
+
+  const teamMap = {
+    'apple-minimal': 'minimal', 'editorial': 'cards', 'saas': 'cards', 'clean': 'minimal',
+  };
+  layout.team = teamMap[estilo] || 'cards';
+
+  layout.nav_style    = navData.style;
+  layout.nav_has_cart = navData.has_cart;
+  layout.font_scale   = tipografia.hero_font_size;
+  layout.tagline_type = tipografia.tagline_style;
+  layout.spacing      = contentLayout.spacing_style;
+
+  if (contentLayout.layouts?.some(l => l.type === 'entertainment-carousel')) layout.has_entertainment_strip = true;
+  const promoGrid = contentLayout.layouts?.find(l => l.type === 'promo-grid');
+  if (promoGrid) {
+    layout.has_promo_grid = true;
+    layout.promo_dual_cta = promoGrid.dual_cta;
+    layout.promo_count    = promoGrid.count;
+  }
+
+  return layout;
 }
 
 /* ── Seleccionar los mejores colores por rol ─────────────────────────── */
@@ -892,9 +1072,12 @@ document.getElementById('btn-analizar').addEventListener('click', async () => {
     // 4. Análisis profundo del CSS completo
     const scoreMap = puntuarColores(cssTotal);
     const tema     = detectarTema(Object.keys(scoreMap).filter(esColorNoGris));
-    const estilo   = detectarEstilo(cssTotal, tema);
-    const roles    = seleccionarRoles(scoreMap, tema);
-    _layoutDetectado = recomendarLayout(estilo, tema);
+    const estilo        = detectarEstilo(cssTotal, tema, html);
+    const navData       = detectarNavStyle(html);
+    const contentLayout = detectarContentLayout(html);
+    const tipografia    = detectarTipografia(cssTotal, html);
+    const roles         = seleccionarRoles(scoreMap, tema);
+    _layoutDetectado = recomendarLayout(estilo, tema, navData, contentLayout, tipografia);
 
     // Todos los colores no-grises ordenados por score
     const coloresOrdenados = Object.entries(scoreMap)
@@ -934,8 +1117,16 @@ document.getElementById('btn-analizar').addEventListener('click', async () => {
     // Mostrar estilo detectado
     const badgeEl = document.getElementById('estilo-badge');
     if (badgeEl) {
-      const labels = { dark:'🌑 Oscuro', gradient:'🌈 Gradiente', modern:'⚡ Moderno', dynamic:'✨ Dinámico', clean:'🪟 Limpio' };
-      badgeEl.textContent = `Estilo detectado: ${labels[estilo] || estilo} · CSS analizados: ${cssUrls.length + 1}`;
+      const labels = {
+        'apple-minimal': '🍎 Apple Minimal', 'editorial':     '📰 Editorial',
+        'ecommerce':     '🛒 E-commerce',    'saas':          '⚙️ SaaS',
+        'portfolio':     '🎨 Portfolio',      'dark':          '🌑 Oscuro',
+        'gradient':      '🌈 Gradiente',      'glassmorphism': '💎 Glassmorphism',
+        'modern':        '⚡ Moderno',         'dynamic':       '✨ Dinámico',
+        'clean':         '🪟 Limpio',
+      };
+      const secciones = _blueprintDetectado?.secciones?.length || 0;
+      badgeEl.textContent = `${labels[estilo]||estilo} · ${navData.items} nav items · ${secciones} secciones · ${contentLayout.primary_layout} · font: ${tipografia.hero_font_size}`;
       badgeEl.style.display = 'block';
     }
 
@@ -981,8 +1172,14 @@ document.getElementById('btn-crear-url').addEventListener('click', async () => {
       secciones: _blueprintDetectado?.secciones || ['hero', 'services', 'projects', 'team'],
       hero_tipo: document.getElementById('url-hero-tipo').value,
     },
-    componentes: readComponentState(),
-    hero_tipo: document.getElementById('url-hero-tipo').value,
+    componentes:     readComponentState(),
+    hero_tipo:       document.getElementById('url-hero-tipo').value,
+    nav_style:       navData?.style,
+    nav_items:       navData?.items,
+    content_layout:  contentLayout?.primary_layout,
+    font_scale:      tipografia?.hero_font_size,
+    tagline_style:   tipografia?.tagline_style,
+    has_promo_grid:  contentLayout?.layouts?.some(l => l.type === 'promo-grid') || false,
   };
 
   const btn = document.getElementById('btn-crear-url');
