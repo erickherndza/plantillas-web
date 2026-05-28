@@ -63,6 +63,7 @@
           {% set _first.done = true %}
         {% endfor %}
         <button type="button" class="section-nav-item" data-section="secciones">Secciones</button>
+        <button type="button" class="section-nav-item" data-section="tech">⚡ Tech · Features</button>
         <button type="button" class="section-nav-item section-nav-repeater" data-section="menu">Menú</button>
         <button type="button" class="section-nav-item section-nav-repeater" data-section="hero-slides">Hero slides</button>
         <button type="button" class="section-nav-item" data-section="css">CSS avanzado</button>
@@ -240,6 +241,23 @@
               <span class="color-hex js-color-hex">{{ config.get('color_icono', config.get('color_primario','#038C8C')) }}</span>
             </div>
             <p class="field-hint">Color del fondo de los íconos (circulo o cuadrado).</p>
+          </div>
+
+          <!-- ── Colores tech (solo para plantilla tech/Apple) ───────── -->
+          <div style="border-top:1px solid var(--admin-border);margin-top:28px;padding-top:24px;">
+            <h3 style="font-size:13px;font-weight:700;color:var(--admin-text);margin-bottom:4px;">Colores adicionales · Plantilla Tech</h3>
+            <p class="field-hint" style="margin-bottom:16px;">Solo aplican si tu sitio usa la plantilla estilo Apple/Tech.</p>
+            <div class="form-group">
+              <label>Fondo del bloque de producto oscuro <span class="field-optional">(tercer showcase)</span></label>
+              <div class="color-field">
+                <input type="color" name="cfg__color_showcase_3" class="color-input js-color"
+                       value="{{ config.get('color_showcase_3', '#1d1d1f') }}">
+                <div class="color-preview js-color-preview"
+                     style="background:{{ config.get('color_showcase_3', '#1d1d1f') }}"></div>
+                <span class="color-hex js-color-hex">{{ config.get('color_showcase_3', '#1d1d1f') }}</span>
+              </div>
+              <p class="field-hint">El tercer bloque de producto usa este fondo oscuro. Default: casi negro.</p>
+            </div>
           </div>
 
           <!-- Etiquetas del menú -->
@@ -501,18 +519,42 @@
                     <span class="repeater-item-num">{{ loop.index }}</span>
                     <button type="button" class="btn-remove-item" title="Eliminar">✕</button>
                   </div>
+                  <div style="display:grid;grid-template-columns:80px 1fr;gap:8px;">
+                    <div class="form-group">
+                      <label>Ícono</label>
+                      <input type="text" name="rep__servicios__{{ idx }}__icono"
+                             value="{{ item.get('icono', '') }}" placeholder="💻">
+                    </div>
+                    <div class="form-group">
+                      <label>Categoría / Etiqueta</label>
+                      <input type="text" name="rep__servicios__{{ idx }}__categoria"
+                             value="{{ item.get('categoria', '') }}" placeholder="Ej: Nuevo · MacBook Pro">
+                    </div>
+                  </div>
                   <div class="form-group">
-                    <label>Título del servicio</label>
+                    <label>Título del producto / servicio</label>
                     <input type="text" name="rep__servicios__{{ idx }}__titulo"
-                           value="{{ item.get('titulo', '') }}" placeholder="Ej: Consultoría">
+                           value="{{ item.get('titulo', '') }}" placeholder="Ej: MacBook Pro">
                   </div>
                   <div class="form-group">
                     <label>Descripción</label>
                     <textarea name="rep__servicios__{{ idx }}__desc" rows="2"
-                              placeholder="Breve descripción del servicio">{{ item.get('desc', '') }}</textarea>
+                              placeholder="Breve descripción">{{ item.get('desc', '') }}</textarea>
+                  </div>
+                  <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+                    <div class="form-group">
+                      <label>Texto del botón CTA</label>
+                      <input type="text" name="rep__servicios__{{ idx }}__cta_texto"
+                             value="{{ item.get('cta_texto', '') }}" placeholder="Ej: Comprar">
+                    </div>
+                    <div class="form-group">
+                      <label>Enlace del botón</label>
+                      <input type="text" name="rep__servicios__{{ idx }}__enlace"
+                             value="{{ item.get('enlace', '') }}" placeholder="#contacto">
+                    </div>
                   </div>
                   <div class="form-group">
-                    <label>Imagen <span class="field-optional">(URL o sube una)</span></label>
+                    <label>Imagen del producto <span class="field-optional">(URL o sube una)</span></label>
                     <div class="img-bg-field">
                       <input type="text" name="rep__servicios__{{ idx }}__imagen"
                              class="img-bg-url-input rep-img-url"
@@ -699,6 +741,72 @@
         </div>
 
         <!-- ══ CONTACTO ══════════════════════════════════════════════════ -->
+        <!-- ══ TECH · FEATURES & CTA ════════════════════════════════════ -->
+        <div class="form-section hidden" id="section-tech">
+          <div class="section-header">
+            <h2 class="section-title">Tech · Features & CTA</h2>
+            <p class="section-desc">Puntos clave del producto y banda de llamada a la acción</p>
+          </div>
+
+          <div class="form-group">
+            <label>Título de la sección features</label>
+            <input type="text" name="cfg__features_titulo"
+                   value="{{ config.get('features_titulo', '') }}"
+                   placeholder="Ej: Diseñado para lo que más importa">
+          </div>
+
+          <p style="font-size:12px;font-weight:700;color:var(--admin-text-muted);text-transform:uppercase;letter-spacing:.06em;margin:20px 0 12px;">6 Características principales</p>
+
+          {% for n in range(1, 7) %}
+          <div style="background:var(--admin-surface-2,#f8fafc);border:1px solid var(--admin-border);border-radius:8px;padding:14px;margin-bottom:10px;">
+            <p style="font-size:12px;font-weight:600;color:var(--admin-text-muted);margin-bottom:10px;">Feature {{ n }}</p>
+            <div style="display:grid;grid-template-columns:60px 1fr;gap:8px;margin-bottom:8px;">
+              <div class="form-group" style="margin:0;">
+                <label style="font-size:11px;">Ícono</label>
+                <input type="text" name="cfg__feat_{{ n }}_icon"
+                       value="{{ config.get('feat_' ~ n ~ '_icon', '') }}"
+                       placeholder="⚡">
+              </div>
+              <div class="form-group" style="margin:0;">
+                <label style="font-size:11px;">Título</label>
+                <input type="text" name="cfg__feat_{{ n }}_titulo"
+                       value="{{ config.get('feat_' ~ n ~ '_titulo', '') }}"
+                       placeholder="Ej: Rendimiento">
+              </div>
+            </div>
+            <div class="form-group" style="margin:0;">
+              <label style="font-size:11px;">Descripción</label>
+              <input type="text" name="cfg__feat_{{ n }}_desc"
+                     value="{{ config.get('feat_' ~ n ~ '_desc', '') }}"
+                     placeholder="Breve descripción de esta característica">
+            </div>
+          </div>
+          {% endfor %}
+
+          <div style="border-top:1px solid var(--admin-border);margin-top:24px;padding-top:20px;">
+            <p style="font-size:12px;font-weight:700;color:var(--admin-text-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:14px;">Banda CTA</p>
+            <div class="form-group">
+              <label>Título del CTA</label>
+              <input type="text" name="cfg__cta_titulo"
+                     value="{{ config.get('cta_titulo', '') }}"
+                     placeholder="Ej: ¿Listo para dar el siguiente paso?">
+            </div>
+            <div class="form-group">
+              <label>Subtítulo del CTA</label>
+              <input type="text" name="cfg__cta_subtitulo"
+                     value="{{ config.get('cta_subtitulo', '') }}"
+                     placeholder="Ej: Descubre toda la línea y encuentra el equipo perfecto.">
+            </div>
+            <div class="form-group">
+              <label>Texto del botón CTA</label>
+              <input type="text" name="cfg__cta_btn"
+                     value="{{ config.get('cta_btn', '') }}"
+                     placeholder="Ej: Comprar ahora">
+            </div>
+          </div>
+        </div>
+
+        <!-- ══ CONTACTO ═══════════════════════════════════════════════════ -->
         <div class="form-section hidden" id="section-contacto">
           <div class="section-header">
             <h2 class="section-title">Contacto y Footer</h2>
@@ -1175,16 +1283,36 @@
           <span class="repeater-item-num">${idx + 1}</span>
           <button type="button" class="btn-remove-item" title="Eliminar">✕</button>
         </div>
+        <div style="display:grid;grid-template-columns:80px 1fr;gap:8px;">
+          <div class="form-group">
+            <label>Ícono</label>
+            <input type="text" name="rep__servicios__${idx}__icono" placeholder="💻">
+          </div>
+          <div class="form-group">
+            <label>Categoría / Etiqueta</label>
+            <input type="text" name="rep__servicios__${idx}__categoria" placeholder="Ej: Nuevo · MacBook Pro">
+          </div>
+        </div>
         <div class="form-group">
-          <label>Título del servicio</label>
-          <input type="text" name="rep__servicios__${idx}__titulo" placeholder="Ej: Consultoría">
+          <label>Título del producto / servicio</label>
+          <input type="text" name="rep__servicios__${idx}__titulo" placeholder="Ej: MacBook Pro">
         </div>
         <div class="form-group">
           <label>Descripción</label>
           <textarea name="rep__servicios__${idx}__desc" rows="2"></textarea>
         </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+          <div class="form-group">
+            <label>Texto del botón CTA</label>
+            <input type="text" name="rep__servicios__${idx}__cta_texto" placeholder="Ej: Comprar">
+          </div>
+          <div class="form-group">
+            <label>Enlace del botón</label>
+            <input type="text" name="rep__servicios__${idx}__enlace" placeholder="#contacto">
+          </div>
+        </div>
         <div class="form-group">
-          <label>Imagen <span class="field-optional">(URL o sube una)</span></label>
+          <label>Imagen del producto</label>
           <div class="img-bg-field">
             <input type="text" name="rep__servicios__${idx}__imagen" class="img-bg-url-input rep-img-url" placeholder="https://...">
             <div class="img-bg-actions">
