@@ -520,6 +520,33 @@ def admin_plantillas():
                            plantillas=plantillas, conteos=conteos)
 
 
+@app.route('/admin/debug-sitio/<slug>')
+@admin_requerido
+def admin_debug_sitio(slug):
+    """Ruta de diagnóstico — muestra qué template y estilo se resuelve para un sitio."""
+    sitio = obtener_sitio_por_slug(slug)
+    if not sitio:
+        return jsonify(error='Sitio no encontrado'), 404
+    _estilos_p = get_estilos(sitio['plantilla_id'])
+    _defaults_p = json.loads((_estilos_p or {}).get('defaults_json', '{}') or '{}')
+    _layout_p   = json.loads((_estilos_p or {}).get('layout_json',   '{}') or '{}')
+    _config_p   = dict(get_config_sitio(sitio['id']))
+    template_resuelto = _resolver_template_sitio(sitio, 'inicio')
+    template_existe   = _template_existe(template_resuelto)
+    return jsonify(
+        slug=slug,
+        plantilla_clave=sitio['plantilla_clave'],
+        plantilla_id=sitio['plantilla_id'],
+        formato=sitio['formato'] if 'formato' in sitio.keys() else '(no formato col)',
+        estilo_en_defaults=_defaults_p.get('estilo_detectado', '—'),
+        estilo_en_layout=_layout_p.get('estilo_detectado', '—'),
+        estilo_en_config=_config_p.get('estilo_detectado', '—'),
+        template_resuelto=template_resuelto,
+        template_existe_en_disco=template_existe,
+        defaults_keys=list(_defaults_p.keys()),
+    )
+
+
 @app.route('/admin/plantillas/nueva', methods=['GET', 'POST'])
 @admin_requerido
 def admin_plantilla_nueva():
@@ -1491,7 +1518,12 @@ def _resolver_template_sitio(sitio, pagina='inicio'):
             # Usar template especializado si el estilo fue detectado
             _estilos_p = get_estilos(sitio['plantilla_id']) if 'plantilla_id' in sitio.keys() else {}
             _defaults_p = json.loads((_estilos_p or {}).get('defaults_json', '{}') or '{}')
-            _estilo_p = _defaults_p.get('estilo_detectado', 'clean')
+            _layout_p   = json.loads((_estilos_p or {}).get('layout_json',   '{}') or '{}')
+            # buscar estilo en defaults → layout → config del sitio (fallbacks)
+            _estilo_p = (_defaults_p.get('estilo_detectado')
+                         or _layout_p.get('estilo_detectado')
+                         or get_config_sitio(sitio['id']).get('estilo_detectado')
+                         or 'clean')
             if _estilo_p in _ESTILO_TEMPLATE_MAP:
                 _t = _ESTILO_TEMPLATE_MAP[_estilo_p]
                 if _template_existe(_t):

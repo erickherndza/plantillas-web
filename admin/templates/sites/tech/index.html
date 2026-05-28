@@ -5,9 +5,19 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <meta name="description" content="{{ config.get('meta_descripcion', config.get('nosotros_descripcion', sitio.nombre)) }}"/>
   <title>{{ config.get('meta_titulo', sitio.nombre) }}</title>
+  {# Tomar solo la primera fuente de la lista (antes de la coma) para Google Fonts #}
+  {% set _fh_raw = (config.get('fuente_titulos') or 'Inter') %}
+  {% set _fb_raw = (config.get('fuente_cuerpo')  or 'Inter') %}
+  {% set _fh = _fh_raw.split(',')[0].strip() if ',' in _fh_raw else _fh_raw.strip() %}
+  {% set _fb = _fb_raw.split(',')[0].strip() if ',' in _fb_raw else _fb_raw.strip() %}
+  {# Ignorar fuentes del sistema que no existen en Google Fonts #}
+  {% set _fh_gf = '' if _fh in ('system-ui','sans-serif','serif','monospace','-apple-system') else _fh %}
+  {% set _fb_gf = '' if _fb in ('system-ui','sans-serif','serif','monospace','-apple-system') else _fb %}
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
-  <link href="https://fonts.googleapis.com/css2?family={{ config.get('fuente_titulos','SF+Pro+Display')|replace(' ','+') }}:wght@300;400;600;700&family={{ config.get('fuente_cuerpo','Inter')|replace(' ','+') }}:wght@300;400;500&display=swap" rel="stylesheet"/>
+  {% if _fh_gf or _fb_gf %}
+  <link href="https://fonts.googleapis.com/css2?{% if _fh_gf %}family={{ _fh_gf|replace(' ','+') }}:wght@300;400;600;700{% if _fb_gf %}&{% endif %}{% endif %}{% if _fb_gf %}family={{ _fb_gf|replace(' ','+') }}:wght@300;400;500{% endif %}&display=swap" rel="stylesheet"/>
+  {% endif %}
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -16,8 +26,8 @@
       --c-accent:    {{ config.get('color_acento',    '#f5f5f7') }};
       --c-dark:      {{ config.get('color_footer_bg', '#1d1d1f') }};
       --c-text:      {{ config.get('color_texto',     '#1d1d1f') }};
-      --font-title:  '{{ config.get('fuente_titulos', 'SF Pro Display') }}', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-      --font-body:   '{{ config.get('fuente_cuerpo',  'Inter') }}', -apple-system, BlinkMacSystemFont, sans-serif;
+      --font-title:  {{ _fh }}, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      --font-body:   {{ _fb }}, -apple-system, BlinkMacSystemFont, sans-serif;
     }
 
     html { scroll-behavior: smooth; }
@@ -127,7 +137,7 @@
       line-height: 1.5;
       margin-bottom: 20px;
     }
-    .t-hero__ctас { display: flex; gap: 16px; justify-content: center; align-items: center; flex-wrap: wrap; }
+    .t-hero__ctas { display: flex; gap: 16px; justify-content: center; align-items: center; flex-wrap: wrap; }
     .t-btn-blue {
       font-size: 14px;
       font-weight: 500;
@@ -223,7 +233,7 @@
       margin-bottom: 18px;
       line-height: 1.5;
     }
-    .t-showcase__ctас { display: flex; gap: 16px; justify-content: center; align-items: center; flex-wrap: wrap; margin-bottom: 28px; }
+    .t-showcase__ctas { display: flex; gap: 16px; justify-content: center; align-items: center; flex-wrap: wrap; margin-bottom: 28px; }
     .t-showcase__img {
       width: 100%;
       max-width: 800px;
@@ -541,7 +551,7 @@
     {% endif %}
     <h1 class="t-hero__title">{{ config.get('hero_titulo', _nombre) }}</h1>
     <p class="t-hero__sub">{{ config.get('hero_subtitulo', 'Tecnología diseñada para llevarte más lejos.') }}</p>
-    <div class="t-hero__ctас">
+    <div class="t-hero__ctas">
       <a href="{{ config.get('hero_cta_href','#productos') }}" class="t-btn-blue">{{ config.get('hero_cta_texto','Comprar') }}</a>
       <a href="{{ config.get('hero_cta2_href','#productos') }}" class="t-btn-link">Saber más</a>
     </div>
@@ -562,7 +572,7 @@
     <p class="t-showcase__eyebrow fade-up">{{ srv.get('icono','') }} {{ srv.get('categoria','Nuevo') }}</p>
     <h2 class="t-showcase__title fade-up">{{ srv.get('titulo','') }}</h2>
     <p class="t-showcase__sub fade-up">{{ srv.get('descripcion','') }}</p>
-    <div class="t-showcase__ctас fade-up">
+    <div class="t-showcase__ctas fade-up">
       <a href="{{ srv.get('enlace','#contacto') }}" class="t-btn-blue">{{ srv.get('cta_texto','Comprar') }}</a>
       <a href="{{ srv.get('enlace','#contacto') }}" class="t-btn-link">Saber más</a>
     </div>
