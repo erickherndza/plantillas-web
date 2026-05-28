@@ -29,8 +29,79 @@
       --icon-shape:   {{ _icon_shape.get(config.get('estilo_icono','circulo'), '50%') }};
       --c-icon-bg:    {{ config.get('color_icono', config.get('color_primario','#1e40af')) }}22;
       --icon-padding: {{ '12px' if config.get('estilo_icono','circulo') in ('circulo','cuadrado') else '0' }};
+
+      {# ── Font scale — viene del scraper (font_scale en _layout) ── #}
+      {% set _fs = _layout.get('font_scale', config.get('font_scale', 'medium')) %}
+      {% if _fs == 'display-xl' %}
+        --hero-title-size:   clamp(3.5rem, 8vw, 6rem);
+        --hero-title-weight: 900;
+        --hero-title-lh:     1.0;
+        --hero-sub-size:     clamp(1.1rem, 2vw, 1.4rem);
+      {% elif _fs == 'display' %}
+        --hero-title-size:   clamp(2.8rem, 6vw, 4.5rem);
+        --hero-title-weight: 800;
+        --hero-title-lh:     1.05;
+        --hero-sub-size:     clamp(1rem, 1.8vw, 1.25rem);
+      {% elif _fs == 'large' %}
+        --hero-title-size:   clamp(2.2rem, 5vw, 3.5rem);
+        --hero-title-weight: 700;
+        --hero-title-lh:     1.1;
+        --hero-sub-size:     clamp(1rem, 1.6vw, 1.15rem);
+      {% elif _fs == 'small' %}
+        --hero-title-size:   clamp(1.4rem, 3vw, 2rem);
+        --hero-title-weight: 600;
+        --hero-title-lh:     1.3;
+        --hero-sub-size:     0.95rem;
+      {% else %}
+        --hero-title-size:   clamp(1.8rem, 4vw, 2.8rem);
+        --hero-title-weight: 700;
+        --hero-title-lh:     1.15;
+        --hero-sub-size:     1rem;
+      {% endif %}
+
+      {# ── Spacing — airy (Apple) vs standard ── #}
+      {% if _layout.get('spacing', config.get('spacing', 'standard')) == 'airy' %}
+        --section-pad: 96px;
+        --section-gap: 32px;
+      {% else %}
+        --section-pad: 64px;
+        --section-gap: 20px;
+      {% endif %}
     }
     {% if config.get('estilo_icono','circulo') == 'sin-icono' %}.lb-card-icon { display:none; }{% endif %}
+
+    {# ── Aplicar font scale al hero y headings ── #}
+    .lb-hero-title, .hero-title { font-size: var(--hero-title-size) !important; font-weight: var(--hero-title-weight) !important; line-height: var(--hero-title-lh) !important; }
+    .lb-hero-sub, .hero-subtitle { font-size: var(--hero-sub-size) !important; }
+    .lb-section { padding: var(--section-pad) 0 !important; }
+
+    {# ── Nav styles ── #}
+    {% set _nav_style = _layout.get('nav_style', config.get('nav_style', 'standard')) %}
+
+    {% if _nav_style == 'flat-minimal' %}
+    /* Apple-style: fondo blanco, sin sombra fuerte, links con mucho espacio */
+    .lb-nav { background: #fff; border-bottom: 1px solid #f0f0f0; box-shadow: none; }
+    .lb-nav-links a { font-size: 13px; font-weight: 400; color: #1d1d1f; letter-spacing: 0; padding: 6px 12px; opacity: .85; }
+    .lb-nav-links a:hover { opacity: 1; color: var(--c-primary); }
+    .lb-nav-logo { font-size: 18px; font-weight: 600; color: #1d1d1f; }
+    .lb-nav { padding: 0 max(24px, 5vw); }
+
+    {% elif _nav_style == 'minimal' %}
+    /* Portfolio-style: muy limpio, pocos links, sin CTA */
+    .lb-nav { background: transparent; box-shadow: none; border-bottom: none; position: absolute; width: 100%; z-index: 100; }
+    .lb-nav-links a { color: #fff; font-weight: 300; letter-spacing: .04em; }
+    .lb-nav-cta { display: none; }
+    .lb-nav-logo { color: #fff; }
+
+    {% elif _nav_style == 'dropdown' %}
+    /* Con submenú: estilo más corporativo */
+    .lb-nav { background: var(--c-nav); }
+    .lb-submenu { background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; box-shadow: 0 8px 24px rgba(0,0,0,.12); }
+    .lb-submenu a { color: var(--c-text) !important; font-size: 13px; }
+
+    {% else %}
+    /* standard: estilo por defecto del CSS base */
+    {% endif %}
   </style>
   {% if config.get('custom_css') %}<style>{{ config.get('custom_css') }}</style>{% endif %}
   {% if config.get('css_personalizado') %}<style>{{ config.get('css_personalizado') }}</style>{% endif %}
@@ -75,7 +146,7 @@
 {% endif %}
 
 <!-- NAVBAR -->
-<nav class="lb-nav">
+<nav class="lb-nav nav-style-{{ _layout.get('nav_style', config.get('nav_style', 'standard')) }}">
   <div class="container">
     <div class="lb-nav-logo">
       {% if config.get('logo_url') %}
@@ -298,6 +369,33 @@
   </div>
 </section>
 {% endif %}
+{% endif %}
+
+<!-- PROMO GRID — aparece cuando el scraper detectó layout tipo Apple/Editorial -->
+{% if _layout.get('has_promo_grid') %}
+<section class="lb-section" style="background:var(--c-section-alt);">
+  <div class="container">
+    <div class="lb-section-header fade-up">
+      <p class="lb-section-eyebrow">Destacados</p>
+      <h2 class="lb-section-title">{{ config.get('promo_titulo','Lo que nos define') }}</h2>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:var(--section-gap);">
+      {% set _promos = [
+        {'icon':'🚀','title':config.get('promo_1_titulo','Velocidad'),'desc':config.get('promo_1_desc','Resultados en tiempo récord.'),'cta':'Ver más'},
+        {'icon':'🎯','title':config.get('promo_2_titulo','Precisión'),'desc':config.get('promo_2_desc','Cada detalle importa en el resultado final.'),'cta':'Conocer'},
+        {'icon':'💡','title':config.get('promo_3_titulo','Innovación'),'desc':config.get('promo_3_desc','Soluciones que anticipan el futuro.'),'cta':'Explorar'},
+      ] %}
+      {% for p in _promos %}
+      <div class="lb-card fade-up" style="display:flex;flex-direction:column;gap:12px;">
+        <div class="lb-card-icon">{{ p.icon }}</div>
+        <h3 class="lb-card-title">{{ p.title }}</h3>
+        <p class="lb-card-desc" style="flex:1;">{{ p.desc }}</p>
+        <a href="#contacto" style="font-size:13px;font-weight:600;color:var(--c-primary);text-decoration:none;">{{ p.cta }} →</a>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
 {% endif %}
 
 <!-- CTA -->
