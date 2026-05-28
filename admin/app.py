@@ -1337,8 +1337,9 @@ def editar_sitio(sitio_id):
             if label.strip():
                 menu_items.append({'label': label.strip(), 'href': href.strip(), 'externo': externo, 'hijos': hijos})
             menu_idx += 1
-        if menu_items:
-            form_data['menu_items'] = json.dumps(menu_items, ensure_ascii=False)
+        # Siempre guardar menu_items: '' vacío limpia el valor anterior
+        # y activa el fallback de labels individuales en el template
+        form_data['menu_items'] = json.dumps(menu_items, ensure_ascii=False) if menu_items else ''
 
         # ── Procesar hero slides ───────────────────────────────────────────────
         hero_slides = []

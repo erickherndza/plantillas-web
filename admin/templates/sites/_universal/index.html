@@ -87,9 +87,10 @@
     </div>
     <button class="lb-nav-toggle" id="navToggle">☰</button>
     <ul class="lb-nav-links" id="navLinks">
-      {% set _menu = config.get('menu_items') %}
-      {% if _menu %}
-        {% set _items = _menu | from_json %}
+      {# Parsear menu_items — si está vacío o falla, usar fallback de labels #}
+      {% set _menu_raw = config.get('menu_items','') %}
+      {% set _items = (_menu_raw | from_json) if _menu_raw else [] %}
+      {% if _items %}
         {% for item in _items %}
         <li class="{{ 'has-sub' if item.get('hijos') }}">
           <a href="{{ item.get('href','#') }}"{{ ' target="_blank"' if item.get('externo') }}>{{ item.get('label','') }}</a>
@@ -103,9 +104,11 @@
         </li>
         {% endfor %}
       {% else %}
+      {# Fallback: links individuales según secciones presentes #}
       <li><a href="#inicio">{{ config.get('menu_inicio','Inicio') }}</a></li>
-      <li><a href="#servicios">{{ config.get('menu_servicios','Servicios') }}</a></li>
-      <li><a href="#nosotros">{{ config.get('menu_nosotros','Nosotros') }}</a></li>
+      {% if config.get('menu_servicios') or secciones.servicios %}<li><a href="#servicios">{{ config.get('menu_servicios','Servicios') }}</a></li>{% endif %}
+      {% if config.get('menu_nosotros') or config.get('nosotros_descripcion') %}<li><a href="#nosotros">{{ config.get('menu_nosotros','Nosotros') }}</a></li>{% endif %}
+      {% if secciones.proyectos %}<li><a href="#proyectos">{{ config.get('menu_proyectos','Proyectos') }}</a></li>{% endif %}
       {% if secciones.equipo %}<li><a href="#equipo">{{ config.get('menu_equipo','Equipo') }}</a></li>{% endif %}
       <li><a href="#contacto">{{ config.get('menu_contacto','Contacto') }}</a></li>
       {% endif %}
