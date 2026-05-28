@@ -1181,8 +1181,32 @@ def crear_sitio():
                 _blueprint  = _defaults_bp.get('_blueprint')
                 _tipo_web   = _defaults_bp.get('_tipo_web', formato)
 
-                if _blueprint and isinstance(_blueprint, dict) and _blueprint.get('sections'):
+                if _blueprint and isinstance(_blueprint, dict):
                     from blueprint_generator import blueprint_to_config, blueprint_to_secciones
+
+                    # ── Normalizar formato del scraper al formato del generator ──
+                    # El scraper envía {secciones:[str,...], layout:{...}, hero_tipo:'...'}
+                    # El generator espera {sections:[{id,layout,...}], detected_sections:[...]}
+                    if 'secciones' in _blueprint and 'sections' not in _blueprint:
+                        _secs_str  = _blueprint.get('secciones', [])
+                        _bp_layout = _blueprint.get('layout', {})
+                        _blueprint = {
+                            'sections': [
+                                {
+                                    'id':         s,
+                                    'layout':     _bp_layout.get(s, ''),
+                                    'card_count': 4 if s == 'services'  else 3,
+                                    'item_count': 6 if s == 'why_us'   else 4,
+                                    'has_stats':  'about'  in _secs_str,
+                                    'has_image':  True,
+                                    'has_social': 'footer' in _secs_str,
+                                }
+                                for s in _secs_str
+                            ],
+                            'detected_sections': _secs_str,
+                            'estilo': _defaults_bp.get('_estilo', 'clean'),
+                        }
+
                     _comp = {k: _defaults_bp.get(f'comp_{k}', False)
                              for k in ['whatsapp','newsletter','social','topbar','citas']}
                     _comp['hero_type'] = _defaults_bp.get('hero_tipo', 'static')
@@ -2568,25 +2592,51 @@ def admin_scraper_crear_url():
     except Exception:
         return jsonify(ok=False, error=f'La clave "{clave}" ya existe.'), 409
 
+    # ── Extraer datos reales del blueprint del scraper ───────────────────
+    _bp_secciones = []
+    _bp_layout_raw = {}
+    _hero_tipo    = componentes.get('hero_type', 'static')
+
+    if blueprint:
+        _bp_secciones  = (blueprint.get('secciones') or
+                          blueprint.get('detected_sections') or [])
+        _bp_layout_raw = blueprint.get('layout') or {}
+
+    # Mapear hero_tipo → variante de template (hero_fullscreen.html, etc.)
+    _HERO_MAP = {
+        'static':     'fullscreen',
+        'fullscreen': 'fullscreen',
+        'slider':     'fullscreen',   # no hay hero_slider.html — usa fullscreen
+        'carousel':   'fullscreen',
+        'dark':       'dark',
+        'gradient':   'gradient',
+        'split':      'split',
+        'minimal':    'minimal',
+    }
+    _hero_variant = _HERO_MAP.get(_hero_tipo, _bp_layout_raw.get('hero', 'fullscreen'))
+
     defaults = {
-        '_blueprint':   blueprint,
-        '_tipo_web':    tipo,
-        '_componentes': componentes,
-        'hero_tipo':        componentes.get('hero_type', 'static'),
-        'comp_whatsapp':    componentes.get('whatsapp', False),
-        'comp_newsletter':  componentes.get('newsletter', True),
-        'comp_social':      componentes.get('social', True),
-        'comp_topbar':      componentes.get('topbar', False),
-        'comp_citas':       componentes.get('citas', False),
+        '_blueprint':          blueprint,
+        '_tipo_web':           tipo,
+        '_componentes':        componentes,
+        # ↓ nivel raíz — el template lee _defaults.get('_detected_sections')
+        '_detected_sections':  json.dumps(_bp_secciones, ensure_ascii=False),
+        'hero_tipo':           _hero_tipo,
+        'comp_whatsapp':       componentes.get('whatsapp',    False),
+        'comp_newsletter':     componentes.get('newsletter',  True),
+        'comp_social':         componentes.get('social',      True),
+        'comp_redes':          componentes.get('social',      True),
+        'comp_topbar':         componentes.get('topbar',      False),
+        'comp_citas':          componentes.get('citas',       False),
     } if blueprint else {'_tipo_web': tipo}
 
     layout = {
-        'hero':          componentes.get('hero_type', 'fullscreen'),
-        'services':      'grid',
-        'projects':      'masonry',
-        'team':          'cards',
+        'hero':          _hero_variant,
+        'services':      _bp_layout_raw.get('services', 'cards'),
+        'projects':      _bp_layout_raw.get('projects', 'masonry'),
+        'team':          _bp_layout_raw.get('team',     'cards'),
         'tipo_web':      tipo,
-        'section_order': blueprint.get('detected_sections', []) if blueprint else [],
+        'section_order': _bp_secciones,
     }
 
     campos_estilos = {
