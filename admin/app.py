@@ -1475,11 +1475,27 @@ def _resolver_template_sitio(sitio, pagina='inicio'):
     clave = sitio['plantilla_clave']
     formato = sitio['formato'] if 'formato' in sitio.keys() else 'web5'
 
+    # Mapa estilo detectado → template especializado
+    _ESTILO_TEMPLATE_MAP = {
+        'apple-minimal': 'sites/tech/index.html',
+        'ecommerce':     'sites/ecommerce/index.html',   # futuro
+        'portfolio':     'sites/portfolio/index.html',   # futuro
+        'saas':          'sites/saas/index.html',        # futuro
+    }
+
     if formato == 'landing':
         if pagina == 'inicio':
             ruta = f'sites/{clave}/index.html'
             if _template_existe(ruta):
                 return ruta
+            # Usar template especializado si el estilo fue detectado
+            _estilos_p = get_estilos(sitio['plantilla_id']) if 'plantilla_id' in sitio.keys() else {}
+            _defaults_p = json.loads((_estilos_p or {}).get('defaults_json', '{}') or '{}')
+            _estilo_p = _defaults_p.get('estilo_detectado', 'clean')
+            if _estilo_p in _ESTILO_TEMPLATE_MAP:
+                _t = _ESTILO_TEMPLATE_MAP[_estilo_p]
+                if _template_existe(_t):
+                    return _t
             return 'sites/_universal/index.html'
 
         ruta = f'sites/{clave}/{pagina}.html'

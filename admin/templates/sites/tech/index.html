@@ -1,0 +1,732 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="description" content="{{ config.get('meta_descripcion', config.get('nosotros_descripcion', sitio.nombre)) }}"/>
+  <title>{{ config.get('meta_titulo', sitio.nombre) }}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family={{ config.get('fuente_titulos','SF+Pro+Display')|replace(' ','+') }}:wght@300;400;600;700&family={{ config.get('fuente_cuerpo','Inter')|replace(' ','+') }}:wght@300;400;500&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --c-primary:   {{ config.get('color_primario',  '#0071e3') }};
+      --c-accent:    {{ config.get('color_acento',    '#f5f5f7') }};
+      --c-dark:      {{ config.get('color_footer_bg', '#1d1d1f') }};
+      --c-text:      {{ config.get('color_texto',     '#1d1d1f') }};
+      --font-title:  '{{ config.get('fuente_titulos', 'SF Pro Display') }}', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      --font-body:   '{{ config.get('fuente_cuerpo',  'Inter') }}', -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: var(--font-body);
+      background: #fff;
+      color: var(--c-text);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .container { max-width: 980px; margin: 0 auto; padding: 0 22px; }
+    .container--wide { max-width: 1200px; margin: 0 auto; padding: 0 22px; }
+
+    /* ════════════════════════════════
+       NAV — sticky translúcida
+    ════════════════════════════════ */
+    .t-nav {
+      position: sticky;
+      top: 0;
+      z-index: 999;
+      background: rgba(255,255,255,.88);
+      backdrop-filter: saturate(180%) blur(20px);
+      -webkit-backdrop-filter: saturate(180%) blur(20px);
+      border-bottom: 1px solid rgba(0,0,0,.1);
+      height: 44px;
+      display: flex;
+      align-items: center;
+    }
+    .t-nav__inner {
+      max-width: 1024px;
+      margin: 0 auto;
+      padding: 0 22px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
+      gap: 8px;
+    }
+    .t-nav__logo {
+      font-family: var(--font-title);
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--c-text);
+      text-decoration: none;
+      letter-spacing: -.02em;
+      flex-shrink: 0;
+    }
+    .t-nav__logo img { height: 22px; width: auto; }
+    .t-nav__links {
+      display: flex;
+      list-style: none;
+      gap: 0;
+      flex: 1;
+      justify-content: center;
+    }
+    .t-nav__links a {
+      font-size: 12px;
+      color: var(--c-text);
+      opacity: .8;
+      text-decoration: none;
+      padding: 0 10px;
+      white-space: nowrap;
+      transition: opacity .2s;
+    }
+    .t-nav__links a:hover { opacity: 1; }
+    .t-nav__actions { display: flex; align-items: center; gap: 16px; flex-shrink: 0; }
+    .t-nav__actions a { font-size: 12px; color: var(--c-text); opacity: .8; text-decoration: none; }
+    .t-nav__actions a:hover { opacity: 1; }
+    .t-nav__toggle { display: none; background: none; border: none; cursor: pointer; padding: 4px; }
+    .t-nav__toggle span { display: block; width: 18px; height: 1.5px; background: var(--c-text); margin: 4px 0; transition: .3s; }
+
+    /* ════════════════════════════════
+       HERO — fullscreen producto
+    ════════════════════════════════ */
+    .t-hero {
+      position: relative;
+      min-height: calc(100vh - 44px);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      text-align: center;
+      padding-top: 52px;
+      overflow: hidden;
+      background: {{ config.get('hero_bg_color', '#fff') }};
+    }
+    .t-hero__eyebrow {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--c-primary);
+      letter-spacing: .01em;
+      margin-bottom: 8px;
+    }
+    .t-hero__title {
+      font-family: var(--font-title);
+      font-size: clamp(2.8rem, 6vw, 4.5rem);
+      font-weight: 700;
+      color: var(--c-text);
+      letter-spacing: -.03em;
+      line-height: 1.05;
+      margin-bottom: 10px;
+    }
+    .t-hero__sub {
+      font-size: clamp(1.1rem, 2vw, 1.4rem);
+      color: #6e6e73;
+      font-weight: 400;
+      line-height: 1.5;
+      margin-bottom: 20px;
+    }
+    .t-hero__ctас { display: flex; gap: 16px; justify-content: center; align-items: center; flex-wrap: wrap; }
+    .t-btn-blue {
+      font-size: 14px;
+      font-weight: 500;
+      color: #fff;
+      background: var(--c-primary);
+      border-radius: 980px;
+      padding: 10px 22px;
+      text-decoration: none;
+      transition: opacity .2s;
+      white-space: nowrap;
+    }
+    .t-btn-blue:hover { opacity: .85; }
+    .t-btn-link {
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--c-primary);
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      white-space: nowrap;
+    }
+    .t-btn-link::after { content: ' ›'; }
+    .t-btn-link:hover { text-decoration: underline; text-underline-offset: 3px; }
+    .t-hero__img {
+      width: 100%;
+      max-width: 900px;
+      margin-top: 32px;
+      flex: 1;
+      object-fit: contain;
+      display: block;
+    }
+    .t-hero__img--placeholder {
+      width: 100%;
+      max-width: 900px;
+      height: 420px;
+      margin-top: 32px;
+      background: linear-gradient(160deg, #f5f5f7 0%, #e8e8ed 100%);
+      border-radius: 18px 18px 0 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 64px;
+    }
+
+    /* ════════════════════════════════
+       PRODUCT SHOWCASE — blocos Apple
+       Cada producto = bloco full-width
+    ════════════════════════════════ */
+    .t-showcase {
+      padding: 0;
+    }
+    .t-showcase__block {
+      position: relative;
+      min-height: 500px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      text-align: center;
+      padding: 52px 22px 0;
+      overflow: hidden;
+    }
+    /* Fondos alternados */
+    .t-showcase__block:nth-child(odd)  { background: #fff; }
+    .t-showcase__block:nth-child(even) { background: #f5f5f7; }
+    /* Color accent del tercero */
+    .t-showcase__block:nth-child(3) {
+      background: {{ config.get('color_showcase_3', '#1d1d1f') }};
+      color: #fff;
+    }
+    .t-showcase__block:nth-child(3) .t-showcase__eyebrow { color: var(--c-primary); }
+    .t-showcase__block:nth-child(3) .t-showcase__sub,
+    .t-showcase__block:nth-child(3) .t-showcase__desc { color: rgba(255,255,255,.7); }
+    .t-showcase__eyebrow {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--c-primary);
+      margin-bottom: 6px;
+      letter-spacing: .01em;
+    }
+    .t-showcase__title {
+      font-family: var(--font-title);
+      font-size: clamp(2rem, 5vw, 3.5rem);
+      font-weight: 700;
+      letter-spacing: -.025em;
+      line-height: 1.08;
+      margin-bottom: 8px;
+    }
+    .t-showcase__sub {
+      font-size: clamp(.95rem, 1.8vw, 1.2rem);
+      color: #6e6e73;
+      margin-bottom: 18px;
+      line-height: 1.5;
+    }
+    .t-showcase__ctас { display: flex; gap: 16px; justify-content: center; align-items: center; flex-wrap: wrap; margin-bottom: 28px; }
+    .t-showcase__img {
+      width: 100%;
+      max-width: 800px;
+      object-fit: contain;
+      display: block;
+      border-radius: 12px 12px 0 0;
+    }
+    .t-showcase__img--placeholder {
+      width: 100%;
+      max-width: 700px;
+      height: 340px;
+      background: linear-gradient(160deg, #e8e8ed, #d2d2d7);
+      border-radius: 12px 12px 0 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 56px;
+    }
+    .t-showcase__block:nth-child(3) .t-showcase__img--placeholder {
+      background: linear-gradient(160deg, #2c2c2e, #1c1c1e);
+    }
+
+    /* ════════════════════════════════
+       FEATURES — grid de 3 iconos
+    ════════════════════════════════ */
+    .t-features {
+      padding: 80px 0;
+      background: #fff;
+    }
+    .t-features__header { text-align: center; margin-bottom: 52px; }
+    .t-features__eyebrow { font-size: 13px; font-weight: 600; color: var(--c-primary); letter-spacing: .06em; text-transform: uppercase; margin-bottom: 10px; }
+    .t-features__title {
+      font-family: var(--font-title);
+      font-size: clamp(1.8rem, 4vw, 2.8rem);
+      font-weight: 700;
+      letter-spacing: -.02em;
+      color: var(--c-text);
+    }
+    .t-features__grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 2px;
+      background: #d2d2d7;
+    }
+    .t-features__item {
+      background: #fff;
+      padding: 44px 36px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+    .t-features__icon {
+      font-size: 36px;
+      line-height: 1;
+    }
+    .t-features__label {
+      font-family: var(--font-title);
+      font-size: 1.15rem;
+      font-weight: 600;
+      letter-spacing: -.01em;
+      color: var(--c-text);
+    }
+    .t-features__desc {
+      font-size: .9rem;
+      color: #6e6e73;
+      line-height: 1.65;
+    }
+
+    /* ════════════════════════════════
+       ABOUT — dos columnas
+    ════════════════════════════════ */
+    .t-about {
+      padding: 80px 0;
+      background: #f5f5f7;
+    }
+    .t-about__inner {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 64px;
+      align-items: center;
+    }
+    .t-about__eyebrow { font-size: 13px; font-weight: 600; color: var(--c-primary); letter-spacing: .06em; text-transform: uppercase; margin-bottom: 14px; }
+    .t-about__title {
+      font-family: var(--font-title);
+      font-size: clamp(1.8rem, 3.5vw, 2.6rem);
+      font-weight: 700;
+      letter-spacing: -.025em;
+      line-height: 1.12;
+      color: var(--c-text);
+      margin-bottom: 18px;
+    }
+    .t-about__text { font-size: .95rem; color: #6e6e73; line-height: 1.75; margin-bottom: 28px; }
+    .t-about__img {
+      width: 100%;
+      border-radius: 18px;
+      object-fit: cover;
+      aspect-ratio: 4/3;
+    }
+    .t-about__img--placeholder {
+      width: 100%;
+      aspect-ratio: 4/3;
+      border-radius: 18px;
+      background: linear-gradient(135deg, var(--c-primary)22, var(--c-primary)44);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 72px;
+    }
+
+    /* ════════════════════════════════
+       CTA BAND
+    ════════════════════════════════ */
+    .t-cta {
+      padding: 80px 22px;
+      text-align: center;
+      background: var(--c-dark);
+      color: #fff;
+    }
+    .t-cta__title {
+      font-family: var(--font-title);
+      font-size: clamp(1.8rem, 4vw, 3rem);
+      font-weight: 700;
+      letter-spacing: -.025em;
+      margin-bottom: 12px;
+    }
+    .t-cta__sub { font-size: 1rem; color: rgba(255,255,255,.7); margin-bottom: 32px; }
+    .t-cta__btns { display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; }
+    .t-btn-white {
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--c-dark);
+      background: #fff;
+      border-radius: 980px;
+      padding: 10px 22px;
+      text-decoration: none;
+      transition: opacity .2s;
+    }
+    .t-btn-white:hover { opacity: .88; }
+    .t-btn-link-white {
+      font-size: 14px;
+      font-weight: 500;
+      color: rgba(255,255,255,.85);
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .t-btn-link-white::after { content: ' ›'; }
+    .t-btn-link-white:hover { color: #fff; }
+
+    /* ════════════════════════════════
+       CONTACTO
+    ════════════════════════════════ */
+    .t-contact {
+      padding: 80px 0;
+      background: #fff;
+    }
+    .t-contact__inner {
+      display: grid;
+      grid-template-columns: 1fr 1.2fr;
+      gap: 64px;
+      align-items: start;
+    }
+    .t-contact__eyebrow { font-size: 13px; font-weight: 600; color: var(--c-primary); letter-spacing: .06em; text-transform: uppercase; margin-bottom: 12px; }
+    .t-contact__title {
+      font-family: var(--font-title);
+      font-size: clamp(1.6rem, 3vw, 2.2rem);
+      font-weight: 700;
+      letter-spacing: -.02em;
+      margin-bottom: 16px;
+      color: var(--c-text);
+    }
+    .t-contact__info { display: flex; flex-direction: column; gap: 12px; margin-top: 24px; }
+    .t-contact__item { font-size: .9rem; color: #6e6e73; }
+    .t-contact__item strong { color: var(--c-text); display: block; font-size: .75rem; text-transform: uppercase; letter-spacing: .06em; margin-bottom: 2px; }
+    .t-form { display: flex; flex-direction: column; gap: 12px; }
+    .t-form input, .t-form textarea {
+      width: 100%;
+      padding: 12px 16px;
+      border: 1px solid #d2d2d7;
+      border-radius: 10px;
+      font: inherit;
+      font-size: .9rem;
+      color: var(--c-text);
+      background: #fff;
+      outline: none;
+      transition: border-color .2s;
+      -webkit-appearance: none;
+    }
+    .t-form input:focus, .t-form textarea:focus { border-color: var(--c-primary); }
+    .t-form textarea { resize: vertical; min-height: 110px; }
+    .t-form button {
+      align-self: flex-start;
+      background: var(--c-primary);
+      color: #fff;
+      border: none;
+      border-radius: 980px;
+      padding: 11px 24px;
+      font: inherit;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: opacity .2s;
+    }
+    .t-form button:hover { opacity: .85; }
+
+    /* ════════════════════════════════
+       FOOTER
+    ════════════════════════════════ */
+    .t-footer {
+      background: #f5f5f7;
+      border-top: 1px solid #d2d2d7;
+      padding: 20px 0 0;
+      font-size: 12px;
+      color: #6e6e73;
+    }
+    .t-footer__top {
+      max-width: 980px;
+      margin: 0 auto;
+      padding: 0 22px 20px;
+      border-bottom: 1px solid #d2d2d7;
+    }
+    .t-footer__cols {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 32px;
+      margin-top: 16px;
+    }
+    .t-footer__col-title { font-weight: 600; color: var(--c-text); margin-bottom: 10px; }
+    .t-footer__col a { display: block; color: #6e6e73; text-decoration: none; margin-bottom: 6px; }
+    .t-footer__col a:hover { color: var(--c-primary); }
+    .t-footer__bottom {
+      max-width: 980px;
+      margin: 0 auto;
+      padding: 12px 22px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    /* ════════════════════════════════
+       RESPONSIVE
+    ════════════════════════════════ */
+    @media (max-width: 768px) {
+      .t-nav__links { display: none; }
+      .t-nav__links.open {
+        display: flex;
+        flex-direction: column;
+        position: fixed;
+        top: 44px; left: 0; right: 0;
+        background: rgba(255,255,255,.96);
+        backdrop-filter: blur(20px);
+        padding: 24px;
+        gap: 4px;
+        border-top: 1px solid rgba(0,0,0,.08);
+        z-index: 998;
+      }
+      .t-nav__links.open a { font-size: 17px; padding: 10px 0; opacity: 1; border-bottom: 1px solid #f0f0f0; }
+      .t-nav__toggle { display: block; }
+      .t-about__inner, .t-contact__inner { grid-template-columns: 1fr; gap: 32px; }
+      .t-features__grid { grid-template-columns: 1fr; background: none; gap: 1px; }
+      .t-features__item { border-bottom: 1px solid #f0f0f0; }
+    }
+
+    /* ════════════════════════════════
+       FADE IN
+    ════════════════════════════════ */
+    .fade-up { opacity: 0; transform: translateY(24px); transition: opacity .6s ease, transform .6s ease; }
+    .fade-up.visible { opacity: 1; transform: none; }
+  </style>
+</head>
+<body>
+
+{# ── Variables de configuración ── #}
+{% set _defaults = defaults if defaults is defined else {} %}
+{% set _nombre   = config.get('nombre_negocio', sitio.nombre) %}
+
+<!-- NAV -->
+<nav class="t-nav" id="t-nav">
+  <div class="t-nav__inner">
+    <a href="#inicio" class="t-nav__logo">
+      {% if config.get('logo_url') %}
+        <img src="{{ config.get('logo_url') }}" alt="{{ _nombre }}">
+      {% else %}
+        {{ _nombre }}
+      {% endif %}
+    </a>
+
+    <ul class="t-nav__links" id="t-nav-links">
+      <li><a href="#inicio">Inicio</a></li>
+      {% if secciones.servicios %}<li><a href="#productos">{{ config.get('menu_servicios','Productos') }}</a></li>{% endif %}
+      {% if config.get('nosotros_descripcion') %}<li><a href="#nosotros">{{ config.get('menu_nosotros','Nosotros') }}</a></li>{% endif %}
+      {% if secciones.proyectos %}<li><a href="#galeria">{{ config.get('menu_proyectos','Galería') }}</a></li>{% endif %}
+      {% if secciones.equipo %}<li><a href="#equipo">Equipo</a></li>{% endif %}
+      <li><a href="#contacto">{{ config.get('menu_contacto','Contacto') }}</a></li>
+    </ul>
+
+    <div class="t-nav__actions">
+      <a href="#contacto">{{ config.get('hero_cta_texto','Comprar') }}</a>
+      <button class="t-nav__toggle" id="t-toggle" aria-label="Menú">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </div>
+</nav>
+
+
+<!-- HERO -->
+<section class="t-hero" id="inicio">
+  <div class="fade-up">
+    {% if config.get('hero_eyebrow') %}
+    <p class="t-hero__eyebrow">{{ config.get('hero_eyebrow') }}</p>
+    {% endif %}
+    <h1 class="t-hero__title">{{ config.get('hero_titulo', _nombre) }}</h1>
+    <p class="t-hero__sub">{{ config.get('hero_subtitulo', 'Tecnología diseñada para llevarte más lejos.') }}</p>
+    <div class="t-hero__ctас">
+      <a href="{{ config.get('hero_cta_href','#productos') }}" class="t-btn-blue">{{ config.get('hero_cta_texto','Comprar') }}</a>
+      <a href="{{ config.get('hero_cta2_href','#productos') }}" class="t-btn-link">Saber más</a>
+    </div>
+  </div>
+  {% if config.get('hero_imagen') %}
+    <img class="t-hero__img" src="{{ config.get('hero_imagen') }}" alt="{{ config.get('hero_titulo', _nombre) }}">
+  {% else %}
+    <div class="t-hero__img--placeholder">💻</div>
+  {% endif %}
+</section>
+
+
+<!-- PRODUCT SHOWCASE — blocos estilo Apple -->
+{% if secciones.servicios %}
+<section class="t-showcase" id="productos">
+  {% for srv in secciones.servicios %}
+  <div class="t-showcase__block">
+    <p class="t-showcase__eyebrow fade-up">{{ srv.get('icono','') }} {{ srv.get('categoria','Nuevo') }}</p>
+    <h2 class="t-showcase__title fade-up">{{ srv.get('titulo','') }}</h2>
+    <p class="t-showcase__sub fade-up">{{ srv.get('descripcion','') }}</p>
+    <div class="t-showcase__ctас fade-up">
+      <a href="{{ srv.get('enlace','#contacto') }}" class="t-btn-blue">{{ srv.get('cta_texto','Comprar') }}</a>
+      <a href="{{ srv.get('enlace','#contacto') }}" class="t-btn-link">Saber más</a>
+    </div>
+    {% if srv.get('imagen') %}
+      <img class="t-showcase__img" src="{{ srv.get('imagen') }}" alt="{{ srv.get('titulo','') }}">
+    {% else %}
+      <div class="t-showcase__img--placeholder">{{ srv.get('icono','📦') }}</div>
+    {% endif %}
+  </div>
+  {% endfor %}
+</section>
+{% endif %}
+
+
+<!-- FEATURES — puntos clave de la marca -->
+<section class="t-features">
+  <div class="container">
+    <div class="t-features__header fade-up">
+      <p class="t-features__eyebrow">Por qué elegirnos</p>
+      <h2 class="t-features__title">{{ config.get('features_titulo','Diseñado para lo que más importa') }}</h2>
+    </div>
+  </div>
+  <div class="container--wide">
+    <div class="t-features__grid">
+      {% set features = [
+        {'icon': config.get('feat_1_icon','⚡'), 'label': config.get('feat_1_titulo','Rendimiento'), 'desc': config.get('feat_1_desc','Potencia para las tareas más exigentes.')},
+        {'icon': config.get('feat_2_icon','🔋'), 'label': config.get('feat_2_titulo','Autonomía'),   'desc': config.get('feat_2_desc','Batería que dura todo el día.')},
+        {'icon': config.get('feat_3_icon','🖥'),  'label': config.get('feat_3_titulo','Pantalla'),    'desc': config.get('feat_3_desc','Colores precisos, brillo excepcional.')},
+        {'icon': config.get('feat_4_icon','🔒'), 'label': config.get('feat_4_titulo','Seguridad'),   'desc': config.get('feat_4_desc','Protección integrada desde el hardware.')},
+        {'icon': config.get('feat_5_icon','♻'), 'label': config.get('feat_5_titulo','Sostenible'),  'desc': config.get('feat_5_desc','Materiales reciclados y huella reducida.')},
+        {'icon': config.get('feat_6_icon','🌐'), 'label': config.get('feat_6_titulo','Conectividad'),'desc': config.get('feat_6_desc','WiFi 6E, Bluetooth 5.3, USB-C Thunderbolt.')},
+      ] %}
+      {% for f in features %}
+      <div class="t-features__item fade-up">
+        <div class="t-features__icon">{{ f.icon }}</div>
+        <p class="t-features__label">{{ f.label }}</p>
+        <p class="t-features__desc">{{ f.desc }}</p>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+
+<!-- ABOUT -->
+{% if config.get('nosotros_descripcion') %}
+<section class="t-about" id="nosotros">
+  <div class="container">
+    <div class="t-about__inner">
+      <div class="fade-up">
+        <p class="t-about__eyebrow">Nuestra historia</p>
+        <h2 class="t-about__title">{{ config.get('nosotros_titulo','Sobre nosotros') }}</h2>
+        <p class="t-about__text">{{ config.get('nosotros_descripcion','') }}</p>
+        {% if config.get('nosotros_mision') %}
+        <p class="t-about__text">{{ config.get('nosotros_mision','') }}</p>
+        {% endif %}
+        <a href="#contacto" class="t-btn-link">Contáctanos</a>
+      </div>
+      <div class="fade-up">
+        {% if config.get('nosotros_imagen') %}
+          <img class="t-about__img" src="{{ config.get('nosotros_imagen') }}" alt="Nosotros">
+        {% else %}
+          <div class="t-about__img--placeholder">🏢</div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</section>
+{% endif %}
+
+
+<!-- CTA BAND -->
+<section class="t-cta">
+  <div class="container">
+    <h2 class="t-cta__title fade-up">{{ config.get('cta_titulo','¿Listo para dar el siguiente paso?') }}</h2>
+    <p class="t-cta__sub fade-up">{{ config.get('cta_subtitulo','Descubre toda la línea y encuentra el equipo perfecto para ti.') }}</p>
+    <div class="t-cta__btns fade-up">
+      <a href="#contacto" class="t-btn-white">{{ config.get('cta_btn','Comprar ahora') }}</a>
+      <a href="#productos" class="t-btn-link-white">Ver todos los productos</a>
+    </div>
+  </div>
+</section>
+
+
+<!-- CONTACTO -->
+<section class="t-contact" id="contacto">
+  <div class="container">
+    <div class="t-contact__inner">
+      <div class="fade-up">
+        <p class="t-contact__eyebrow">Atención al cliente</p>
+        <h2 class="t-contact__title">Estamos aquí para ayudarte</h2>
+        <div class="t-contact__info">
+          {% if config.get('contacto_telefono') %}
+          <div class="t-contact__item"><strong>Teléfono</strong>{{ config.get('contacto_telefono') }}</div>
+          {% endif %}
+          {% if config.get('contacto_email') %}
+          <div class="t-contact__item"><strong>Email</strong>{{ config.get('contacto_email') }}</div>
+          {% endif %}
+          {% if config.get('contacto_direccion') %}
+          <div class="t-contact__item"><strong>Dirección</strong>{{ config.get('contacto_direccion') }}</div>
+          {% endif %}
+          {% if config.get('contacto_horario') %}
+          <div class="t-contact__item"><strong>Horario</strong>{{ config.get('contacto_horario') }}</div>
+          {% endif %}
+        </div>
+      </div>
+      <form class="t-form fade-up" method="POST" action="/s/{{ sitio.slug }}/enviar-contacto">
+        <input type="text"  name="nombre"   placeholder="Tu nombre"            required>
+        <input type="email" name="email"    placeholder="Correo electrónico"   required>
+        <input type="tel"   name="telefono" placeholder="Teléfono (opcional)">
+        <textarea           name="mensaje"  placeholder="¿En qué podemos ayudarte?" required></textarea>
+        <button type="submit">Enviar mensaje</button>
+      </form>
+    </div>
+  </div>
+</section>
+
+
+<!-- FOOTER -->
+<footer class="t-footer">
+  <div class="t-footer__top">
+    <p>Copyright &copy; {{ sitio.nombre }} · Todos los derechos reservados.</p>
+    <div class="t-footer__cols">
+      <div class="t-footer__col">
+        <p class="t-footer__col-title">{{ _nombre }}</p>
+        <a href="#inicio">Inicio</a>
+        {% if secciones.servicios %}<a href="#productos">Productos</a>{% endif %}
+        {% if config.get('nosotros_descripcion') %}<a href="#nosotros">Nosotros</a>{% endif %}
+        <a href="#contacto">Contacto</a>
+      </div>
+      <div class="t-footer__col">
+        <p class="t-footer__col-title">Soporte</p>
+        <a href="#contacto">Contactar soporte</a>
+        <a href="#contacto">Garantía</a>
+        <a href="#contacto">Reparaciones</a>
+      </div>
+      <div class="t-footer__col">
+        <p class="t-footer__col-title">Contacto</p>
+        {% if config.get('contacto_telefono') %}<a href="tel:{{ config.get('contacto_telefono') }}">{{ config.get('contacto_telefono') }}</a>{% endif %}
+        {% if config.get('contacto_email') %}<a href="mailto:{{ config.get('contacto_email') }}">{{ config.get('contacto_email') }}</a>{% endif %}
+        {% if config.get('instagram_url') %}<a href="{{ config.get('instagram_url') }}" target="_blank">Instagram</a>{% endif %}
+        {% if config.get('facebook_url') %}<a href="{{ config.get('facebook_url') }}" target="_blank">Facebook</a>{% endif %}
+      </div>
+    </div>
+  </div>
+  <div class="t-footer__bottom">
+    <span>{{ sitio.nombre }} &copy; {{ config.get('footer_anio','2025') }}</span>
+    <span>{{ config.get('footer_legal','') }}</span>
+  </div>
+</footer>
+
+
+<script>
+  // Nav toggle mobile
+  document.getElementById('t-toggle').onclick = () =>
+    document.getElementById('t-nav-links').classList.toggle('open');
+
+  // Fade-up on scroll
+  const obs = new IntersectionObserver(entries =>
+    entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); }),
+    { threshold: 0.1 }
+  );
+  document.querySelectorAll('.fade-up').forEach(el => obs.observe(el));
+</script>
+
+</body>
+</html>
