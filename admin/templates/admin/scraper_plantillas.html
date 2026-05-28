@@ -1043,6 +1043,9 @@ function readComponentState(){
 
 /* ── Botón Analizar ──────────────────────────────────────────────────── */
 let _layoutDetectado = null; // guardado para reutilizar al crear
+let _navData         = null;
+let _contentLayout   = null;
+let _tipografia      = null;
 let _blueprintDetectado = getDefaultBlueprint();
 renderBlueprintControls(_blueprintDetectado);
 
@@ -1073,11 +1076,11 @@ document.getElementById('btn-analizar').addEventListener('click', async () => {
     const scoreMap = puntuarColores(cssTotal);
     const tema     = detectarTema(Object.keys(scoreMap).filter(esColorNoGris));
     const estilo        = detectarEstilo(cssTotal, tema, html);
-    const navData       = detectarNavStyle(html);
-    const contentLayout = detectarContentLayout(html);
-    const tipografia    = detectarTipografia(cssTotal, html);
+    _navData       = detectarNavStyle(html);
+    _contentLayout = detectarContentLayout(html);
+    _tipografia    = detectarTipografia(cssTotal, html);
     const roles         = seleccionarRoles(scoreMap, tema);
-    _layoutDetectado = recomendarLayout(estilo, tema, navData, contentLayout, tipografia);
+    _layoutDetectado = recomendarLayout(estilo, tema, _navData, _contentLayout, _tipografia);
 
     // Todos los colores no-grises ordenados por score
     const coloresOrdenados = Object.entries(scoreMap)
@@ -1126,7 +1129,7 @@ document.getElementById('btn-analizar').addEventListener('click', async () => {
         'clean':         '🪟 Limpio',
       };
       const secciones = _blueprintDetectado?.secciones?.length || 0;
-      badgeEl.textContent = `${labels[estilo]||estilo} · ${navData.items} nav items · ${secciones} secciones · ${contentLayout.primary_layout} · font: ${tipografia.hero_font_size}`;
+      badgeEl.textContent = `${labels[estilo]||estilo} · ${_navData.items} nav items · ${secciones} secciones · ${_contentLayout.primary_layout} · font: ${_tipografia.hero_font_size}`;
       badgeEl.style.display = 'block';
     }
 
@@ -1174,12 +1177,12 @@ document.getElementById('btn-crear-url').addEventListener('click', async () => {
     },
     componentes:     readComponentState(),
     hero_tipo:       document.getElementById('url-hero-tipo').value,
-    nav_style:       navData?.style,
-    nav_items:       navData?.items,
-    content_layout:  contentLayout?.primary_layout,
-    font_scale:      tipografia?.hero_font_size,
-    tagline_style:   tipografia?.tagline_style,
-    has_promo_grid:  contentLayout?.layouts?.some(l => l.type === 'promo-grid') || false,
+    nav_style:       _navData?.style,
+    nav_items:       _navData?.items,
+    content_layout:  _contentLayout?.primary_layout,
+    font_scale:      _tipografia?.hero_font_size,
+    tagline_style:   _tipografia?.tagline_style,
+    has_promo_grid:  _contentLayout?.layouts?.some(l => l.type === 'promo-grid') || false,
   };
 
   const btn = document.getElementById('btn-crear-url');
