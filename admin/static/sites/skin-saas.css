@@ -1,0 +1,176 @@
+/*
+ * SKIN: saas — Tech / Startup / SaaS
+ * Dark hero, secciones alternas navy/blanco, gradientes, features en grid denso
+ */
+
+body { background: #fff; color: #0f172a; }
+
+/* ── Nav: oscura con gradiente ── */
+.lb-nav {
+  background: #0f172a !important;
+  border-bottom: none !important;
+  box-shadow: 0 1px 0 rgba(255,255,255,.06) !important;
+}
+.lb-nav-logo { color: #fff !important; font-weight: 700; font-size: 17px; }
+.lb-nav-links a {
+  color: rgba(255,255,255,.75) !important;
+  font-size: 14px !important;
+  font-weight: 500 !important;
+  padding: 6px 14px !important;
+  border-radius: 6px !important;
+}
+.lb-nav-links a:hover { color: #fff !important; background: rgba(255,255,255,.08) !important; }
+.lb-nav-cta {
+  background: var(--c-primary) !important;
+  color: #fff !important;
+  border-radius: 8px !important;
+  font-size: 14px !important;
+  font-weight: 600 !important;
+  padding: 8px 18px !important;
+  box-shadow: 0 0 0 1px rgba(255,255,255,.1) !important;
+}
+
+/* ── Hero: dark con gradiente radial ── */
+.lb-hero {
+  background: #0f172a !important;
+  min-height: 90vh !important;
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+.lb-hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse 80% 60% at 50% -10%, var(--c-primary)44, transparent);
+  pointer-events: none;
+}
+.lb-hero-bg { opacity: .12 !important; filter: grayscale(40%); }
+.lb-hero-overlay { background: rgba(15,23,42,.6) !important; }
+.lb-hero-content { position: relative; z-index: 1; }
+.lb-hero-eyebrow {
+  display: inline-block;
+  background: var(--c-primary)22 !important;
+  color: var(--c-primary) !important;
+  border: 1px solid var(--c-primary)44;
+  border-radius: 999px !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  letter-spacing: .08em !important;
+  padding: 5px 14px !important;
+  text-transform: uppercase;
+  margin-bottom: 20px;
+}
+.lb-hero-title {
+  font-size: clamp(2.5rem, 5.5vw, 4.5rem) !important;
+  font-weight: 800 !important;
+  line-height: 1.1 !important;
+  color: #fff !important;
+  letter-spacing: -.03em !important;
+  margin-bottom: 20px !important;
+}
+.lb-hero-title span, .lb-hero-title strong {
+  background: linear-gradient(135deg, var(--c-primary), var(--c-accent, #a78bfa));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.lb-hero-sub {
+  font-size: 1.1rem !important;
+  color: rgba(255,255,255,.7) !important;
+  font-weight: 400 !important;
+  line-height: 1.7 !important;
+  max-width: 540px;
+  opacity: 1 !important;
+  margin-bottom: 36px !important;
+}
+.lb-btn-primary {
+  background: var(--c-primary) !important;
+  border-radius: 8px !important;
+  padding: 13px 24px !important;
+  font-weight: 600 !important;
+  font-size: 15px !important;
+  box-shadow: 0 4px 24px var(--c-primary)66 !important;
+}
+.lb-btn-outline {
+  background: rgba(255,255,255,.06) !important;
+  border: 1px solid rgba(255,255,255,.14) !important;
+  color: #fff !important;
+  border-radius: 8px !important;
+  padding: 13px 24px !important;
+  font-weight: 600 !important;
+  font-size: 15px !important;
+  backdrop-filter: blur(8px);
+}
+
+/* ── Secciones alternas: blanco / gris muy claro / oscuro ── */
+.lb-section { background: #fff !important; padding: 88px 0 !important; }
+.lb-section.alt { background: #f8fafc !important; }
+.sections-wrapper > .lb-section:nth-child(4n) { background: #0f172a !important; }
+.sections-wrapper > .lb-section:nth-child(4n) .lb-section-title,
+.sections-wrapper > .lb-section:nth-child(4n) .lb-section-sub,
+.sections-wrapper > .lb-section:nth-child(4n) .lb-section-eyebrow { color: #fff !important; }
+
+.lb-section-eyebrow {
+  font-size: 12px !important;
+  font-weight: 700;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--c-primary) !important;
+}
+.lb-section-title {
+  font-size: clamp(1.7rem, 3.5vw, 2.6rem) !important;
+  font-weight: 800 !important;
+  letter-spacing: -.025em !important;
+  color: #0f172a !important;
+  line-height: 1.15 !important;
+}
+.lb-section-sub { color: #64748b !important; font-size: 1rem !important; }
+
+/* ── Cards: con borde y hover elevado ── */
+.lb-card {
+  background: #fff !important;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 12px !important;
+  padding: 28px !important;
+  box-shadow: 0 1px 3px rgba(0,0,0,.06) !important;
+  transition: transform .2s, box-shadow .2s, border-color .2s;
+}
+.lb-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 36px rgba(0,0,0,.12) !important;
+  border-color: var(--c-primary) !important;
+}
+.lb-card-icon {
+  width: 44px !important; height: 44px !important;
+  background: var(--c-primary)15 !important;
+  color: var(--c-primary);
+  border-radius: 10px !important;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 20px !important;
+  margin-bottom: 18px;
+  padding: 0 !important;
+}
+.lb-card-title { font-size: 1rem !important; font-weight: 700 !important; color: #0f172a !important; margin-bottom: 8px; }
+.lb-card-desc  { font-size: .9rem !important; color: #64748b !important; line-height: 1.65; }
+
+/* ── About ── */
+.lb-about-label { color: var(--c-primary) !important; font-weight: 700; text-transform: uppercase; font-size: 12px; letter-spacing: .1em; }
+.lb-about-title { font-size: clamp(1.6rem, 3vw, 2.4rem) !important; font-weight: 800 !important; letter-spacing: -.025em !important; color: #0f172a !important; }
+.lb-about-text { color: #475569 !important; line-height: 1.75; }
+
+/* ── CTA: gradiente primary → dark ── */
+.lb-cta {
+  background: linear-gradient(135deg, var(--c-primary), #0f172a) !important;
+  color: #fff !important;
+  padding: 88px 24px !important;
+}
+.lb-cta h2 { color: #fff !important; font-size: clamp(1.8rem, 3.5vw, 2.8rem) !important; font-weight: 800 !important; letter-spacing: -.02em; }
+.lb-cta p  { color: rgba(255,255,255,.75) !important; }
+.lb-cta-btn { background: #fff !important; color: var(--c-primary) !important; border-radius: 8px !important; font-weight: 700 !important; }
+
+/* ── Footer: oscuro ── */
+.lb-footer { background: #0f172a !important; }
+.lb-footer-brand, .lb-footer-tagline, .lb-footer-links a, .lb-footer-bottom { color: rgba(255,255,255,.7) !important; }
+.lb-footer-brand { color: #fff !important; font-weight: 700; }
+.lb-footer-bottom { border-top-color: rgba(255,255,255,.08) !important; }

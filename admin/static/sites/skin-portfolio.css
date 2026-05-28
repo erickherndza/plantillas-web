@@ -1,0 +1,151 @@
+/*
+ * SKIN: portfolio — Creativo / Agencia / Portfolio
+ * Hero fullscreen con imagen/color dominante, galería masonry, nav transparente sobre hero
+ */
+
+body { background: #0a0a0a; color: #e8e8e8; }
+
+/* ── Nav: transparente sobre hero, se torna sólida al hacer scroll ── */
+.lb-nav {
+  background: transparent !important;
+  box-shadow: none !important;
+  border-bottom: none !important;
+  position: absolute !important;
+  top: 0; left: 0; right: 0;
+  z-index: 100;
+}
+.lb-nav.scrolled, .lb-nav:focus-within {
+  background: rgba(10,10,10,.92) !important;
+  backdrop-filter: blur(12px);
+}
+.lb-nav-logo { color: #fff !important; font-weight: 700; font-size: 18px; }
+.lb-nav-links a {
+  color: rgba(255,255,255,.8) !important;
+  font-size: 13px !important;
+  font-weight: 400 !important;
+  letter-spacing: .06em !important;
+  text-transform: uppercase !important;
+  padding: 6px 12px !important;
+}
+.lb-nav-links a:hover { color: #fff !important; opacity: 1; }
+.lb-nav-cta { display: none !important; }
+
+/* ── Hero: fullscreen con overlay oscuro fuerte ── */
+.lb-hero {
+  min-height: 100vh !important;
+  background: #0a0a0a !important;
+}
+.lb-hero-overlay {
+  background: linear-gradient(to bottom, rgba(0,0,0,.55) 0%, rgba(0,0,0,.3) 50%, rgba(0,0,0,.8) 100%) !important;
+}
+.lb-hero-content {
+  text-align: center;
+  padding-top: 100px;
+}
+.lb-hero-eyebrow {
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  letter-spacing: .2em !important;
+  text-transform: uppercase !important;
+  color: var(--c-primary) !important;
+  margin-bottom: 24px;
+}
+.lb-hero-title {
+  font-size: clamp(3rem, 8vw, 7rem) !important;
+  font-weight: 900 !important;
+  line-height: .95 !important;
+  color: #fff !important;
+  letter-spacing: -.04em !important;
+  text-transform: uppercase !important;
+  margin-bottom: 24px !important;
+}
+.lb-hero-sub {
+  font-size: 1rem !important;
+  color: rgba(255,255,255,.65) !important;
+  font-weight: 300 !important;
+  letter-spacing: .04em !important;
+  max-width: 420px;
+  margin: 0 auto 40px !important;
+  opacity: 1 !important;
+}
+.lb-btn-primary {
+  background: transparent !important;
+  border: 1px solid rgba(255,255,255,.5) !important;
+  color: #fff !important;
+  border-radius: 0 !important;
+  padding: 14px 36px !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  letter-spacing: .1em !important;
+  text-transform: uppercase !important;
+  transition: all .3s !important;
+}
+.lb-btn-primary:hover { background: #fff !important; color: #0a0a0a !important; }
+.lb-btn-outline { display: none !important; }
+
+/* ── Secciones: fondo oscuro ── */
+.lb-section { background: #0a0a0a !important; padding: 96px 0 !important; }
+.lb-section.alt { background: #111 !important; }
+
+.lb-section-eyebrow {
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  letter-spacing: .15em !important;
+  text-transform: uppercase !important;
+  color: var(--c-primary) !important;
+}
+.lb-section-title {
+  font-size: clamp(2rem, 4vw, 3.5rem) !important;
+  font-weight: 900 !important;
+  color: #fff !important;
+  letter-spacing: -.03em !important;
+  text-transform: uppercase !important;
+  line-height: 1.05 !important;
+}
+.lb-section-sub { color: rgba(255,255,255,.5) !important; font-size: .95rem !important; letter-spacing: .03em; }
+
+/* ── Cards: oscuras con borde de acento en hover ── */
+.lb-card {
+  background: #161616 !important;
+  border: 1px solid rgba(255,255,255,.06) !important;
+  border-radius: 4px !important;
+  padding: 32px !important;
+  box-shadow: none !important;
+  transition: border-color .3s;
+}
+.lb-card:hover { border-color: var(--c-primary) !important; }
+.lb-card-icon {
+  font-size: 26px !important;
+  background: none !important;
+  padding: 0 !important;
+  border-radius: 0 !important;
+  margin-bottom: 20px;
+  color: var(--c-primary);
+}
+.lb-card-title { font-size: 1rem !important; font-weight: 700 !important; color: #fff !important; letter-spacing: -.01em; margin-bottom: 10px; }
+.lb-card-desc  { font-size: .9rem !important; color: rgba(255,255,255,.5) !important; line-height: 1.65; }
+
+/* ── About ── */
+.lb-about-label { color: var(--c-primary) !important; font-size: 11px; font-weight: 600; letter-spacing: .15em; text-transform: uppercase; }
+.lb-about-title { color: #fff !important; font-size: clamp(2rem, 4vw, 3rem) !important; font-weight: 900 !important; letter-spacing: -.03em !important; text-transform: uppercase; }
+.lb-about-text { color: rgba(255,255,255,.55) !important; line-height: 1.8; }
+
+/* ── CTA ── */
+.lb-cta {
+  background: var(--c-primary) !important;
+  color: #fff !important;
+  padding: 96px 24px !important;
+}
+.lb-cta h2 { color: #fff !important; font-size: clamp(2rem, 4vw, 3.5rem) !important; font-weight: 900 !important; letter-spacing: -.03em; text-transform: uppercase; }
+.lb-cta p  { color: rgba(255,255,255,.75) !important; }
+.lb-cta-btn { background: #fff !important; color: var(--c-primary) !important; border-radius: 0 !important; font-weight: 700 !important; letter-spacing: .05em; text-transform: uppercase; font-size: 13px !important; }
+
+/* ── Footer ── */
+.lb-footer { background: #050505 !important; border-top: 1px solid rgba(255,255,255,.06); }
+.lb-footer-brand { color: #fff !important; font-weight: 900; text-transform: uppercase; }
+.lb-footer-tagline, .lb-footer-links a, .lb-footer-bottom { color: rgba(255,255,255,.35) !important; }
+.lb-footer-links a:hover { color: var(--c-primary) !important; }
+.lb-footer-bottom { border-top-color: rgba(255,255,255,.06) !important; }
+
+/* ── Nav scrolled — JS fix ── */
+.lb-hero + * { margin-top: 0; }

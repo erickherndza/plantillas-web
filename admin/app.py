@@ -1665,6 +1665,7 @@ def _defaults_desde_payload(payload: dict, layout=None):
     defaults['og_imagen']         = payload.get('og_imagen') or defaults.get('hero_imagen_url', '')
 
     # ── Scraper mejorado — señales de estilo y nav ───────────────────────────
+    defaults['estilo_detectado']   = payload.get('estilo',         'clean')
     defaults['nav_style']          = payload.get('nav_style',      'standard')
     defaults['content_layout']     = payload.get('content_layout', 'standard')
     defaults['font_scale']         = payload.get('font_scale',     'medium')
@@ -2623,6 +2624,8 @@ def admin_scraper_crear_url():
     }
     _hero_variant = _HERO_MAP.get(_hero_tipo, _bp_layout_raw.get('hero', 'fullscreen'))
 
+    _estilo_detectado = d.get('estilo', 'clean')
+
     defaults = {
         '_blueprint':          blueprint,
         '_tipo_web':           tipo,
@@ -2636,15 +2639,30 @@ def admin_scraper_crear_url():
         'comp_redes':          componentes.get('social',      True),
         'comp_topbar':         componentes.get('topbar',      False),
         'comp_citas':          componentes.get('citas',       False),
-    } if blueprint else {'_tipo_web': tipo}
+        # Scraper mejorado
+        'estilo_detectado':    _estilo_detectado,
+        'nav_style':           d.get('nav_style',     'standard'),
+        'font_scale':          d.get('font_scale',    'medium'),
+        'tagline_style':       d.get('tagline_style', 'descriptive'),
+        'has_promo_grid':      '1' if d.get('has_promo_grid') else '0',
+    } if blueprint else {
+        '_tipo_web':        tipo,
+        'estilo_detectado': _estilo_detectado,
+    }
 
     layout = {
-        'hero':          _hero_variant,
-        'services':      _bp_layout_raw.get('services', 'cards'),
-        'projects':      _bp_layout_raw.get('projects', 'masonry'),
-        'team':          _bp_layout_raw.get('team',     'cards'),
-        'tipo_web':      tipo,
-        'section_order': _bp_secciones,
+        'hero':              _hero_variant,
+        'services':          _bp_layout_raw.get('services',  'cards'),
+        'projects':          _bp_layout_raw.get('projects',  'masonry'),
+        'team':              _bp_layout_raw.get('team',      'cards'),
+        'tipo_web':          tipo,
+        'section_order':     _bp_secciones,
+        # Señales del scraper mejorado
+        'estilo_detectado':  _estilo_detectado,
+        'nav_style':         d.get('nav_style',     'standard'),
+        'font_scale':        d.get('font_scale',    'medium'),
+        'spacing':           _bp_layout_raw.get('spacing',   'standard'),
+        'has_promo_grid':    d.get('has_promo_grid', False),
     }
 
     campos_estilos = {

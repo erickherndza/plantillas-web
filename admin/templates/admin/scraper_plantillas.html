@@ -1042,8 +1042,9 @@ function readComponentState(){
 }
 
 /* ── Botón Analizar ──────────────────────────────────────────────────── */
-let _layoutDetectado = null; // guardado para reutilizar al crear
-let _navData         = null;
+let _layoutDetectado  = null;
+let _estiloDetectado  = 'clean'; // guardado para pasarlo al backend al crear
+let _navData          = null;
 let _contentLayout   = null;
 let _tipografia      = null;
 let _blueprintDetectado = getDefaultBlueprint();
@@ -1076,6 +1077,7 @@ document.getElementById('btn-analizar').addEventListener('click', async () => {
     const scoreMap = puntuarColores(cssTotal);
     const tema     = detectarTema(Object.keys(scoreMap).filter(esColorNoGris));
     const estilo        = detectarEstilo(cssTotal, tema, html);
+    _estiloDetectado    = estilo;
     _navData       = detectarNavStyle(html);
     _contentLayout = detectarContentLayout(html);
     _tipografia    = detectarTipografia(cssTotal, html);
@@ -1177,6 +1179,7 @@ document.getElementById('btn-crear-url').addEventListener('click', async () => {
     },
     componentes:     readComponentState(),
     hero_tipo:       document.getElementById('url-hero-tipo').value,
+    estilo:          _estiloDetectado,
     nav_style:       _navData?.style,
     nav_items:       _navData?.items,
     content_layout:  _contentLayout?.primary_layout,

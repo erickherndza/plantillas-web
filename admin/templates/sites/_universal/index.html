@@ -9,6 +9,18 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet"/>
   <link href="{{ url_for('static', filename='sites/landing-base.css') }}" rel="stylesheet"/>
+  {# ── Skin visual según estilo detectado por el scraper ── #}
+  {% set _estilo = config.get('estilo_detectado', (defaults.get('estilo_detectado', 'clean') if defaults is defined else 'clean')) %}
+  {% if _estilo == 'apple-minimal' %}
+  <link href="{{ url_for('static', filename='sites/skin-minimal.css') }}" rel="stylesheet"/>
+  {% elif _estilo == 'portfolio' %}
+  <link href="{{ url_for('static', filename='sites/skin-portfolio.css') }}" rel="stylesheet"/>
+  {% elif _estilo in ('saas', 'modern', 'dynamic', 'dark', 'gradient', 'glassmorphism') %}
+  <link href="{{ url_for('static', filename='sites/skin-saas.css') }}" rel="stylesheet"/>
+  {% elif _estilo == 'ecommerce' %}
+  <link href="{{ url_for('static', filename='sites/skin-ecommerce.css') }}" rel="stylesheet"/>
+  {% endif %}
+  {# editorial → skin-saas por similitud; clean → sin skin extra (usa base CSS) #}
   <style>
     :root {
       --c-primary:     {{ config.get('color_primario',  '#1e40af') }};
