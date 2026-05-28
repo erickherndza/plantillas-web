@@ -1502,7 +1502,7 @@ def _resolver_template_sitio(sitio, pagina='inicio'):
     clave = sitio['plantilla_clave']
     formato = sitio['formato'] if 'formato' in sitio.keys() else 'web5'
 
-    # Mapa estilo detectado → template especializado
+    # Mapa estilo detectado → template especializado (landing)
     _ESTILO_TEMPLATE_MAP = {
         'apple-minimal': 'sites/tech/index.html',
         'ecommerce':     'sites/ecommerce/index.html',   # futuro
@@ -1510,20 +1510,24 @@ def _resolver_template_sitio(sitio, pagina='inicio'):
         'saas':          'sites/saas/index.html',        # futuro
     }
 
+    # Helper: resolver estilo guardado en DB para esta plantilla
+    def _get_estilo_plantilla():
+        if 'plantilla_id' not in sitio.keys():
+            return 'clean'
+        _ep = get_estilos(sitio['plantilla_id'])
+        _d  = json.loads((_ep or {}).get('defaults_json', '{}') or '{}')
+        _l  = json.loads((_ep or {}).get('layout_json',   '{}') or '{}')
+        return (_d.get('estilo_detectado')
+                or _l.get('estilo_detectado')
+                or get_config_sitio(sitio['id']).get('estilo_detectado')
+                or 'clean')
+
     if formato == 'landing':
         if pagina == 'inicio':
             ruta = f'sites/{clave}/index.html'
             if _template_existe(ruta):
                 return ruta
-            # Usar template especializado si el estilo fue detectado
-            _estilos_p = get_estilos(sitio['plantilla_id']) if 'plantilla_id' in sitio.keys() else {}
-            _defaults_p = json.loads((_estilos_p or {}).get('defaults_json', '{}') or '{}')
-            _layout_p   = json.loads((_estilos_p or {}).get('layout_json',   '{}') or '{}')
-            # buscar estilo en defaults → layout → config del sitio (fallbacks)
-            _estilo_p = (_defaults_p.get('estilo_detectado')
-                         or _layout_p.get('estilo_detectado')
-                         or get_config_sitio(sitio['id']).get('estilo_detectado')
-                         or 'clean')
+            _estilo_p = _get_estilo_plantilla()
             if _estilo_p in _ESTILO_TEMPLATE_MAP:
                 _t = _ESTILO_TEMPLATE_MAP[_estilo_p]
                 if _template_existe(_t):
@@ -1535,10 +1539,17 @@ def _resolver_template_sitio(sitio, pagina='inicio'):
             return ruta
         return 'sites/_universal/index.html'
 
+    # web5 — primero intentar plantilla específica, luego estilo especializado
     if pagina == 'inicio':
         ruta = f'sites/{clave}/index.html'
         if _template_existe(ruta):
             return ruta
+        # Si el estilo detectado tiene template propio, usarlo también para web5
+        _estilo_p = _get_estilo_plantilla()
+        if _estilo_p in _ESTILO_TEMPLATE_MAP:
+            _t = _ESTILO_TEMPLATE_MAP[_estilo_p]
+            if _template_existe(_t):
+                return _t
         return 'sites/empresa/inicio.html'
 
     ruta = f'sites/{clave}/{pagina}.html'
