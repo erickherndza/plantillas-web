@@ -2746,21 +2746,60 @@ def admin_scraper_crear_url():
 # GENERACIÓN CON IA — Claude genera HTML/CSS+Jinja2 único por estilo
 # ══════════════════════════════════════════════════════════════════════════════
 
+def _escapar_llaves_css_js(bloque):
+    """Escapa { } de CSS/JS preservando expresiones Jinja2 {{ }} y {% %}."""
+    result = []
+    i = 0
+    while i < len(bloque):
+        # Preservar expresiones Jinja2
+        if bloque[i:i+2] in ('{{', '{%', '{#'):
+            cierre = '}}' if bloque[i:i+2] == '{{' else ('%}' if bloque[i:i+2] == '{%' else '#}')
+            fin = bloque.find(cierre, i + 2)
+            if fin != -1:
+                result.append(bloque[i:fin + 2])
+                i = fin + 2
+                continue
+        if bloque[i] == '{':
+            result.append("{{ '{' }}")
+        elif bloque[i] == '}':
+            result.append("{{ '}' }}")
+        else:
+            result.append(bloque[i])
+        i += 1
+    return ''.join(result)
+
+
+def _preparar_html_ia(html):
+    """Escapa llaves en bloques <style> y <script> para que Jinja2 no falle."""
+    import re as _re
+    html = _re.sub(
+        r'(<style[^>]*>)([\s\S]*?)(</style>)',
+        lambda m: m.group(1) + _escapar_llaves_css_js(m.group(2)) + m.group(3),
+        html, flags=_re.IGNORECASE
+    )
+    html = _re.sub(
+        r'(<script(?!\s+src)[^>]*>)([\s\S]*?)(</script>)',
+        lambda m: m.group(1) + _escapar_llaves_css_js(m.group(2)) + m.group(3),
+        html, flags=_re.IGNORECASE
+    )
+    return html
+
+
 def _extraer_html_ia(texto):
     """Extrae HTML limpio de la respuesta de Claude (puede venir en markdown)."""
     import re as _re
     m = _re.search(r'```html\s*([\s\S]+?)```', texto)
     if m:
-        return m.group(1).strip()
+        return _preparar_html_ia(m.group(1).strip())
     m = _re.search(r'```\s*([\s\S]+?)```', texto)
     if m:
-        return m.group(1).strip()
+        return _preparar_html_ia(m.group(1).strip())
     idx = texto.find('<!DOCTYPE')
     if idx == -1:
         idx = texto.find('<html')
     if idx != -1:
-        return texto[idx:].strip()
-    return texto.strip()
+        return _preparar_html_ia(texto[idx:].strip())
+    return _preparar_html_ia(texto.strip())
 
 
 def _build_ia_prompt(a):
