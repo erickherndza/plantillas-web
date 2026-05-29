@@ -2173,10 +2173,8 @@ def ver_sitio(slug):
     template = _resolver_template_sitio(sitio, 'inicio')
     try:
         return render_template(template, sitio=sitio, pagina_activa='inicio', **ctx)
-    except Exception as _e:
-        if session.get('admin'):
-            return f'<pre style="color:red;padding:20px"><b>Error en template {template}:</b>\n{__import__("traceback").format_exc()}</pre>', 500
-        abort(500)
+    except Exception:
+        return f'<pre style="color:red;padding:20px"><b>Error en template:</b> {template}\n\n{__import__("traceback").format_exc()}</pre>', 500
 
 
 @app.route('/s/<slug>/<pagina>/')
@@ -2957,6 +2955,41 @@ REQUISITOS TÉCNICOS OBLIGATORIOS:
 7. Sin Bootstrap, sin jQuery, sin dependencias externas (solo Google Fonts si corresponde)
 
 REGLA CRÍTICA: Responde ÚNICAMENTE con el código HTML. Sin explicaciones, sin markdown, sin comentarios fuera del HTML. Empieza con <!DOCTYPE html>"""
+
+
+@app.route('/admin/debug-template/<slug>')
+@admin_requerido
+def admin_debug_template(slug):
+    import os as _os
+    sitio = obtener_sitio_por_slug(slug)
+    if not sitio:
+        return jsonify(error='sitio no encontrado'), 404
+    tpl_name = _resolver_template_sitio(sitio, 'inicio')
+    tpl_path = _os.path.join(app.root_path, 'templates', tpl_name)
+    existe   = _os.path.exists(tpl_path)
+    size     = _os.path.getsize(tpl_path) if existe else 0
+    preview  = ''
+    if existe:
+        with open(tpl_path, encoding='utf-8', errors='replace') as f:
+            preview = f.read(500)
+    ctx = _contexto_sitio(sitio)
+    try:
+        render_template(tpl_name, sitio=sitio, pagina_activa='inicio', **ctx)
+        render_ok = True
+        render_err = None
+    except Exception as ex:
+        render_ok = False
+        render_err = __import__('traceback').format_exc()
+    return jsonify(
+        slug=slug,
+        template=tpl_name,
+        path=tpl_path,
+        existe=existe,
+        size_bytes=size,
+        render_ok=render_ok,
+        render_error=render_err,
+        preview_100chars=preview[:100],
+    )
 
 
 @app.route('/admin/scraper/modelos-disponibles')
