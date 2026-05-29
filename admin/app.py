@@ -2980,6 +2980,9 @@ def admin_debug_template(slug):
         render_err     = __import__('traceback').format_exc()
         render_len     = 0
         render_preview = ''
+    from flask import request as _req
+    if _req.args.get('html') == '1' and render_ok:
+        return rendered, 200, {'Content-Type': 'text/html; charset=utf-8'}
     return jsonify(
         slug=slug,
         template=tpl_name,
@@ -2989,7 +2992,7 @@ def admin_debug_template(slug):
         render_error=render_err,
         render_output_len=render_len,
         render_output_preview=render_preview,
-        config_keys=list(ctx.get('cfg', {}).keys())[:20],
+        config_keys=list(ctx.get('config', {}).keys())[:20],
     )
 
 
