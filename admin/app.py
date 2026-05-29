@@ -2749,42 +2749,24 @@ def admin_scraper_crear_url():
 # GENERACIÓN CON IA — Claude genera HTML/CSS+Jinja2 único por estilo
 # ══════════════════════════════════════════════════════════════════════════════
 
-def _escapar_llaves_css_js(bloque):
-    """Escapa { } de CSS/JS preservando expresiones Jinja2 {{ }} y {% %}."""
-    result = []
-    i = 0
-    while i < len(bloque):
-        # Preservar expresiones Jinja2
-        if bloque[i:i+2] in ('{{', '{%', '{#'):
-            cierre = '}}' if bloque[i:i+2] == '{{' else ('%}' if bloque[i:i+2] == '{%' else '#}')
-            fin = bloque.find(cierre, i + 2)
-            if fin != -1:
-                result.append(bloque[i:fin + 2])
-                i = fin + 2
-                continue
-        if bloque[i] == '{':
-            result.append("{{ '{' }}")
-        elif bloque[i] == '}':
-            result.append("{{ '}' }}")
-        else:
-            result.append(bloque[i])
-        i += 1
-    return ''.join(result)
-
-
-def _preparar_html_ia(html):
-    """Escapa llaves en bloques <style> y <script> para que Jinja2 no falle."""
+def _reparar_html_ia(html):
+    """Cierra tags faltantes que Claude a veces olvida al truncar la respuesta."""
     import re as _re
-    html = _re.sub(
-        r'(<style[^>]*>)([\s\S]*?)(</style>)',
-        lambda m: m.group(1) + _escapar_llaves_css_js(m.group(2)) + m.group(3),
-        html, flags=_re.IGNORECASE
-    )
-    html = _re.sub(
-        r'(<script(?!\s+src)[^>]*>)([\s\S]*?)(</script>)',
-        lambda m: m.group(1) + _escapar_llaves_css_js(m.group(2)) + m.group(3),
-        html, flags=_re.IGNORECASE
-    )
+    # Contar style/script abiertos y cerrar los que falten
+    abre_style  = len(_re.findall(r'<style[^>]*>', html, _re.I))
+    cierra_style = len(_re.findall(r'</style>', html, _re.I))
+    if abre_style > cierra_style:
+        html += '\n</style>' * (abre_style - cierra_style)
+
+    abre_script  = len(_re.findall(r'<script[^>]*>', html, _re.I))
+    cierra_script = len(_re.findall(r'</script>', html, _re.I))
+    if abre_script > cierra_script:
+        html += '\n</script>' * (abre_script - cierra_script)
+
+    if '</body>' not in html.lower():
+        html += '\n</body>'
+    if '</html>' not in html.lower():
+        html += '\n</html>'
     return html
 
 
@@ -2793,16 +2775,16 @@ def _extraer_html_ia(texto):
     import re as _re
     m = _re.search(r'```html\s*([\s\S]+?)```', texto)
     if m:
-        return _preparar_html_ia(m.group(1).strip())
+        return _reparar_html_ia(m.group(1).strip())
     m = _re.search(r'```\s*([\s\S]+?)```', texto)
     if m:
-        return _preparar_html_ia(m.group(1).strip())
+        return _reparar_html_ia(m.group(1).strip())
     idx = texto.find('<!DOCTYPE')
     if idx == -1:
         idx = texto.find('<html')
     if idx != -1:
-        return _preparar_html_ia(texto[idx:].strip())
-    return _preparar_html_ia(texto.strip())
+        return _reparar_html_ia(texto[idx:].strip())
+    return _reparar_html_ia(texto.strip())
 
 
 def _build_ia_prompt(a):
@@ -3089,7 +3071,7 @@ def admin_scraper_generar_ia():
         import json as _json
         _body = _json.dumps({
             'model': 'claude-haiku-4-5-20251001',
-            'max_tokens': 4096,
+            'max_tokens': 8192,
             'messages': [{'role': 'user', 'content': prompt}]
         }).encode('utf-8')
         _req = _urlreq.Request(
