@@ -2968,27 +2968,28 @@ def admin_debug_template(slug):
     tpl_path = _os.path.join(app.root_path, 'templates', tpl_name)
     existe   = _os.path.exists(tpl_path)
     size     = _os.path.getsize(tpl_path) if existe else 0
-    preview  = ''
-    if existe:
-        with open(tpl_path, encoding='utf-8', errors='replace') as f:
-            preview = f.read(500)
     ctx = _contexto_sitio(sitio)
     try:
-        render_template(tpl_name, sitio=sitio, pagina_activa='inicio', **ctx)
-        render_ok = True
+        rendered = render_template(tpl_name, sitio=sitio, pagina_activa='inicio', **ctx)
+        render_ok  = True
         render_err = None
-    except Exception as ex:
-        render_ok = False
-        render_err = __import__('traceback').format_exc()
+        render_len = len(rendered)
+        render_preview = rendered[:300]
+    except Exception:
+        render_ok      = False
+        render_err     = __import__('traceback').format_exc()
+        render_len     = 0
+        render_preview = ''
     return jsonify(
         slug=slug,
         template=tpl_name,
-        path=tpl_path,
         existe=existe,
         size_bytes=size,
         render_ok=render_ok,
         render_error=render_err,
-        preview_100chars=preview[:100],
+        render_output_len=render_len,
+        render_output_preview=render_preview,
+        config_keys=list(ctx.get('cfg', {}).keys())[:20],
     )
 
 
