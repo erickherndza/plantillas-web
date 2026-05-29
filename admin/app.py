@@ -2971,9 +2971,11 @@ def admin_scraper_generar_ia():
 
     # ── Llamar a Claude API (urllib — sin dependencias externas) ─────────────
     try:
-        import urllib.request as _urlreq, json as _json
+        import urllib.request as _urlreq
+        import urllib.error  as _urlerr
+        import json as _json
         _body = _json.dumps({
-            'model': 'claude-haiku-4-5-20251001',
+            'model': 'claude-3-5-haiku-20241022',
             'max_tokens': 4096,
             'messages': [{'role': 'user', 'content': prompt}]
         }).encode('utf-8')
@@ -2990,6 +2992,9 @@ def admin_scraper_generar_ia():
         with _urlreq.urlopen(_req, timeout=60) as _resp:
             _data = _json.loads(_resp.read().decode('utf-8'))
         html_raw = _data['content'][0]['text']
+    except _urlerr.HTTPError as e:
+        _err_body = e.read().decode('utf-8', errors='replace')
+        return jsonify(ok=False, error=f'API error {e.code}: {_err_body[:300]}'), 500
     except Exception as e:
         return jsonify(ok=False, error=f'Error llamando a Claude API: {str(e)}'), 500
 
