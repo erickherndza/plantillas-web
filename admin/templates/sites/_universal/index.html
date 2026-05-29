@@ -21,6 +21,8 @@
   <link href="{{ url_for('static', filename='sites/skin-ecommerce.css') }}" rel="stylesheet"/>
   {% endif %}
   {# editorial → skin-saas por similitud; clean → sin skin extra (usa base CSS) #}
+  {# _layout: alias de la var 'layout' que pasa el contexto — evita UndefinedError #}
+  {% set _layout = layout if layout is defined else {} %}
   <style>
     :root {
       --c-primary:     {{ config.get('color_primario',  '#1e40af') }};
