@@ -1,0 +1,120 @@
+{% extends "sites/tech/base.html" %}
+
+{% block titulo %}{{ sitio.nombre }} — {{ config.get('menu_proyectos','Proyectos') }}{% endblock %}
+
+{% block extra_css %}
+  .t-portfolio { padding: 72px 0; background: #fff; }
+  .t-portfolio__filters { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; margin-bottom: 40px; }
+  .t-filter-btn {
+    font-size: 13px; font-weight: 500; padding: 7px 18px; border-radius: 980px;
+    border: 1.5px solid #d2d2d7; background: #fff; color: #6e6e73; cursor: pointer; transition: all .2s;
+  }
+  .t-filter-btn:hover, .t-filter-btn.active { border-color: var(--c-primary); background: var(--c-primary); color: #fff; }
+  .t-portfolio__grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px,1fr)); gap: 2px; background: #d2d2d7; }
+  .t-portfolio__item { position: relative; overflow: hidden; background: #f5f5f7; cursor: pointer; }
+  .t-portfolio__item img { width: 100%; aspect-ratio: 4/3; object-fit: cover; display: block; transition: transform .4s; }
+  .t-portfolio__item:hover img { transform: scale(1.04); }
+  .t-portfolio__overlay {
+    position: absolute; inset: 0; background: rgba(0,0,0,.55);
+    display: flex; flex-direction: column; justify-content: flex-end;
+    padding: 20px; opacity: 0; transition: opacity .3s;
+  }
+  .t-portfolio__item:hover .t-portfolio__overlay { opacity: 1; }
+  .t-portfolio__name  { font-family: var(--font-title); font-size: 1rem; font-weight: 700; color: #fff; margin-bottom: 4px; }
+  .t-portfolio__cat   { font-size: .8rem; color: rgba(255,255,255,.75); }
+  .t-portfolio__placeholder {
+    width: 100%; aspect-ratio: 4/3; background: #e8e8ed;
+    display: flex; align-items: center; justify-content: center; font-size: 44px;
+  }
+  .t-portfolio__item[style*="display:none"] { display: none !important; }
+
+  .t-empty-state { padding: 120px 22px; text-align: center; }
+  .t-empty-state h2 { font-family: var(--font-title); font-size: 2rem; font-weight: 700; color: var(--c-text); margin-bottom: 12px; }
+  .t-empty-state p  { color: #6e6e73; margin-bottom: 28px; }
+
+  @media (max-width: 640px) {
+    .t-portfolio__grid { grid-template-columns: 1fr; background: none; gap: 1px; }
+  }
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  const btns  = document.querySelectorAll('.t-filter-btn');
+  const items = document.querySelectorAll('.t-portfolio__item[data-cat]');
+  btns.forEach(b => b.addEventListener('click', () => {
+    btns.forEach(x => x.classList.remove('active'));
+    b.classList.add('active');
+    const cat = b.dataset.cat;
+    items.forEach(i => {
+      i.style.display = (cat === 'all' || i.dataset.cat === cat) ? '' : 'none';
+    });
+  }));
+</script>
+{% endblock %}
+
+{% block content %}
+{% set _nombre = config.get('nombre_negocio', sitio.nombre) %}
+{% set _base   = '/s/' + sitio.slug %}
+
+<!-- CABECERA -->
+<section class="t-page-hero">
+  <p class="t-page-hero__eyebrow fade-up">{{ config.get('menu_proyectos','Proyectos') }}</p>
+  <h1 class="t-page-hero__title fade-up">{{ config.get('proyectos_titulo','Nuestro trabajo') }}</h1>
+  <p class="t-page-hero__sub fade-up">{{ config.get('proyectos_intro','Una selección de los proyectos en los que hemos trabajado.') }}</p>
+</section>
+
+{% if secciones.proyectos %}
+<section class="t-portfolio">
+  <div class="t-container">
+    {# Recolectar categorías únicas #}
+    {% set cats = [] %}
+    {% for p in secciones.proyectos %}
+      {% if p.get('categoria') and p.get('categoria') not in cats %}
+        {% set _ = cats.append(p.get('categoria')) %}
+      {% endif %}
+    {% endfor %}
+
+    {% if cats|length > 1 %}
+    <div class="t-portfolio__filters fade-up">
+      <button class="t-filter-btn active" data-cat="all">Todos</button>
+      {% for cat in cats %}
+        <button class="t-filter-btn" data-cat="{{ cat }}">{{ cat }}</button>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    <div class="t-portfolio__grid">
+      {% for p in secciones.proyectos %}
+      <div class="t-portfolio__item fade-up" data-cat="{{ p.get('categoria','') }}">
+        {% if p.get('imagen') %}
+          <img src="{{ p.get('imagen') }}" alt="{{ p.get('titulo','') }}">
+        {% else %}
+          <div class="t-portfolio__placeholder">🖼</div>
+        {% endif %}
+        <div class="t-portfolio__overlay">
+          <p class="t-portfolio__name">{{ p.get('titulo','') }}</p>
+          {% if p.get('categoria') %}<p class="t-portfolio__cat">{{ p.get('categoria') }}</p>{% endif %}
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% else %}
+<div class="t-empty-state">
+  <h2>Próximamente</h2>
+  <p>Estamos construyendo nuestro portafolio. Vuelve pronto.</p>
+  <a href="{{ _base }}/contacto/" class="t-btn-blue">Hablar de tu proyecto</a>
+</div>
+{% endif %}
+
+<!-- CTA -->
+<section class="t-cta">
+  <h2 class="t-cta__title fade-up">¿Tienes un proyecto en mente?</h2>
+  <p class="t-cta__sub fade-up">Cuéntanos tu idea y construyamos algo increíble juntos.</p>
+  <div class="t-cta__btns fade-up">
+    <a href="{{ _base }}/contacto/" class="t-btn-white">Iniciar proyecto</a>
+    <a href="{{ _base }}/servicios/" style="color:rgba(255,255,255,.85);text-decoration:none;font-size:14px;">Ver servicios ›</a>
+  </div>
+</section>
+{% endblock %}

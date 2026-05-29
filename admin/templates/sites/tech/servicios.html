@@ -1,0 +1,97 @@
+{% extends "sites/tech/base.html" %}
+
+{% block titulo %}{{ sitio.nombre }} — {{ config.get('menu_servicios','Servicios') }}{% endblock %}
+
+{% block extra_css %}
+  /* Showcase full — estilo Apple por blocos */
+  .t-showcase { padding: 0; }
+  .t-showcase__block {
+    position: relative; min-height: 480px;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: flex-start;
+    text-align: center; padding: 52px 22px 0; overflow: hidden;
+  }
+  .t-showcase__block:nth-child(odd)  { background: #fff; }
+  .t-showcase__block:nth-child(even) { background: #f5f5f7; }
+  .t-showcase__block:nth-child(3n) {
+    background: {{ config.get('color_showcase_3','#1d1d1f') }};
+    color: #fff;
+  }
+  .t-showcase__block:nth-child(3n) .t-showcase__sub { color: rgba(255,255,255,.7); }
+  .t-showcase__eyebrow { font-size: 14px; font-weight: 600; color: var(--c-primary); margin-bottom: 6px; letter-spacing: .01em; }
+  .t-showcase__title {
+    font-family: var(--font-title); font-size: clamp(2rem, 5vw, 3.5rem);
+    font-weight: 700; letter-spacing: -.025em; line-height: 1.08; margin-bottom: 8px;
+  }
+  .t-showcase__sub { font-size: clamp(.95rem,1.8vw,1.2rem); color: #6e6e73; margin-bottom: 18px; line-height: 1.5; }
+  .t-showcase__price {
+    font-family: var(--font-title); font-size: 1.2rem; font-weight: 600;
+    color: var(--c-primary); margin-bottom: 18px;
+  }
+  .t-showcase__ctas { display: flex; gap: 16px; justify-content: center; align-items: center; flex-wrap: wrap; margin-bottom: 28px; }
+  .t-showcase__img { width: 100%; max-width: 760px; object-fit: contain; display: block; border-radius: 12px 12px 0 0; }
+  .t-showcase__img--placeholder {
+    width: 100%; max-width: 700px; height: 300px;
+    background: linear-gradient(160deg, #e8e8ed, #d2d2d7);
+    border-radius: 12px 12px 0 0;
+    display: flex; align-items: center; justify-content: center; font-size: 56px;
+  }
+  .t-showcase__block:nth-child(3n) .t-showcase__img--placeholder { background: linear-gradient(160deg, #2c2c2e, #1c1c1e); }
+
+  /* Grid simple si no hay secciones */
+  .t-empty-state { padding: 120px 22px; text-align: center; }
+  .t-empty-state h2 { font-family: var(--font-title); font-size: 2rem; font-weight: 700; color: var(--c-text); margin-bottom: 12px; }
+  .t-empty-state p  { color: #6e6e73; margin-bottom: 28px; }
+{% endblock %}
+
+{% block content %}
+{% set _nombre = config.get('nombre_negocio', sitio.nombre) %}
+{% set _base   = '/s/' + sitio.slug %}
+
+<!-- CABECERA -->
+<section class="t-page-hero">
+  <p class="t-page-hero__eyebrow fade-up">{{ config.get('menu_servicios','Productos y servicios') }}</p>
+  <h1 class="t-page-hero__title fade-up">{{ config.get('servicios_titulo', 'Nuestros productos') }}</h1>
+  <p class="t-page-hero__sub fade-up">{{ config.get('servicios_intro', 'Todo lo que necesitas para avanzar.') }}</p>
+</section>
+
+{% if secciones.servicios %}
+<!-- SHOWCASE — un bloco por producto (estilo Apple) -->
+<div class="t-showcase">
+  {% for srv in secciones.servicios %}
+  <div class="t-showcase__block">
+    <p class="t-showcase__eyebrow fade-up">{{ srv.get('icono','') }} {{ srv.get('categoria','') }}</p>
+    <h2 class="t-showcase__title fade-up">{{ srv.get('titulo','') }}</h2>
+    <p class="t-showcase__sub fade-up">{{ srv.get('descripcion','') }}</p>
+    {% if srv.get('precio') %}
+    <p class="t-showcase__price fade-up">{{ srv.get('precio') }}</p>
+    {% endif %}
+    <div class="t-showcase__ctas fade-up">
+      <a href="{{ srv.get('enlace','#') }}" class="t-btn-blue">{{ srv.get('cta_texto','Ver más') }}</a>
+      <a href="{{ _base }}/contacto/" class="t-btn-link">Consultar</a>
+    </div>
+    {% if srv.get('imagen') %}
+      <img class="t-showcase__img" src="{{ srv.get('imagen') }}" alt="{{ srv.get('titulo','') }}">
+    {% else %}
+      <div class="t-showcase__img--placeholder">{{ srv.get('icono','📦') }}</div>
+    {% endif %}
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<div class="t-empty-state">
+  <h2>Próximamente</h2>
+  <p>Estamos preparando nuestro catálogo de productos. Vuelve pronto.</p>
+  <a href="{{ _base }}/contacto/" class="t-btn-blue">Consultar disponibilidad</a>
+</div>
+{% endif %}
+
+<!-- CTA -->
+<section class="t-cta">
+  <h2 class="t-cta__title fade-up">¿No encuentras lo que buscas?</h2>
+  <p class="t-cta__sub fade-up">Cuéntanos tu proyecto y te ofrecemos una solución a medida.</p>
+  <div class="t-cta__btns fade-up">
+    <a href="{{ _base }}/contacto/" class="t-btn-white">Hablar con nosotros</a>
+  </div>
+</section>
+{% endblock %}

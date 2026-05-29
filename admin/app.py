@@ -1502,15 +1502,17 @@ def _resolver_template_sitio(sitio, pagina='inicio'):
     clave = sitio['plantilla_clave']
     formato = sitio['formato'] if 'formato' in sitio.keys() else 'web5'
 
-    # Mapa estilo detectado → template especializado (landing)
-    _ESTILO_TEMPLATE_MAP = {
+    # Mapa estilo → directorio de templates web5 especializados
+    _ESTILO_WEB5_DIR = {
+        'apple-minimal': 'tech',
+        # 'saas':       'saas',      # futuro
+        # 'ecommerce':  'ecommerce', # futuro
+    }
+    # Para landing: template único one-page
+    _ESTILO_LANDING_MAP = {
         'apple-minimal': 'sites/tech/index.html',
-        'ecommerce':     'sites/ecommerce/index.html',   # futuro
-        'portfolio':     'sites/portfolio/index.html',   # futuro
-        'saas':          'sites/saas/index.html',        # futuro
     }
 
-    # Helper: resolver estilo guardado en DB para esta plantilla
     def _get_estilo_plantilla():
         if 'plantilla_id' not in sitio.keys():
             return 'clean'
@@ -1522,41 +1524,42 @@ def _resolver_template_sitio(sitio, pagina='inicio'):
                 or get_config_sitio(sitio['id']).get('estilo_detectado')
                 or 'clean')
 
+    # ── LANDING — one-page ──
     if formato == 'landing':
         if pagina == 'inicio':
             ruta = f'sites/{clave}/index.html'
             if _template_existe(ruta):
                 return ruta
             _estilo_p = _get_estilo_plantilla()
-            if _estilo_p in _ESTILO_TEMPLATE_MAP:
-                _t = _ESTILO_TEMPLATE_MAP[_estilo_p]
-                if _template_existe(_t):
-                    return _t
+            _t = _ESTILO_LANDING_MAP.get(_estilo_p)
+            if _t and _template_existe(_t):
+                return _t
             return 'sites/_universal/index.html'
-
         ruta = f'sites/{clave}/{pagina}.html'
         if _template_existe(ruta):
             return ruta
         return 'sites/_universal/index.html'
 
-    # web5 — primero intentar plantilla específica, luego estilo especializado
-    if pagina == 'inicio':
-        ruta = f'sites/{clave}/index.html'
-        if _template_existe(ruta):
-            return ruta
-        # Si el estilo detectado tiene template propio, usarlo también para web5
-        _estilo_p = _get_estilo_plantilla()
-        if _estilo_p in _ESTILO_TEMPLATE_MAP:
-            _t = _ESTILO_TEMPLATE_MAP[_estilo_p]
-            if _template_existe(_t):
-                return _t
-        return 'sites/empresa/inicio.html'
-
+    # ── WEB5 — 5 páginas ──
+    # 1. Template especifico de la plantilla
     ruta = f'sites/{clave}/{pagina}.html'
     if _template_existe(ruta):
         return ruta
-    return f'sites/empresa/{pagina}.html'
-
+    if pagina == 'inicio':
+        ruta_idx = f'sites/{clave}/index.html'
+        if _template_existe(ruta_idx):
+            return ruta_idx
+    # 2. Directorio por estilo detectado
+    _estilo_p = _get_estilo_plantilla()
+    _dir = _ESTILO_WEB5_DIR.get(_estilo_p)
+    if _dir:
+        _pf = 'inicio.html' if pagina == 'inicio' else f'{pagina}.html'
+        _t = f'sites/{_dir}/{_pf}'
+        if _template_existe(_t):
+            return _t
+    # 3. Fallback empresa
+    _pf = 'inicio.html' if pagina == 'inicio' else f'{pagina}.html'
+    return f'sites/empresa/{_pf}'
 
 def _leer_json_dict(valor):
     """Normaliza valores JSON guardados en DB a un dict seguro."""

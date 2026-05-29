@@ -1,0 +1,144 @@
+{% extends "sites/tech/base.html" %}
+
+{% block titulo %}{{ sitio.nombre }} — {{ config.get('menu_inicio','Inicio') }}{% endblock %}
+
+{% block extra_css %}
+  .t-hero {
+    position: relative; min-height: calc(100vh - 44px);
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: flex-start;
+    text-align: center; padding-top: 52px; overflow: hidden;
+    background: {{ config.get('hero_bg_color','#fff') }};
+  }
+  .t-hero__eyebrow { font-size: 14px; font-weight: 600; color: var(--c-primary); letter-spacing: .01em; margin-bottom: 8px; }
+  .t-hero__title {
+    font-family: var(--font-title); font-size: clamp(2.8rem, 6vw, 4.5rem);
+    font-weight: 700; color: var(--c-text); letter-spacing: -.03em; line-height: 1.05; margin-bottom: 10px;
+  }
+  .t-hero__sub { font-size: clamp(1.1rem, 2vw, 1.4rem); color: #6e6e73; font-weight: 400; line-height: 1.5; margin-bottom: 22px; }
+  .t-hero__ctas { display: flex; gap: 16px; justify-content: center; align-items: center; flex-wrap: wrap; }
+  .t-hero__img { width: 100%; max-width: 900px; margin-top: 32px; object-fit: contain; display: block; }
+  .t-hero__img--placeholder {
+    width: 100%; max-width: 900px; height: 420px; margin-top: 32px;
+    background: linear-gradient(160deg, #f5f5f7 0%, #e8e8ed 100%);
+    border-radius: 18px 18px 0 0; display: flex; align-items: center; justify-content: center; font-size: 64px;
+  }
+
+  /* Highlights — primeros 3 servicios como preview */
+  .t-highlights { padding: 72px 0; background: #f5f5f7; }
+  .t-highlights__header { text-align: center; margin-bottom: 44px; }
+  .t-highlights__eyebrow { font-size: 13px; font-weight: 600; color: var(--c-primary); letter-spacing: .06em; text-transform: uppercase; margin-bottom: 8px; }
+  .t-highlights__title { font-family: var(--font-title); font-size: clamp(1.8rem, 3.5vw, 2.6rem); font-weight: 700; letter-spacing: -.025em; color: var(--c-text); }
+  .t-highlights__grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 2px; background: #d2d2d7; }
+  .t-highlights__card { background: #fff; padding: 36px 28px; display: flex; flex-direction: column; gap: 10px; transition: background .2s; }
+  .t-highlights__card:hover { background: #fafafa; }
+  .t-highlights__icon { font-size: 32px; }
+  .t-highlights__name { font-family: var(--font-title); font-size: 1.1rem; font-weight: 600; letter-spacing: -.01em; color: var(--c-text); }
+  .t-highlights__desc { font-size: .875rem; color: #6e6e73; line-height: 1.6; }
+  .t-highlights__more { font-size: 13px; color: var(--c-primary); text-decoration: none; margin-top: 4px; }
+  .t-highlights__more::after { content: ' ›'; }
+
+  /* Features grid */
+  .t-features { padding: 80px 0; background: #fff; }
+  .t-features__header { text-align: center; margin-bottom: 48px; }
+  .t-features__eyebrow { font-size: 12px; font-weight: 600; color: var(--c-primary); letter-spacing: .07em; text-transform: uppercase; margin-bottom: 8px; }
+  .t-features__title { font-family: var(--font-title); font-size: clamp(1.8rem, 3.5vw, 2.6rem); font-weight: 700; letter-spacing: -.025em; color: var(--c-text); }
+  .t-features__grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 2px; background: #d2d2d7; }
+  .t-features__item { background: #fff; padding: 40px 32px; display: flex; flex-direction: column; gap: 12px; }
+  .t-features__ico { font-size: 34px; }
+  .t-features__label { font-family: var(--font-title); font-size: 1.1rem; font-weight: 600; letter-spacing: -.01em; color: var(--c-text); }
+  .t-features__desc { font-size: .875rem; color: #6e6e73; line-height: 1.65; }
+
+  @media (max-width: 768px) {
+    .t-highlights__grid, .t-features__grid { grid-template-columns: 1fr; background: none; gap: 1px; }
+  }
+{% endblock %}
+
+{% block content %}
+{% set _nombre = config.get('nombre_negocio', sitio.nombre) %}
+{% set _base   = '/s/' + sitio.slug %}
+
+<!-- HERO -->
+<section class="t-hero">
+  <div class="fade-up">
+    {% if config.get('hero_eyebrow') %}
+    <p class="t-hero__eyebrow">{{ config.get('hero_eyebrow') }}</p>
+    {% endif %}
+    <h1 class="t-hero__title">{{ config.get('hero_titulo', _nombre) }}</h1>
+    <p class="t-hero__sub">{{ config.get('hero_subtitulo', 'Tecnología diseñada para llevarte más lejos.') }}</p>
+    <div class="t-hero__ctas">
+      <a href="{{ _base }}/servicios/" class="t-btn-blue">{{ config.get('hero_cta_texto','Ver productos') }}</a>
+      <a href="{{ _base }}/nosotros/"  class="t-btn-link">Conocer más</a>
+    </div>
+  </div>
+  {% if config.get('hero_imagen') %}
+    <img class="t-hero__img" src="{{ config.get('hero_imagen') }}" alt="{{ config.get('hero_titulo', _nombre) }}">
+  {% else %}
+    <div class="t-hero__img--placeholder">💻</div>
+  {% endif %}
+</section>
+
+<!-- HIGHLIGHTS — primeros 3 servicios -->
+{% if secciones.servicios %}
+<section class="t-highlights">
+  <div class="t-container">
+    <div class="t-highlights__header fade-up">
+      <p class="t-highlights__eyebrow">{{ config.get('menu_servicios','Nuestros Productos') }}</p>
+      <h2 class="t-highlights__title">Lo mejor de {{ _nombre }}</h2>
+    </div>
+    <div class="t-highlights__grid">
+      {% for srv in secciones.servicios[:3] %}
+      <div class="t-highlights__card fade-up">
+        <div class="t-highlights__icon">{{ srv.get('icono','📦') }}</div>
+        <p class="t-highlights__name">{{ srv.get('titulo','') }}</p>
+        <p class="t-highlights__desc">{{ srv.get('descripcion','') }}</p>
+        <a class="t-highlights__more" href="{{ _base }}/servicios/">Ver más</a>
+      </div>
+      {% endfor %}
+    </div>
+    <div style="text-align:center;margin-top:36px;">
+      <a href="{{ _base }}/servicios/" class="t-btn-outline">Ver todos los productos</a>
+    </div>
+  </div>
+</section>
+{% endif %}
+
+<!-- FEATURES -->
+<section class="t-features">
+  <div class="t-container">
+    <div class="t-features__header fade-up">
+      <p class="t-features__eyebrow">Por qué elegirnos</p>
+      <h2 class="t-features__title">{{ config.get('features_titulo','Diseñado para lo que más importa') }}</h2>
+    </div>
+  </div>
+  <div class="t-container--wide">
+    <div class="t-features__grid">
+      {% set features = [
+        {'icon': config.get('feat_1_icon','⚡'), 'label': config.get('feat_1_titulo','Rendimiento'), 'desc': config.get('feat_1_desc','Potencia para las tareas más exigentes.')},
+        {'icon': config.get('feat_2_icon','🔋'), 'label': config.get('feat_2_titulo','Autonomía'),   'desc': config.get('feat_2_desc','Batería que dura todo el día.')},
+        {'icon': config.get('feat_3_icon','🖥'), 'label': config.get('feat_3_titulo','Pantalla'),    'desc': config.get('feat_3_desc','Colores precisos, brillo excepcional.')},
+        {'icon': config.get('feat_4_icon','🔒'), 'label': config.get('feat_4_titulo','Seguridad'),   'desc': config.get('feat_4_desc','Protección integrada.')},
+        {'icon': config.get('feat_5_icon','♻'), 'label': config.get('feat_5_titulo','Sostenible'),  'desc': config.get('feat_5_desc','Materiales reciclados.')},
+        {'icon': config.get('feat_6_icon','🌐'), 'label': config.get('feat_6_titulo','Conectividad'),'desc': config.get('feat_6_desc','Siempre conectado.')},
+      ] %}
+      {% for f in features %}
+      <div class="t-features__item fade-up">
+        <div class="t-features__ico">{{ f.icon }}</div>
+        <p class="t-features__label">{{ f.label }}</p>
+        <p class="t-features__desc">{{ f.desc }}</p>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<!-- CTA BAND -->
+<section class="t-cta">
+  <h2 class="t-cta__title fade-up">{{ config.get('cta_titulo', '¿Listo para empezar?') }}</h2>
+  <p class="t-cta__sub fade-up">{{ config.get('cta_subtitulo', 'Contáctanos hoy y descubre todo lo que podemos ofrecerte.') }}</p>
+  <div class="t-cta__btns fade-up">
+    <a href="{{ _base }}/contacto/" class="t-btn-white">{{ config.get('cta_btn','Contactar ahora') }}</a>
+    <a href="{{ _base }}/servicios/" class="t-btn-link-white" style="color:rgba(255,255,255,.85);text-decoration:none;">Ver productos ›</a>
+  </div>
+</section>
+{% endblock %}

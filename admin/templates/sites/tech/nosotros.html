@@ -1,0 +1,152 @@
+{% extends "sites/tech/base.html" %}
+
+{% block titulo %}{{ sitio.nombre }} — {{ config.get('menu_nosotros','Nosotros') }}{% endblock %}
+
+{% block extra_css %}
+  .t-about-section { padding: 80px 0; background: #fff; }
+  .t-about-section.alt { background: #f5f5f7; }
+  .t-about__inner { display: grid; grid-template-columns: 1fr 1fr; gap: 64px; align-items: center; }
+  .t-about__eyebrow { font-size: 13px; font-weight: 600; color: var(--c-primary); letter-spacing: .06em; text-transform: uppercase; margin-bottom: 12px; }
+  .t-about__title {
+    font-family: var(--font-title); font-size: clamp(1.8rem, 3.5vw, 2.6rem);
+    font-weight: 700; letter-spacing: -.025em; line-height: 1.12; color: var(--c-text); margin-bottom: 16px;
+  }
+  .t-about__text { font-size: .95rem; color: #6e6e73; line-height: 1.8; margin-bottom: 20px; }
+  .t-about__img { width: 100%; border-radius: 18px; object-fit: cover; aspect-ratio: 4/3; }
+  .t-about__img--placeholder {
+    width: 100%; aspect-ratio: 4/3; border-radius: 18px;
+    background: linear-gradient(135deg, var(--c-primary)20, var(--c-accent,#e8e8ed));
+    display: flex; align-items: center; justify-content: center; font-size: 72px;
+  }
+
+  /* MVV */
+  .t-mvv { padding: 72px 0; background: var(--c-dark); }
+  .t-mvv__header { text-align: center; margin-bottom: 48px; }
+  .t-mvv__title { font-family: var(--font-title); font-size: clamp(1.8rem,3.5vw,2.6rem); font-weight: 700; letter-spacing: -.025em; color: #fff; }
+  .t-mvv__grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 2px; background: rgba(255,255,255,.12); }
+  .t-mvv__card { background: var(--c-dark); padding: 40px 32px; }
+  .t-mvv__ico { font-size: 32px; margin-bottom: 16px; }
+  .t-mvv__card-title { font-family: var(--font-title); font-size: 1.2rem; font-weight: 700; color: #fff; margin-bottom: 10px; letter-spacing: -.02em; }
+  .t-mvv__card-text { font-size: .9rem; color: rgba(255,255,255,.65); line-height: 1.7; }
+
+  /* EQUIPO */
+  .t-team { padding: 80px 0; background: #fff; }
+  .t-team__header { text-align: center; margin-bottom: 48px; }
+  .t-team__eyebrow { font-size: 12px; font-weight: 600; color: var(--c-primary); letter-spacing: .07em; text-transform: uppercase; margin-bottom: 8px; }
+  .t-team__title { font-family: var(--font-title); font-size: clamp(1.8rem,3.5vw,2.6rem); font-weight: 700; letter-spacing: -.025em; color: var(--c-text); }
+  .t-team__grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px,1fr)); gap: 28px; }
+  .t-team__card { text-align: center; }
+  .t-team__photo { width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 50%; margin-bottom: 14px; }
+  .t-team__photo--placeholder {
+    width: 100%; aspect-ratio: 1; border-radius: 50%; margin-bottom: 14px;
+    background: linear-gradient(135deg, #e8e8ed, #d2d2d7);
+    display: flex; align-items: center; justify-content: center; font-size: 40px;
+  }
+  .t-team__name { font-family: var(--font-title); font-size: 1rem; font-weight: 600; color: var(--c-text); margin-bottom: 4px; }
+  .t-team__role { font-size: .85rem; color: #6e6e73; }
+
+  @media (max-width: 768px) {
+    .t-about__inner { grid-template-columns: 1fr; gap: 32px; }
+    .t-mvv__grid { grid-template-columns: 1fr; background: none; gap: 1px; }
+  }
+{% endblock %}
+
+{% block content %}
+{% set _nombre = config.get('nombre_negocio', sitio.nombre) %}
+{% set _base   = '/s/' + sitio.slug %}
+
+<!-- CABECERA -->
+<section class="t-page-hero">
+  <p class="t-page-hero__eyebrow fade-up">{{ config.get('menu_nosotros','Nosotros') }}</p>
+  <h1 class="t-page-hero__title fade-up">{{ config.get('nosotros_titulo', 'Nuestra historia') }}</h1>
+  {% if config.get('nosotros_descripcion') %}
+  <p class="t-page-hero__sub fade-up">{{ config.get('nosotros_descripcion')[:160] }}{% if config.get('nosotros_descripcion')|length > 160 %}…{% endif %}</p>
+  {% endif %}
+</section>
+
+<!-- HISTORIA -->
+{% if config.get('nosotros_descripcion') %}
+<section class="t-about-section">
+  <div class="t-container">
+    <div class="t-about__inner">
+      <div class="fade-up">
+        <p class="t-about__eyebrow">Nuestra historia</p>
+        <h2 class="t-about__title">{{ config.get('nosotros_titulo','Sobre nosotros') }}</h2>
+        <p class="t-about__text">{{ config.get('nosotros_descripcion','') }}</p>
+        {% if config.get('nosotros_mision') %}
+        <p class="t-about__text">{{ config.get('nosotros_mision','') }}</p>
+        {% endif %}
+        <a href="{{ _base }}/contacto/" class="t-btn-link">Contáctanos</a>
+      </div>
+      <div class="fade-up">
+        {% if config.get('nosotros_imagen') %}
+          <img class="t-about__img" src="{{ config.get('nosotros_imagen') }}" alt="Nosotros">
+        {% else %}
+          <div class="t-about__img--placeholder">🏢</div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</section>
+{% endif %}
+
+<!-- MISIÓN / VISIÓN / VALORES -->
+<section class="t-mvv">
+  <div class="t-container">
+    <div class="t-mvv__header fade-up">
+      <h2 class="t-mvv__title">Nuestro propósito</h2>
+    </div>
+    <div class="t-mvv__grid">
+      <div class="t-mvv__card fade-up">
+        <div class="t-mvv__ico">🎯</div>
+        <p class="t-mvv__card-title">Misión</p>
+        <p class="t-mvv__card-text">{{ config.get('nosotros_mision','Ofrecer soluciones de calidad que transformen la vida de nuestros clientes.') }}</p>
+      </div>
+      <div class="t-mvv__card fade-up">
+        <div class="t-mvv__ico">🔭</div>
+        <p class="t-mvv__card-title">Visión</p>
+        <p class="t-mvv__card-text">{{ config.get('nosotros_vision','Ser líderes en innovación y referente de excelencia en nuestra industria.') }}</p>
+      </div>
+      <div class="t-mvv__card fade-up">
+        <div class="t-mvv__ico">💎</div>
+        <p class="t-mvv__card-title">Valores</p>
+        <p class="t-mvv__card-text">{{ config.get('nosotros_valores','Integridad, innovación y compromiso con cada proyecto que emprendemos.') }}</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- EQUIPO -->
+{% if secciones.equipo %}
+<section class="t-team">
+  <div class="t-container">
+    <div class="t-team__header fade-up">
+      <p class="t-team__eyebrow">El equipo</p>
+      <h2 class="t-team__title">Las personas detrás de {{ _nombre }}</h2>
+    </div>
+    <div class="t-team__grid">
+      {% for m in secciones.equipo %}
+      <div class="t-team__card fade-up">
+        {% if m.get('imagen') %}
+          <img class="t-team__photo" src="{{ m.get('imagen') }}" alt="{{ m.get('nombre','') }}">
+        {% else %}
+          <div class="t-team__photo--placeholder">👤</div>
+        {% endif %}
+        <p class="t-team__name">{{ m.get('nombre','') }}</p>
+        <p class="t-team__role">{{ m.get('cargo','') }}</p>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endif %}
+
+<!-- CTA -->
+<section class="t-cta">
+  <h2 class="t-cta__title fade-up">¿Quieres trabajar con nosotros?</h2>
+  <p class="t-cta__sub fade-up">Estamos siempre abiertos a nuevas oportunidades y colaboraciones.</p>
+  <div class="t-cta__btns fade-up">
+    <a href="{{ _base }}/contacto/" class="t-btn-white">Escríbenos</a>
+  </div>
+</section>
+{% endblock %}

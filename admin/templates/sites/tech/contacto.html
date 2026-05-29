@@ -1,0 +1,153 @@
+{% extends "sites/tech/base.html" %}
+
+{% block titulo %}{{ sitio.nombre }} — {{ config.get('menu_contacto','Contacto') }}{% endblock %}
+
+{% block extra_css %}
+  .t-contact-section { padding: 80px 0; background: #fff; }
+  .t-contact__inner { display: grid; grid-template-columns: 1fr 1.3fr; gap: 72px; align-items: start; }
+  .t-contact__eyebrow { font-size: 13px; font-weight: 600; color: var(--c-primary); letter-spacing: .06em; text-transform: uppercase; margin-bottom: 12px; }
+  .t-contact__title {
+    font-family: var(--font-title); font-size: clamp(1.6rem, 3vw, 2.4rem);
+    font-weight: 700; letter-spacing: -.025em; line-height: 1.1; color: var(--c-text); margin-bottom: 16px;
+  }
+  .t-contact__sub { font-size: .95rem; color: #6e6e73; line-height: 1.7; margin-bottom: 28px; }
+  .t-contact__info { display: flex; flex-direction: column; gap: 16px; }
+  .t-contact__item { display: flex; align-items: flex-start; gap: 12px; }
+  .t-contact__ico { font-size: 20px; flex-shrink: 0; margin-top: 2px; }
+  .t-contact__label { font-size: .75rem; font-weight: 600; color: #6e6e73; text-transform: uppercase; letter-spacing: .06em; margin-bottom: 2px; }
+  .t-contact__val { font-size: .9rem; color: var(--c-text); }
+  .t-contact__val a { color: var(--c-primary); text-decoration: none; }
+
+  /* Formulario */
+  .t-form { display: flex; flex-direction: column; gap: 14px; }
+  .t-form__row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .t-form input, .t-form textarea, .t-form select {
+    width: 100%; padding: 13px 16px; border: 1px solid #d2d2d7; border-radius: 10px;
+    font: inherit; font-size: .9rem; color: var(--c-text); background: #fff;
+    outline: none; transition: border-color .2s; -webkit-appearance: none;
+  }
+  .t-form input:focus, .t-form textarea:focus { border-color: var(--c-primary); box-shadow: 0 0 0 3px var(--c-primary)18; }
+  .t-form textarea { resize: vertical; min-height: 120px; }
+  .t-form button {
+    align-self: flex-start; background: var(--c-primary); color: #fff;
+    border: none; border-radius: 980px; padding: 12px 28px;
+    font: inherit; font-size: 14px; font-weight: 500; cursor: pointer; transition: opacity .2s;
+  }
+  .t-form button:hover { opacity: .85; }
+  .t-form-success { display: none; padding: 16px 20px; background: #d1fae5; border-radius: 10px; color: #065f46; font-size: .9rem; font-weight: 500; }
+  .t-form-error   { display: none; padding: 16px 20px; background: #fee2e2; border-radius: 10px; color: #991b1b; font-size: .9rem; }
+
+  @media (max-width: 768px) {
+    .t-contact__inner { grid-template-columns: 1fr; gap: 40px; }
+    .t-form__row { grid-template-columns: 1fr; }
+  }
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function(){
+  const form = document.getElementById('t-form');
+  if (!form) return;
+  form.addEventListener('submit', async e => {
+    e.preventDefault();
+    const btn = form.querySelector('button[type=submit]');
+    const ok  = document.getElementById('t-form-ok');
+    const err = document.getElementById('t-form-err');
+    btn.disabled = true; btn.textContent = 'Enviando…';
+    try {
+      const r = await fetch(form.action, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(Object.fromEntries(new FormData(form)))
+      });
+      const d = await r.json();
+      if (d.ok) { ok.style.display = 'block'; form.reset(); }
+      else { err.style.display = 'block'; }
+    } catch {
+      err.style.display = 'block';
+    } finally {
+      btn.disabled = false; btn.textContent = 'Enviar mensaje';
+    }
+  });
+})();
+</script>
+{% endblock %}
+
+{% block content %}
+{% set _nombre = config.get('nombre_negocio', sitio.nombre) %}
+{% set _base   = '/s/' + sitio.slug %}
+
+<!-- CABECERA -->
+<section class="t-page-hero">
+  <p class="t-page-hero__eyebrow fade-up">{{ config.get('menu_contacto','Contacto') }}</p>
+  <h1 class="t-page-hero__title fade-up">Hablemos</h1>
+  <p class="t-page-hero__sub fade-up">Estamos aquí para responder tus preguntas y ayudarte a dar el siguiente paso.</p>
+</section>
+
+<!-- CONTACTO + FORM -->
+<section class="t-contact-section">
+  <div class="t-container">
+    <div class="t-contact__inner">
+      <!-- Info -->
+      <div class="fade-up">
+        <p class="t-contact__eyebrow">Información de contacto</p>
+        <h2 class="t-contact__title">Estamos para ayudarte</h2>
+        <p class="t-contact__sub">{{ config.get('nosotros_descripcion','Cuéntanos tu proyecto o consulta. Respondemos dentro de las próximas 24 horas.') | truncate(180) }}</p>
+        <div class="t-contact__info">
+          {% if config.get('contacto_email') %}
+          <div class="t-contact__item">
+            <span class="t-contact__ico">✉</span>
+            <div>
+              <p class="t-contact__label">Email</p>
+              <p class="t-contact__val"><a href="mailto:{{ config.get('contacto_email') }}">{{ config.get('contacto_email') }}</a></p>
+            </div>
+          </div>
+          {% endif %}
+          {% if config.get('contacto_telefono') %}
+          <div class="t-contact__item">
+            <span class="t-contact__ico">📞</span>
+            <div>
+              <p class="t-contact__label">Teléfono</p>
+              <p class="t-contact__val"><a href="tel:{{ config.get('contacto_telefono') }}">{{ config.get('contacto_telefono') }}</a></p>
+            </div>
+          </div>
+          {% endif %}
+          {% if config.get('contacto_direccion') %}
+          <div class="t-contact__item">
+            <span class="t-contact__ico">📍</span>
+            <div>
+              <p class="t-contact__label">Dirección</p>
+              <p class="t-contact__val">{{ config.get('contacto_direccion') }}</p>
+            </div>
+          </div>
+          {% endif %}
+          {% if config.get('contacto_horario') %}
+          <div class="t-contact__item">
+            <span class="t-contact__ico">🕐</span>
+            <div>
+              <p class="t-contact__label">Horario</p>
+              <p class="t-contact__val">{{ config.get('contacto_horario') }}</p>
+            </div>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Formulario -->
+      <div class="fade-up">
+        <div id="t-form-ok" class="t-form-success">✅ Mensaje enviado. Te contactaremos pronto.</div>
+        <div id="t-form-err" class="t-form-error">❌ Ocurrió un error. Intenta de nuevo.</div>
+        <form id="t-form" class="t-form" method="POST" action="{{ _base }}/enviar-contacto">
+          <div class="t-form__row">
+            <input type="text"  name="nombre"   placeholder="Tu nombre"  required>
+            <input type="email" name="email"    placeholder="Tu email"   required>
+          </div>
+          <input type="tel"    name="telefono" placeholder="Teléfono (opcional)">
+          <textarea            name="mensaje"  placeholder="¿En qué podemos ayudarte?" required></textarea>
+          <button type="submit">Enviar mensaje</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

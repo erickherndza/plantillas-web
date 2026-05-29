@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="description" content="{% block meta_desc %}{{ config.get('nosotros_descripcion', sitio.nombre) }}{% endblock %}"/>
+  <title>{% block titulo %}{{ sitio.nombre }}{% endblock %}</title>
+
+  {# ── Fuentes: solo la primera familia, ignorar system-ui #}
+  {% set _fh_raw = (config.get('fuente_titulos') or 'Inter') %}
+  {% set _fb_raw = (config.get('fuente_cuerpo')  or 'Inter') %}
+  {% set _fh = _fh_raw.split(',')[0].strip() if ',' in _fh_raw else _fh_raw.strip() %}
+  {% set _fb = _fb_raw.split(',')[0].strip() if ',' in _fb_raw else _fb_raw.strip() %}
+  {% set _sys = ('system-ui','-apple-system','sans-serif','serif','monospace') %}
+  {% set _fh_gf = '' if _fh in _sys else _fh %}
+  {% set _fb_gf = '' if _fb in _sys else _fb %}
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  {% if _fh_gf or _fb_gf %}
+  <link href="https://fonts.googleapis.com/css2?{% if _fh_gf %}family={{ _fh_gf|replace(' ','+') }}:wght@300;400;600;700{% if _fb_gf %}&{% endif %}{% endif %}{% if _fb_gf %}family={{ _fb_gf|replace(' ','+') }}:wght@300;400;500{% endif %}&display=swap" rel="stylesheet"/>
+  {% endif %}
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --c-primary: {{ config.get('color_primario',  '#0071e3') }};
+      --c-accent:  {{ config.get('color_acento',    '#f5f5f7') }};
+      --c-dark:    {{ config.get('color_footer_bg', '#1d1d1f') }};
+      --c-text:    {{ config.get('color_texto',     '#1d1d1f') }};
+      --font-title: {{ _fh }}, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      --font-body:  {{ _fb }}, -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+
+    html { scroll-behavior: smooth; }
+    body { font-family: var(--font-body); background: #fff; color: var(--c-text); -webkit-font-smoothing: antialiased; }
+
+    .t-container  { max-width: 980px;  margin: 0 auto; padding: 0 22px; }
+    .t-container--wide { max-width: 1200px; margin: 0 auto; padding: 0 22px; }
+
+    /* ── NAV ── */
+    .t-nav {
+      position: sticky; top: 0; z-index: 999;
+      background: rgba(255,255,255,.88);
+      backdrop-filter: saturate(180%) blur(20px);
+      -webkit-backdrop-filter: saturate(180%) blur(20px);
+      border-bottom: 1px solid rgba(0,0,0,.1);
+      height: 44px; display: flex; align-items: center;
+    }
+    .t-nav__inner {
+      max-width: 1024px; margin: 0 auto; padding: 0 22px;
+      display: flex; align-items: center; justify-content: space-between; width: 100%; gap: 8px;
+    }
+    .t-nav__logo {
+      font-family: var(--font-title); font-size: 17px; font-weight: 700;
+      color: var(--c-text); text-decoration: none; letter-spacing: -.02em; flex-shrink: 0;
+    }
+    .t-nav__logo img { height: 22px; width: auto; }
+    .t-nav__links { display: flex; list-style: none; flex: 1; justify-content: center; }
+    .t-nav__links a {
+      font-size: 12px; color: var(--c-text); opacity: .8; text-decoration: none;
+      padding: 0 10px; white-space: nowrap; transition: opacity .2s;
+    }
+    .t-nav__links a:hover, .t-nav__links a.active { opacity: 1; }
+    .t-nav__links a.active { font-weight: 600; }
+    .t-nav__actions { display: flex; align-items: center; gap: 14px; flex-shrink: 0; }
+    .t-nav-cta {
+      font-size: 13px; font-weight: 500;
+      background: var(--c-primary); color: #fff !important;
+      border-radius: 980px; padding: 6px 16px; text-decoration: none !important;
+      opacity: 1 !important; transition: opacity .2s;
+    }
+    .t-nav-cta:hover { opacity: .85 !important; }
+    .t-nav__toggle { display: none; background: none; border: none; cursor: pointer; padding: 4px; }
+    .t-nav__toggle span { display: block; width: 18px; height: 1.5px; background: var(--c-text); margin: 4px 0; }
+
+    /* ── BOTONES globales ── */
+    .t-btn-blue {
+      font-size: 14px; font-weight: 500; color: #fff; background: var(--c-primary);
+      border-radius: 980px; padding: 10px 22px; text-decoration: none; transition: opacity .2s; white-space: nowrap; display: inline-block;
+    }
+    .t-btn-blue:hover { opacity: .85; }
+    .t-btn-link {
+      font-size: 14px; font-weight: 500; color: var(--c-primary);
+      text-decoration: none; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;
+    }
+    .t-btn-link::after { content: ' ›'; }
+    .t-btn-link:hover { text-decoration: underline; text-underline-offset: 3px; }
+    .t-btn-white {
+      font-size: 14px; font-weight: 500; color: var(--c-dark); background: #fff;
+      border-radius: 980px; padding: 10px 22px; text-decoration: none; transition: opacity .2s; display: inline-block;
+    }
+    .t-btn-white:hover { opacity: .88; }
+    .t-btn-outline {
+      font-size: 14px; font-weight: 500; color: var(--c-primary);
+      background: transparent; border: 1.5px solid var(--c-primary);
+      border-radius: 980px; padding: 9px 22px; text-decoration: none; transition: all .2s; display: inline-block;
+    }
+    .t-btn-outline:hover { background: var(--c-primary); color: #fff; }
+
+    /* ── PAGE HERO (cabecera de páginas interiores) ── */
+    .t-page-hero {
+      background: #f5f5f7; padding: 72px 22px 60px; text-align: center; border-bottom: 1px solid #d2d2d7;
+    }
+    .t-page-hero__eyebrow {
+      font-size: 13px; font-weight: 600; color: var(--c-primary);
+      letter-spacing: .06em; text-transform: uppercase; margin-bottom: 10px;
+    }
+    .t-page-hero__title {
+      font-family: var(--font-title); font-size: clamp(2rem, 5vw, 3.5rem);
+      font-weight: 700; letter-spacing: -.025em; line-height: 1.1; color: var(--c-text); margin-bottom: 12px;
+    }
+    .t-page-hero__sub {
+      font-size: clamp(.95rem, 2vw, 1.15rem); color: #6e6e73; max-width: 560px; margin: 0 auto; line-height: 1.6;
+    }
+
+    /* ── CTA BAND ── */
+    .t-cta { padding: 80px 22px; text-align: center; background: var(--c-dark); color: #fff; }
+    .t-cta__title {
+      font-family: var(--font-title); font-size: clamp(1.8rem, 4vw, 3rem);
+      font-weight: 700; letter-spacing: -.025em; margin-bottom: 12px;
+    }
+    .t-cta__sub  { font-size: 1rem; color: rgba(255,255,255,.7); margin-bottom: 32px; }
+    .t-cta__btns { display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; }
+
+    /* ── FOOTER ── */
+    .t-footer { background: #f5f5f7; border-top: 1px solid #d2d2d7; padding: 32px 0 0; font-size: 12px; color: #6e6e73; }
+    .t-footer__inner {
+      max-width: 980px; margin: 0 auto; padding: 0 22px 24px;
+      display: grid; grid-template-columns: 2fr repeat(3,1fr); gap: 32px; border-bottom: 1px solid #d2d2d7;
+    }
+    .t-footer__brand { font-family: var(--font-title); font-size: 15px; font-weight: 700; color: var(--c-text); margin-bottom: 6px; }
+    .t-footer__tagline { font-size: 11px; color: #6e6e73; line-height: 1.6; }
+    .t-footer__col-title { font-weight: 600; color: var(--c-text); margin-bottom: 10px; font-size: 11px; text-transform: uppercase; letter-spacing: .04em; }
+    .t-footer__col a { display: block; color: #6e6e73; text-decoration: none; margin-bottom: 7px; transition: color .2s; }
+    .t-footer__col a:hover { color: var(--c-primary); }
+    .t-footer__bottom {
+      max-width: 980px; margin: 0 auto; padding: 12px 22px;
+      display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;
+    }
+
+    /* ── FADE-UP ── */
+    .fade-up { opacity: 0; transform: translateY(24px); transition: opacity .6s ease, transform .6s ease; }
+    .fade-up.visible { opacity: 1; transform: none; }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 768px) {
+      .t-nav__links { display: none; }
+      .t-nav__links.open {
+        display: flex; flex-direction: column;
+        position: fixed; top: 44px; left: 0; right: 0;
+        background: rgba(255,255,255,.96); backdrop-filter: blur(20px);
+        padding: 24px; gap: 4px; border-top: 1px solid rgba(0,0,0,.08); z-index: 998;
+      }
+      .t-nav__links.open li a { font-size: 17px; padding: 10px 0; opacity: 1; border-bottom: 1px solid #f0f0f0; display: block; }
+      .t-nav__toggle { display: block; }
+      .t-footer__inner { grid-template-columns: 1fr 1fr; }
+    }
+    @media (max-width: 480px) {
+      .t-footer__inner { grid-template-columns: 1fr; }
+    }
+
+    {% block extra_css %}{% endblock %}
+  </style>
+  {% if config.get('css_personalizado') %}<style>{{ config.get('css_personalizado') }}</style>{% endif %}
+</head>
+<body>
+
+{# ── Variables comunes ── #}
+{% set _nombre = config.get('nombre_negocio', sitio.nombre) %}
+{% set _base   = '/s/' + sitio.slug %}
+
+<!-- NAV -->
+<nav class="t-nav" id="t-nav">
+  <div class="t-nav__inner">
+    <a href="{{ _base }}/" class="t-nav__logo">
+      {% if config.get('logo_url') %}
+        <img src="{{ config.get('logo_url') }}" alt="{{ _nombre }}">
+      {% else %}{{ _nombre }}{% endif %}
+    </a>
+    <ul class="t-nav__links" id="t-nav-links">
+      <li><a href="{{ _base }}/"            class="{{ 'active' if pagina_activa=='inicio' }}">{{ config.get('menu_inicio','Inicio') }}</a></li>
+      <li><a href="{{ _base }}/nosotros/"   class="{{ 'active' if pagina_activa=='nosotros' }}">{{ config.get('menu_nosotros','Nosotros') }}</a></li>
+      <li><a href="{{ _base }}/servicios/"  class="{{ 'active' if pagina_activa=='servicios' }}">{{ config.get('menu_servicios','Servicios') }}</a></li>
+      <li><a href="{{ _base }}/proyectos/"  class="{{ 'active' if pagina_activa=='proyectos' }}">{{ config.get('menu_proyectos','Proyectos') }}</a></li>
+      <li><a href="{{ _base }}/contacto/"   class="{{ 'active' if pagina_activa=='contacto' }}">{{ config.get('menu_contacto','Contacto') }}</a></li>
+    </ul>
+    <div class="t-nav__actions">
+      <a href="{{ _base }}/contacto/" class="t-nav-cta">{{ config.get('hero_cta_texto','Contactar') }}</a>
+      <button class="t-nav__toggle" id="t-toggle" aria-label="Menú">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </div>
+</nav>
+
+<!-- CONTENIDO -->
+{% block content %}{% endblock %}
+
+<!-- FOOTER -->
+<footer class="t-footer">
+  <div class="t-footer__inner">
+    <div>
+      <p class="t-footer__brand">{{ _nombre }}</p>
+      <p class="t-footer__tagline">{{ config.get('footer_descripcion', config.get('hero_subtitulo', '')) }}</p>
+    </div>
+    <div class="t-footer__col">
+      <p class="t-footer__col-title">{{ config.get('menu_inicio','Inicio') }}</p>
+      <a href="{{ _base }}/">Inicio</a>
+      {% if config.get('nosotros_descripcion') %}<a href="{{ _base }}/nosotros/">{{ config.get('menu_nosotros','Nosotros') }}</a>{% endif %}
+    </div>
+    <div class="t-footer__col">
+      <p class="t-footer__col-title">{{ config.get('menu_servicios','Productos') }}</p>
+      {% for srv in secciones.servicios[:4] %}
+        <a href="{{ _base }}/servicios/">{{ srv.get('titulo','') }}</a>
+      {% else %}
+        <a href="{{ _base }}/servicios/">{{ config.get('menu_servicios','Servicios') }}</a>
+      {% endfor %}
+    </div>
+    <div class="t-footer__col">
+      <p class="t-footer__col-title">Contacto</p>
+      {% if config.get('contacto_email') %}<a href="mailto:{{ config.get('contacto_email') }}">{{ config.get('contacto_email') }}</a>{% endif %}
+      {% if config.get('contacto_telefono') %}<a href="tel:{{ config.get('contacto_telefono') }}">{{ config.get('contacto_telefono') }}</a>{% endif %}
+      {% if config.get('contacto_direccion') %}<span style="color:#6e6e73">{{ config.get('contacto_direccion') }}</span>{% endif %}
+    </div>
+  </div>
+  <div class="t-footer__bottom">
+    <span>Copyright © <script>document.write(new Date().getFullYear())</script> {{ _nombre }}</span>
+    <span style="display:flex;gap:20px;">
+      <a href="{{ _base }}/contacto/" style="color:#6e6e73;text-decoration:none;">Contacto</a>
+      <a href="{{ _base }}/nosotros/" style="color:#6e6e73;text-decoration:none;">Nosotros</a>
+    </span>
+  </div>
+</footer>
+
+<script>
+  document.getElementById('t-toggle').onclick = () =>
+    document.getElementById('t-nav-links').classList.toggle('open');
+  const obs = new IntersectionObserver(
+    es => es.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); }),
+    { threshold: 0.1 }
+  );
+  document.querySelectorAll('.fade-up').forEach(el => obs.observe(el));
+</script>
+{% block extra_js %}{% endblock %}
+</body>
+</html>
