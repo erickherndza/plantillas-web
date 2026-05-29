@@ -145,6 +145,32 @@
 
     <div id="sc-alert-url" class="sc-alert sc-alert-error"></div>
 
+    <!-- Botón IA — siempre visible, no requiere análisis previo -->
+    <div style="margin-top:20px;padding:20px;background:#f0fdf4;border:1.5px solid #86efac;border-radius:12px;">
+      <p style="margin:0 0 12px;font-size:.88rem;color:#166534;font-weight:600;">✨ Generar plantilla con IA</p>
+      <p style="margin:0 0 14px;font-size:.83rem;color:#166534;line-height:1.5;">
+        Analiza la URL y luego genera HTML/CSS 100% único con Claude AI — estructura, tipografía y layout propios.<br>
+        <em>O llena el formulario abajo manualmente y haz click en "Generar con IA" directamente.</em>
+      </p>
+      <div class="sc-form-grid" style="margin-bottom:14px;">
+        <div>
+          <label class="sc-label">Nombre de la plantilla</label>
+          <input id="url-nombre" class="sc-input" type="text" placeholder="Mi plantilla"/>
+        </div>
+        <div>
+          <label class="sc-label">Clave única</label>
+          <input id="url-clave" class="sc-input" type="text" placeholder="mi-plantilla"/>
+        </div>
+      </div>
+      <div id="sc-alert-crear-url" class="sc-alert"></div>
+      <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;">
+        <button class="btn-generar-ia" id="btn-generar-ia">
+          <span id="ia-btn-txt">✨ Generar con IA</span>
+          <span class="spinner" id="sp-ia"></span>
+        </button>
+      </div>
+    </div>
+
     <!-- Resultados del scraper -->
     <div id="sc-results" style="display:none;">
 
@@ -189,18 +215,10 @@
         </div>
       </div>
 
-      <!-- Formulario para crear plantilla -->
+      <!-- Formulario para crear plantilla (colores/fuentes post-análisis) -->
       <div style="margin-top:28px;padding-top:24px;border-top:2px solid #e2e8f0;">
-        <h3 style="font-size:1.05rem;font-weight:700;color:#1e293b;margin:0 0 20px;">Crear plantilla desde análisis</h3>
+        <h3 style="font-size:1.05rem;font-weight:700;color:#1e293b;margin:0 0 20px;">Ajustar colores y fuentes detectados</h3>
         <div class="sc-form-grid">
-          <div>
-            <label class="sc-label">Nombre de la plantilla</label>
-            <input id="url-nombre" class="sc-input" type="text" placeholder="Mi plantilla"/>
-          </div>
-          <div>
-            <label class="sc-label">Clave única</label>
-            <input id="url-clave" class="sc-input" type="text" placeholder="mi-plantilla"/>
-          </div>
           <div>
             <label class="sc-label">Color primario</label>
             <div class="color-row">
@@ -238,22 +256,11 @@
             <input id="url-fb" class="sc-input" type="text" placeholder="Open Sans" value="system-ui"/>
           </div>
         </div>
-
-        <div id="sc-alert-crear-url" class="sc-alert"></div>
-
-        <div style="display:flex;flex-wrap:wrap;align-items:center;gap:0;">
+        <div style="margin-top:16px;">
           <button class="btn-crear" id="btn-crear-url">
-            <span>✦ Crear plantilla</span>
+            <span>✦ Crear plantilla (sin IA)</span>
             <span class="spinner" id="sp-crear-url"></span>
           </button>
-          <button class="btn-generar-ia" id="btn-generar-ia" title="Genera HTML único con Claude AI basado en la estructura del sitio analizado">
-            <span id="ia-btn-txt">✨ Generar con IA</span>
-            <span class="spinner" id="sp-ia"></span>
-          </button>
-        </div>
-        <div class="ia-info-box" id="ia-info-box">
-          Claude AI analizará la estructura visual detectada y generará un template HTML/CSS único para esta plantilla.
-          Requiere <code>ANTHROPIC_API_KEY</code> en el servidor. El proceso tarda ~20 segundos.
         </div>
       </div>
     </div><!-- /sc-results -->
