@@ -2983,6 +2983,8 @@ def admin_debug_template(slug):
     from flask import request as _req
     if _req.args.get('html') == '1' and render_ok:
         return rendered, 200, {'Content-Type': 'text/html; charset=utf-8'}
+    if _req.args.get('txt') == '1' and render_ok:
+        return rendered, 200, {'Content-Type': 'text/plain; charset=utf-8'}
     return jsonify(
         slug=slug,
         template=tpl_name,
