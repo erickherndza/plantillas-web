@@ -2975,7 +2975,7 @@ def admin_scraper_generar_ia():
         import urllib.error  as _urlerr
         import json as _json
         _body = _json.dumps({
-            'model': 'claude-3-5-haiku-20241022',
+            'model': 'claude-3-5-haiku-latest',
             'max_tokens': 4096,
             'messages': [{'role': 'user', 'content': prompt}]
         }).encode('utf-8')
