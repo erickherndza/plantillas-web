@@ -2969,16 +2969,27 @@ def admin_scraper_generar_ia():
     }
     prompt = _build_ia_prompt(analisis)
 
-    # ── Llamar a Claude API ───────────────────────────────────────────────────
+    # ── Llamar a Claude API (urllib — sin dependencias externas) ─────────────
     try:
-        import anthropic as _anthropic
-        client = _anthropic.Anthropic(api_key=_ak)
-        msg = client.messages.create(
-            model='claude-haiku-4-5-20251001',
-            max_tokens=4096,
-            messages=[{'role': 'user', 'content': prompt}]
+        import urllib.request as _urlreq, json as _json
+        _body = _json.dumps({
+            'model': 'claude-haiku-4-5-20251001',
+            'max_tokens': 4096,
+            'messages': [{'role': 'user', 'content': prompt}]
+        }).encode('utf-8')
+        _req = _urlreq.Request(
+            'https://api.anthropic.com/v1/messages',
+            data=_body,
+            headers={
+                'x-api-key':         _ak,
+                'anthropic-version': '2023-06-01',
+                'content-type':      'application/json',
+            },
+            method='POST'
         )
-        html_raw = msg.content[0].text
+        with _urlreq.urlopen(_req, timeout=60) as _resp:
+            _data = _json.loads(_resp.read().decode('utf-8'))
+        html_raw = _data['content'][0]['text']
     except Exception as e:
         return jsonify(ok=False, error=f'Error llamando a Claude API: {str(e)}'), 500
 
