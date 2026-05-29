@@ -2915,6 +2915,36 @@ REQUISITOS TÉCNICOS OBLIGATORIOS:
 REGLA CRÍTICA: Responde ÚNICAMENTE con el código HTML. Sin explicaciones, sin markdown, sin comentarios fuera del HTML. Empieza con <!DOCTYPE html>"""
 
 
+@app.route('/admin/scraper/modelos-disponibles')
+@admin_requerido
+def admin_modelos_disponibles():
+    import urllib.request as _urlreq, urllib.error as _urlerr, json as _json
+    _ak = os.environ.get('ANTHROPIC_API_KEY', '').strip()
+    if not _ak:
+        _env_path = os.path.join(os.path.dirname(__file__), '.env')
+        if os.path.exists(_env_path):
+            for _ln in open(_env_path):
+                _ln = _ln.strip()
+                if _ln.startswith('ANTHROPIC_API_KEY='):
+                    _ak = _ln.split('=', 1)[1].strip().strip('"').strip("'")
+    if not _ak:
+        return jsonify(error='Sin API key'), 400
+    try:
+        _req = _urlreq.Request(
+            'https://api.anthropic.com/v1/models',
+            headers={'x-api-key': _ak, 'anthropic-version': '2023-06-01'},
+            method='GET'
+        )
+        with _urlreq.urlopen(_req, timeout=15) as _r:
+            _data = _json.loads(_r.read().decode())
+        modelos = [m.get('id') for m in _data.get('data', [])]
+        return jsonify(total=len(modelos), modelos=modelos)
+    except _urlerr.HTTPError as e:
+        return jsonify(error=e.read().decode(errors='replace')), 500
+    except Exception as e:
+        return jsonify(error=str(e)), 500
+
+
 @app.route('/admin/scraper/generar-con-ia', methods=['POST'])
 @admin_requerido
 def admin_scraper_generar_ia():
