@@ -2742,6 +2742,289 @@ def admin_scraper_crear_url():
     return jsonify(ok=True, pid=pid, redirect=url_for('admin_plantillas'))
 
 
+# ══════════════════════════════════════════════════════════════════════════════
+# GENERACIÓN CON IA — Claude genera HTML/CSS+Jinja2 único por estilo
+# ══════════════════════════════════════════════════════════════════════════════
+
+def _extraer_html_ia(texto):
+    """Extrae HTML limpio de la respuesta de Claude (puede venir en markdown)."""
+    import re as _re
+    m = _re.search(r'```html\s*([\s\S]+?)```', texto)
+    if m:
+        return m.group(1).strip()
+    m = _re.search(r'```\s*([\s\S]+?)```', texto)
+    if m:
+        return m.group(1).strip()
+    idx = texto.find('<!DOCTYPE')
+    if idx == -1:
+        idx = texto.find('<html')
+    if idx != -1:
+        return texto[idx:].strip()
+    return texto.strip()
+
+
+def _build_ia_prompt(a):
+    """Construye el prompt para Claude a partir del análisis del scraper."""
+    estilo_desc = {
+        'apple-minimal': 'minimalista tipo Apple — espaciado generoso, tipografía bold sin sombras, líneas limpias, fondos blancos/gris-claro alternados',
+        'ecommerce':     'tienda online — cards de producto con imagen dominante, precios visibles, CTAs urgentes en color',
+        'portfolio':     'portafolio creativo — imágenes full-bleed, tipografía editorial enorme, contraste alto',
+        'saas':          'SaaS/tecnología — hero oscuro con glow, features en cards, gradientes sutiles',
+        'editorial':     'magazine — múltiples columnas, fotos prominentes, jerarquía tipográfica marcada',
+        'dark':          'tema oscuro premium — negro profundo, acentos brillantes, sensación de lujo',
+        'gradient':      'vibrante moderno — gradientes audaces, formas orgánicas, color como protagonista',
+        'clean':         'corporativo limpio — profesional, secciones definidas, confianza',
+    }.get(a.get('estilo', 'clean'), 'diseño web moderno y profesional')
+
+    nav_desc = {
+        'transparent-overlay': 'navbar transparente superpuesta al hero, con blur/glass al hacer scroll',
+        'dark':     'navbar oscura sólida con texto claro',
+        'colored':  'navbar con el color primario sólido',
+        'minimal':  'navbar ultra-minimalista: solo logo + links, sin fondo visible',
+        'standard': 'navbar blanca clásica con sombra sutil',
+    }.get(a.get('nav_style', 'standard'), 'navbar blanca con sombra sutil')
+
+    scale_desc = {
+        'display-xl': 'títulos gigantes clamp(4rem,10vw,8rem), impacto máximo',
+        'display':    'títulos grandes clamp(3rem,7vw,5.5rem)',
+        'large':      'títulos medianos-grandes clamp(2.2rem,5vw,3.8rem)',
+        'medium':     'títulos estándar clamp(1.8rem,4vw,2.8rem)',
+    }.get(a.get('font_scale', 'medium'), 'títulos estándar clamp(1.8rem,4vw,2.8rem)')
+
+    hero_map = {
+        'fullscreen': 'hero pantalla completa con imagen de fondo y overlay',
+        'split':      'hero dividido en dos columnas: texto izquierda, imagen/media derecha',
+        'minimal':    'hero minimalista: texto centrado grande, sin imagen de fondo, mucho espacio',
+        'gradient':   'hero con fondo de gradiente sin imagen',
+        'dark':       'hero oscuro con texto claro y efecto de iluminación',
+        'static':     'hero con imagen de fondo estática',
+    }
+    hero_desc = hero_map.get(a.get('hero_tipo', 'fullscreen'), 'hero con imagen de fondo')
+
+    secciones = a.get('secciones', ['hero', 'servicios', 'nosotros', 'contacto'])
+    if not secciones:
+        secciones = ['hero', 'servicios', 'nosotros', 'contacto']
+
+    seccion_map = {
+        'hero': 'sección hero principal',
+        'services': 'sección de servicios/productos',
+        'servicios': 'sección de servicios/productos',
+        'projects': 'galería o portafolio de proyectos',
+        'proyectos': 'galería o portafolio de proyectos',
+        'team': 'sección del equipo',
+        'equipo': 'sección del equipo',
+        'about': 'sección sobre nosotros',
+        'nosotros': 'sección sobre nosotros',
+        'contact': 'sección de contacto con formulario',
+        'contacto': 'sección de contacto con formulario',
+        'testimonials': 'testimonios de clientes',
+        'newsletter': 'sección de newsletter/suscripción',
+        'pricing': 'tabla de precios',
+        'features': 'grid de características/beneficios',
+        'stats': 'estadísticas o números clave',
+        'gallery': 'galería de imágenes',
+        'cta': 'banda de call-to-action',
+    }
+    secciones_legible = ' → '.join(seccion_map.get(s, s) for s in secciones)
+
+    fh = (a.get('fuente_titulos') or 'Inter').split(',')[0].strip()
+    fb = (a.get('fuente_cuerpo') or 'Inter').split(',')[0].strip()
+    sys_f = ('system-ui', '-apple-system', 'sans-serif', 'serif', 'monospace', '')
+    fh_gf = '' if fh in sys_f else fh
+    fb_gf = '' if fb in sys_f else fb
+    fonts_line = ''
+    if fh_gf or fb_gf:
+        fonts_line = f'- Fuentes: {fh_gf or "Inter"} para títulos, {fb_gf or "Inter"} para cuerpo (cargar desde Google Fonts)'
+
+    densidad_desc = {
+        'airy':    'espaciado muy generoso (padding 80-120px), mucho whitespace, sensación de lujo',
+        'dense':   'compacto, información densa, padding reducido (32-48px)',
+        'standard': 'espaciado estándar (padding 64-80px)',
+    }.get(a.get('densidad', 'standard'), 'espaciado estándar')
+
+    cp  = a.get('color_primario', '#1e40af')
+    ca  = a.get('color_acento',   '#f59e0b')
+    cfb = a.get('color_footer',   '#0f172a')
+
+    return f"""Eres un diseñador web experto. Genera un template HTML landing page ÚNICO con CSS integrado.
+
+ANÁLISIS VISUAL DEL SITIO A EMULAR (captura su estructura y personalidad, no su contenido):
+- Estilo: {estilo_desc}
+- Nav: {nav_desc} con {a.get('nav_items', 5)} items
+- Hero: {hero_desc}
+- Flujo de secciones: {secciones_legible}
+- Escala tipográfica: {scale_desc}
+- Densidad: {densidad_desc}
+- Paleta: primario {cp}, acento {ca}, footer {cfb}
+{fonts_line}
+{'- Layout especial: grid de promoción/destacados' if a.get('has_promo_grid') else ''}
+
+VARIABLES JINJA2 — ÚSALAS EXACTAMENTE ASÍ EN EL HTML:
+{{{{ config.get('nombre_negocio', sitio.nombre) }}}}
+{{{{ config.get('hero_eyebrow', '') }}}}
+{{{{ config.get('hero_titulo', sitio.nombre) }}}}
+{{{{ config.get('hero_subtitulo', '') }}}}
+{{{{ config.get('hero_cta_texto', 'Contáctanos') }}}}
+{{{{ config.get('hero_cta_href', '#contacto') }}}}
+{{{{ config.get('hero_imagen', '') }}}}
+{{{{ config.get('logo_url', '') }}}}
+{{{{ config.get('color_primario', '{cp}') }}}}
+{{{{ config.get('color_acento', '{ca}') }}}}
+{{{{ config.get('color_footer_bg', '{cfb}') }}}}
+{{{{ config.get('color_texto', '#1e293b') }}}}
+{{{{ config.get('fuente_titulos', '{fh}') }}}}
+{{{{ config.get('fuente_cuerpo', '{fb}') }}}}
+{{{{ config.get('nosotros_titulo', 'Sobre nosotros') }}}}
+{{{{ config.get('nosotros_descripcion', '') }}}}
+{{{{ config.get('nosotros_imagen', '') }}}}
+{{{{ config.get('contacto_email', '') }}}}
+{{{{ config.get('contacto_telefono', '') }}}}
+{{{{ config.get('contacto_direccion', '') }}}}
+{{{{ sitio.slug }}}}
+
+LOOPS DE SECCIONES DINÁMICAS (incluir si aplica al estilo):
+{{% if secciones.servicios %}}
+{{% for srv in secciones.servicios %}}
+  {{{{ srv.get('titulo','') }}}}  {{{{ srv.get('descripcion','') }}}}
+  {{{{ srv.get('icono','') }}}}   {{{{ srv.get('imagen','') }}}}
+  {{{{ srv.get('precio','') }}}}  {{{{ srv.get('cta_texto','Ver más') }}}}
+{{% endfor %}}
+{{% endif %}}
+
+{{% if secciones.proyectos %}}
+{{% for p in secciones.proyectos %}}
+  {{{{ p.get('titulo','') }}}}  {{{{ p.get('imagen','') }}}}  {{{{ p.get('categoria','') }}}}
+{{% endfor %}}
+{{% endif %}}
+
+{{% if secciones.equipo %}}
+{{% for m in secciones.equipo %}}
+  {{{{ m.get('nombre','') }}}}  {{{{ m.get('cargo','') }}}}  {{{{ m.get('imagen','') }}}}
+{{% endfor %}}
+{{% endif %}}
+
+REQUISITOS TÉCNICOS OBLIGATORIOS:
+1. HTML5 completo: <!DOCTYPE html>, <html lang="es">, <head> con <meta charset>, <meta viewport>, <title>
+2. TODO el CSS en un único bloque <style> al final del <head>
+3. :root con variables: --c-primary, --c-accent, --c-dark, --c-text, --font-title, --font-body (inicializadas con config.get)
+4. Responsive: @media (max-width: 768px) y @media (max-width: 480px)
+5. JS inline al final del body: hamburger menu + IntersectionObserver para .fade-up
+6. Formulario de contacto: <form method="POST" action="/s/{{{{ sitio.slug }}}}/enviar-contacto">
+7. Sin Bootstrap, sin jQuery, sin dependencias externas (solo Google Fonts si corresponde)
+
+REGLA CRÍTICA: Responde ÚNICAMENTE con el código HTML. Sin explicaciones, sin markdown, sin comentarios fuera del HTML. Empieza con <!DOCTYPE html>"""
+
+
+@app.route('/admin/scraper/generar-con-ia', methods=['POST'])
+@admin_requerido
+def admin_scraper_generar_ia():
+    import re as _re, unicodedata as _ud
+
+    # ── Leer API key ──────────────────────────────────────────────────────────
+    _ak = os.environ.get('ANTHROPIC_API_KEY', '').strip()
+    if not _ak:
+        # Intentar desde .env local
+        _env_path = os.path.join(os.path.dirname(__file__), '.env')
+        if os.path.exists(_env_path):
+            for _ln in open(_env_path):
+                _ln = _ln.strip()
+                if _ln.startswith('ANTHROPIC_API_KEY='):
+                    _ak = _ln.split('=', 1)[1].strip().strip('"').strip("'")
+    if not _ak:
+        return jsonify(ok=False, error='ANTHROPIC_API_KEY no configurada. Agrégala al .env de PythonAnywhere.'), 400
+
+    d = request.get_json(force=True)
+
+    nombre = d.get('nombre', '').strip()
+    clave  = d.get('clave',  '').strip().lower()
+    if not nombre or not clave:
+        return jsonify(ok=False, error='Nombre y clave son obligatorios.'), 400
+
+    # Sanear clave
+    clave = _ud.normalize('NFD', clave)
+    clave = ''.join(c for c in clave if _ud.category(c) != 'Mn')
+    clave = _re.sub(r'[^a-z0-9]+', '-', clave).strip('-')[:30]
+    if not clave or not clave[0].isalpha():
+        clave = 'p-' + clave
+    clave = clave[:30]
+
+    # ── Construir prompt ──────────────────────────────────────────────────────
+    analisis = {
+        'estilo':          d.get('estilo',          'clean'),
+        'nav_style':       d.get('nav_transparente') and 'transparent-overlay' or d.get('nav_style', 'standard'),
+        'nav_items':       d.get('nav_items',        5),
+        'hero_tipo':       d.get('hero_tipo',        'fullscreen'),
+        'font_scale':      d.get('font_scale',       'medium'),
+        'densidad':        d.get('densidad',         'standard'),
+        'has_promo_grid':  d.get('has_promo_grid',   False),
+        'secciones':       d.get('secciones',        []),
+        'color_primario':  d.get('color_primario',   '#1e40af'),
+        'color_acento':    d.get('color_acento',     '#f59e0b'),
+        'color_footer':    d.get('color_footer',     '#0f172a'),
+        'fuente_titulos':  d.get('fuente_titulos',   'Inter'),
+        'fuente_cuerpo':   d.get('fuente_cuerpo',    'Inter'),
+        'url_analizada':   d.get('url_analizada',    ''),
+        'weight_style':    d.get('weight_style',     'balanced'),
+        'is_image_dominant': d.get('is_image_dominant', False),
+    }
+    prompt = _build_ia_prompt(analisis)
+
+    # ── Llamar a Claude API ───────────────────────────────────────────────────
+    try:
+        import anthropic as _anthropic
+        client = _anthropic.Anthropic(api_key=_ak)
+        msg = client.messages.create(
+            model='claude-haiku-4-5-20251001',
+            max_tokens=4096,
+            messages=[{'role': 'user', 'content': prompt}]
+        )
+        html_raw = msg.content[0].text
+    except Exception as e:
+        return jsonify(ok=False, error=f'Error llamando a Claude API: {str(e)}'), 500
+
+    html_generado = _extraer_html_ia(html_raw)
+
+    # Validación básica
+    if len(html_generado) < 800 or '<!DOCTYPE' not in html_generado.upper():
+        return jsonify(ok=False, error='La IA no generó HTML válido. Intenta de nuevo o ajusta los parámetros.'), 500
+
+    # ── Guardar plantilla en DB ───────────────────────────────────────────────
+    try:
+        pid = crear_plantilla(clave, nombre, 'landing',
+                              f'Generada con IA — {analisis["url_analizada"]}', '', '{}')
+    except Exception:
+        return jsonify(ok=False, error=f'La clave "{clave}" ya existe. Cambia el nombre.'), 409
+
+    campos_estilos = {
+        'color_primary':   analisis['color_primario'],
+        'color_accent':    analisis['color_acento'],
+        'color_secondary': analisis['color_footer'],
+        'font_heading':    analisis['fuente_titulos'],
+        'font_body':       analisis['fuente_cuerpo'],
+        'defaults_json':   json.dumps({
+            'estilo_detectado': analisis['estilo'],
+            'url_origen':       analisis['url_analizada'],
+            'generado_ia':      '1',
+            'color_primario':   analisis['color_primario'],
+            'color_acento':     analisis['color_acento'],
+            'color_footer_bg':  analisis['color_footer'],
+            'fuente_titulos':   analisis['fuente_titulos'],
+            'fuente_cuerpo':    analisis['fuente_cuerpo'],
+        }),
+    }
+    upsert_estilos(pid, campos_estilos)
+
+    # ── Guardar template HTML en disco ────────────────────────────────────────
+    tpl_dir  = os.path.join(app.root_path, 'templates', 'sites', clave)
+    os.makedirs(tpl_dir, exist_ok=True)
+    tpl_path = os.path.join(tpl_dir, 'index.html')
+    with open(tpl_path, 'w', encoding='utf-8') as _f:
+        _f.write(html_generado)
+
+    flash(f'Plantilla "{nombre}" generada con IA ✨', 'success')
+    return jsonify(ok=True, pid=pid, redirect=url_for('admin_plantillas'))
+
+
 @app.route('/admin/scraper/crear-desde-categoria', methods=['POST'])
 @admin_requerido
 def admin_scraper_crear_categoria():

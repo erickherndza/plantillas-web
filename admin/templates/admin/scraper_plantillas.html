@@ -80,6 +80,14 @@
                    transition:background .2s; display:inline-flex; align-items:center; gap:8px; }
     .btn-crear:hover { background:#6d28d9; }
     .btn-crear:disabled { background:#a78bfa; cursor:not-allowed; }
+    .btn-generar-ia { background:linear-gradient(135deg,#059669,#0d9488); color:#fff; border:none;
+                      padding:13px 36px; border-radius:10px; font-weight:700; font-size:1rem; cursor:pointer;
+                      margin-top:28px; margin-left:12px; transition:opacity .2s;
+                      display:inline-flex; align-items:center; gap:8px; }
+    .btn-generar-ia:hover { opacity:.88; }
+    .btn-generar-ia:disabled { opacity:.5; cursor:not-allowed; }
+    .ia-info-box { background:#ecfdf5; border:1.5px solid #6ee7b7; border-radius:10px; padding:14px 18px;
+                   font-size:.87rem; color:#065f46; margin-top:16px; display:none; line-height:1.6; }
 
     /* ── Spinner ──────────────────────────────────────────────────── */
     .spinner { display:none; width:18px; height:18px; border:3px solid rgba(255,255,255,.35);
@@ -233,10 +241,20 @@
 
         <div id="sc-alert-crear-url" class="sc-alert"></div>
 
-        <button class="btn-crear" id="btn-crear-url">
-          <span>✦ Crear plantilla</span>
-          <span class="spinner" id="sp-crear-url"></span>
-        </button>
+        <div style="display:flex;flex-wrap:wrap;align-items:center;gap:0;">
+          <button class="btn-crear" id="btn-crear-url">
+            <span>✦ Crear plantilla</span>
+            <span class="spinner" id="sp-crear-url"></span>
+          </button>
+          <button class="btn-generar-ia" id="btn-generar-ia" title="Genera HTML único con Claude AI basado en la estructura del sitio analizado">
+            <span id="ia-btn-txt">✨ Generar con IA</span>
+            <span class="spinner" id="sp-ia"></span>
+          </button>
+        </div>
+        <div class="ia-info-box" id="ia-info-box">
+          Claude AI analizará la estructura visual detectada y generará un template HTML/CSS único para esta plantilla.
+          Requiere <code>ANTHROPIC_API_KEY</code> en el servidor. El proceso tarda ~20 segundos.
+        </div>
       </div>
     </div><!-- /sc-results -->
   </div><!-- /tab-scraper -->
@@ -1041,12 +1059,36 @@ function readComponentState(){
   };
 }
 
+/* ── Detectar densidad visual ────────────────────────────────────────── */
+function detectarDensidad(cssTexto) {
+  const paddingValues = [...cssTexto.matchAll(/padding[^:]*:\s*([\d.]+)(?:px|rem)/gi)]
+    .map(m => parseFloat(m[1]));
+  if (!paddingValues.length) return 'standard';
+  const avg = paddingValues.reduce((a, b) => a + b, 0) / paddingValues.length;
+  if (avg > 28) return 'airy';
+  if (avg < 10) return 'dense';
+  return 'standard';
+}
+
+/* ── Detectar nav transparente ───────────────────────────────────────── */
+function detectarNavTransparente(html) {
+  const doc = new DOMParser().parseFromString(html, 'text/html');
+  const nav = doc.querySelector('nav, header');
+  if (!nav) return false;
+  const cls = (nav.getAttribute('class') || '').toLowerCase();
+  return /transparent|overlay|absolute/.test(cls) ||
+         /position\s*:\s*absolute/.test(nav.getAttribute('style') || '');
+}
+
 /* ── Botón Analizar ──────────────────────────────────────────────────── */
 let _layoutDetectado  = null;
 let _estiloDetectado  = 'clean'; // guardado para pasarlo al backend al crear
 let _navData          = null;
 let _contentLayout   = null;
 let _tipografia      = null;
+let _densidad        = 'standard';
+let _navTransparente = false;
+let _urlAnalizada    = '';
 let _blueprintDetectado = getDefaultBlueprint();
 renderBlueprintControls(_blueprintDetectado);
 
@@ -1057,6 +1099,7 @@ document.getElementById('btn-analizar').addEventListener('click', async () => {
 
   setSpinner('sp-txt','sp-spin', true);
   document.getElementById('sc-results').style.display = 'none';
+  _urlAnalizada = url;
 
   try {
     // 1. Descargar HTML
@@ -1078,9 +1121,11 @@ document.getElementById('btn-analizar').addEventListener('click', async () => {
     const tema     = detectarTema(Object.keys(scoreMap).filter(esColorNoGris));
     const estilo        = detectarEstilo(cssTotal, tema, html);
     _estiloDetectado    = estilo;
-    _navData       = detectarNavStyle(html);
-    _contentLayout = detectarContentLayout(html);
-    _tipografia    = detectarTipografia(cssTotal, html);
+    _navData          = detectarNavStyle(html);
+    _contentLayout    = detectarContentLayout(html);
+    _tipografia       = detectarTipografia(cssTotal, html);
+    _densidad         = detectarDensidad(cssTotal);
+    _navTransparente  = detectarNavTransparente(html);
     const roles         = seleccionarRoles(scoreMap, tema);
     _layoutDetectado = recomendarLayout(estilo, tema, _navData, _contentLayout, _tipografia);
 
@@ -1140,6 +1185,7 @@ document.getElementById('btn-analizar').addEventListener('click', async () => {
       document.getElementById('url-nombre').value = meta.title.slice(0, 60);
 
     document.getElementById('sc-results').style.display = 'block';
+    document.getElementById('ia-info-box').style.display = 'block';
     _activeRole = 'primario';
 
     if (!coloresOrdenados.length)
@@ -1211,6 +1257,72 @@ document.getElementById('btn-crear-url').addEventListener('click', async () => {
     btn.disabled = false;
   } finally {
     document.getElementById('sp-crear-url').style.display = 'none';
+  }
+});
+
+/* ── Generar con IA ──────────────────────────────────────────────────── */
+document.getElementById('btn-generar-ia').addEventListener('click', async () => {
+  hideAlert('sc-alert-crear-url');
+  const nombre = document.getElementById('url-nombre').value.trim();
+  const clave  = document.getElementById('url-clave').value.trim();
+  if (!nombre || !clave){ showAlert('sc-alert-crear-url','Nombre y clave son obligatorios antes de generar.'); return; }
+
+  const btn = document.getElementById('btn-generar-ia');
+  const btnCrear = document.getElementById('btn-crear-url');
+  btn.disabled = true;
+  btnCrear.disabled = true;
+  document.getElementById('ia-btn-txt').style.display = 'none';
+  document.getElementById('sp-ia').style.display = 'inline-block';
+
+  showAlert('sc-alert-crear-url', '⏳ Claude está generando el template… tarda ~20 segundos.', 'success');
+
+  const payload = {
+    nombre,
+    clave,
+    color_primario:   document.getElementById('url-cp').value,
+    color_acento:     document.getElementById('url-ca').value,
+    color_footer:     document.getElementById('url-cf').value,
+    fuente_titulos:   document.getElementById('url-fh').value || 'Inter',
+    fuente_cuerpo:    document.getElementById('url-fb').value || 'Inter',
+    tipo:             document.getElementById('url-tipo').value,
+    estilo:           _estiloDetectado,
+    nav_style:        _navData?.style       || 'minimal',
+    nav_items:        _navData?.items       || 5,
+    nav_transparente: _navTransparente,
+    hero_tipo:        document.getElementById('url-hero-tipo').value,
+    font_scale:       _tipografia?.hero_font_size || 'medium',
+    tagline_style:    _tipografia?.tagline_style  || 'descriptive',
+    weight_style:     _tipografia?.weight_style   || 'balanced',
+    uses_google_font: _tipografia?.uses_google_font || false,
+    densidad:         _densidad,
+    content_layout:   _contentLayout?.primary_layout || 'standard',
+    is_image_dominant: _contentLayout?.is_image_dominant || false,
+    secciones:        _blueprintDetectado?.secciones || ['hero','services','projects','team'],
+    componentes:      readComponentState(),
+    url_analizada:    _urlAnalizada,
+  };
+
+  try {
+    const r = await fetch('/admin/scraper/generar-con-ia', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify(payload)
+    });
+    const d = await r.json();
+    if (d.ok){
+      showAlert('sc-alert-crear-url', '✅ Template generado por IA. Redirigiendo al panel de plantillas…', 'success');
+      setTimeout(() => window.location.href = d.redirect, 1500);
+    } else {
+      showAlert('sc-alert-crear-url', '❌ ' + (d.error || 'Error generando con IA. Revisa el API key en el servidor.'));
+      btn.disabled = false;
+      btnCrear.disabled = false;
+    }
+  } catch(e){
+    showAlert('sc-alert-crear-url','Error de red. Intenta de nuevo.');
+    btn.disabled = false;
+    btnCrear.disabled = false;
+  } finally {
+    document.getElementById('ia-btn-txt').style.display = '';
+    document.getElementById('sp-ia').style.display = 'none';
   }
 });
 
