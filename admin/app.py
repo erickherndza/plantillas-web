@@ -2171,7 +2171,12 @@ def ver_sitio(slug):
         abort(404)
     ctx = _contexto_sitio(sitio)
     template = _resolver_template_sitio(sitio, 'inicio')
-    return render_template(template, sitio=sitio, pagina_activa='inicio', **ctx)
+    try:
+        return render_template(template, sitio=sitio, pagina_activa='inicio', **ctx)
+    except Exception as _e:
+        if session.get('admin'):
+            return f'<pre style="color:red;padding:20px"><b>Error en template {template}:</b>\n{__import__("traceback").format_exc()}</pre>', 500
+        abort(500)
 
 
 @app.route('/s/<slug>/<pagina>/')
