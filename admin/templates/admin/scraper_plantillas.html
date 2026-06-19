@@ -70,6 +70,11 @@
                  border-radius:12px; background:#fff; font-size:.9rem; color:#1e293b; }
     .sc-toggle input { width:18px; height:18px; accent-color:#7c3aed; }
     .sc-hero-type { margin-top:12px; }
+    .menu-editor-row { display:grid; grid-template-columns:1fr 1fr auto; gap:10px; align-items:start; margin-bottom:10px; }
+    .menu-editor-row input { width:100%; padding:10px 12px; border:1.5px solid #e2e8f0; border-radius:10px; font-size:.9rem; }
+    .menu-editor-row button { min-width:44px; border:none; border-radius:10px; background:#ef4444; color:#fff; cursor:pointer; }
+    .menu-editor-row button:hover { background:#dc2626; }
+    .menu-editor-controls { display:flex; gap:10px; flex-wrap:wrap; margin-top:12px; }
 
     /* ── Buttons ──────────────────────────────────────────────────── */
     .btn-scrape  { background:#0ea5e9; color:#fff; border:none; padding:11px 28px; border-radius:10px;
@@ -215,7 +220,27 @@
         </div>
       </div>
 
-      <!-- Formulario para crear plantilla (colores/fuentes post-análisis) -->
+      <div class="result-box" style="margin-top:16px;">
+        <div class="result-title">Menú detectado</div>
+        <p id="menu-detected-badge" style="margin:0 0 12px;color:#475569;font-size:.85rem;"></p>
+        <div id="menu-detected-list"></div>
+      </div>
+
+      <div id="menu-editor-wrapper" class="result-box" style="margin-top:16px; display:none;">
+        <div class="result-title">Editar menú detectado</div>
+        <div id="menu-editor-list"></div>
+        <div class="menu-editor-controls">
+          <button type="button" id="menu-add-item" class="btn-scrape">+ Agregar ítem</button>
+          <span style="color:#64748b;font-size:.85rem;align-self:center;">Edita texto y enlaces antes de guardar el menú en la plantilla.</span>
+        </div>
+      </div>
+
+      <div class="result-box" style="margin-top:16px;">
+        <div class="result-title">Variables CSS detectadas</div>
+        <div id="css-vars-container" style="margin-top:10px;"></div>
+      </div>
+
+      <!-- Formulario para crear plantilla -->
       <div style="margin-top:28px;padding-top:24px;border-top:2px solid #e2e8f0;">
         <h3 style="font-size:1.05rem;font-weight:700;color:#1e293b;margin:0 0 20px;">Ajustar colores y fuentes detectados</h3>
         <div class="sc-form-grid">
@@ -859,6 +884,9 @@ function extraerMeta(html){
 /* ── Renderizar swatches ─────────────────────────────────────────────── */
 let _colorSeleccionado = { primario: null, acento: null, footer: null };
 let _activeRole = null;
+let _detectedMenuItems = [];
+let _detectedCssVars = {};
+let _detectedNav = { navbar_sticky: false, navbar_transparente: false };
 
 function renderSwatches(colores, roles){
   const cont = document.getElementById('swatch-container');
@@ -929,6 +957,180 @@ function renderFonts(fuentes){
   // asignar primeras 2 automáticamente
   if (fuentes[0]) document.getElementById('url-fh').value = fuentes[0];
   if (fuentes[1]) document.getElementById('url-fb').value = fuentes[1];
+}
+
+function extraerMenu(html){
+  const doc = new DOMParser().parseFromString(html, 'text/html');
+  const menuItems = [];
+  const seen = new Set();
+  const selectors = [
+    'nav a[href]',
+    '[role="navigation"] a[href]',
+    '[class*="menu"] a[href]',
+    '[class*="nav"] a[href]',
+    '[id*="menu"] a[href]',
+    '[id*="nav"] a[href]'
+  ];
+  const anchors = doc.querySelectorAll(selectors.join(', '));
+  anchors.forEach(a => {
+    const href = (a.getAttribute('href') || '').trim();
+    if (!href || href.startsWith('javascript:') || href.startsWith('mailto:') || href.startsWith('tel:')) return;
+    const label = (a.textContent || a.getAttribute('aria-label') || a.getAttribute('title') || href).trim();
+    if (!label) return;
+    const key = `${label}|${href}`;
+    if (seen.has(key)) return;
+    seen.add(key);
+    menuItems.push({ label, href });
+  });
+  if (!menuItems.length){
+    const header = doc.querySelector('header, .site-header, .topbar, .navbar');
+    if (header){
+      header.querySelectorAll('a[href]').forEach(a => {
+        const href = (a.getAttribute('href') || '').trim();
+        if (!href || href.startsWith('javascript:') || href.startsWith('mailto:') || href.startsWith('tel:')) return;
+        const label = (a.textContent || a.getAttribute('aria-label') || a.getAttribute('title') || href).trim();
+        if (!label) return;
+        const key = `${label}|${href}`;
+        if (seen.has(key)) return;
+        seen.add(key);
+        menuItems.push({ label, href });
+      });
+    }
+  }
+  return menuItems.slice(0, 12);
+}
+
+function extraerCSSVars(texto){
+  const vars = {};
+  for (const m of texto.matchAll(/--([\w-]+)\s*:\s*([^;]+);/g)){
+    vars[m[1].trim()] = m[2].trim();
+  }
+  return vars;
+}
+
+function renderMenuItems(menuItems){
+  const container = document.getElementById('menu-detected-list');
+  const badge = document.getElementById('menu-detected-badge');
+  container.innerHTML = '';
+  if (!menuItems.length){
+    badge.textContent = 'No se detectaron enlaces de navegación claros.';
+    container.innerHTML = '<p style="color:#64748b;font-size:.9rem;">Prueba con otra URL o edita el menú manualmente antes de crear la plantilla.</p>';
+    renderMenuEditor([]);
+    return;
+  }
+  badge.textContent = `${menuItems.length} elementos detectados en el menú.`;
+  menuItems.forEach(item => {
+    const row = document.createElement('div');
+    row.style.cssText = 'display:flex;justify-content:space-between;gap:12px;align-items:center;padding:10px 0;border-bottom:1px solid #e2e8f0;';
+    const label = document.createElement('div');
+    label.textContent = item.label;
+    label.style.fontWeight = '600';
+    const href = document.createElement('div');
+    href.textContent = item.href;
+    href.style.opacity = '.7';
+    href.style.fontSize = '.85rem';
+    row.appendChild(label);
+    row.appendChild(href);
+    container.appendChild(row);
+  });
+  renderMenuEditor(menuItems);
+}
+
+function createMenuEditorRow(item, idx){
+  const row = document.createElement('div');
+  row.className = 'menu-editor-row';
+  row.dataset.index = idx;
+
+  const inputLabel = document.createElement('input');
+  inputLabel.type = 'text';
+  inputLabel.placeholder = 'Texto del ítem';
+  inputLabel.value = item.label || '';
+  inputLabel.name = `menu_label_${idx}`;
+
+  const inputHref = document.createElement('input');
+  inputHref.type = 'text';
+  inputHref.placeholder = 'href';
+  inputHref.value = item.href || '';
+  inputHref.name = `menu_href_${idx}`;
+
+  const removeBtn = document.createElement('button');
+  removeBtn.type = 'button';
+  removeBtn.textContent = '✕';
+  removeBtn.title = 'Eliminar ítem';
+  removeBtn.addEventListener('click', () => {
+    row.remove();
+    updateMenuEditorIndices();
+  });
+
+  row.appendChild(inputLabel);
+  row.appendChild(inputHref);
+  row.appendChild(removeBtn);
+  return row;
+}
+
+function renderMenuEditor(menuItems){
+  const wrapper = document.getElementById('menu-editor-wrapper');
+  const list = document.getElementById('menu-editor-list');
+  const addButton = document.getElementById('menu-add-item');
+  list.innerHTML = '';
+  wrapper.style.display = 'block';
+
+  const items = Array.isArray(menuItems) ? menuItems : [];
+  if (!items.length){
+    list.innerHTML = '<p style="color:#64748b;font-size:.9rem;margin-bottom:12px;">No hay menú detectado. Puedes agregar manualmente los ítems de navegación.</p>';
+  }
+  items.forEach((item, idx) => list.appendChild(createMenuEditorRow(item, idx)));
+
+  addButton.onclick = () => {
+    list.appendChild(createMenuEditorRow({ label:'', href:'' }, list.children.length));
+  };
+}
+
+function updateMenuEditorIndices(){
+  const rows = Array.from(document.querySelectorAll('#menu-editor-list .menu-editor-row'));
+  rows.forEach((row, idx) => {
+    row.dataset.index = idx;
+    row.querySelector('input[name^="menu_label_"]').name = `menu_label_${idx}`;
+    row.querySelector('input[name^="menu_href_"]').name = `menu_href_${idx}`;
+  });
+}
+
+function collectMenuItems(){
+  const rows = Array.from(document.querySelectorAll('#menu-editor-list .menu-editor-row'));
+  return rows.map(row => {
+    const label = row.querySelector('input[name^="menu_label_"]').value.trim();
+    const href = row.querySelector('input[name^="menu_href_"]').value.trim();
+    return { label, href };
+  }).filter(item => item.label && item.href);
+}
+
+function renderCSSVars(vars){
+  const container = document.getElementById('css-vars-container');
+  container.innerHTML = '';
+  const entries = Object.entries(vars).slice(0, 12);
+  if (!entries.length){
+    container.innerHTML = '<p style="color:#64748b;font-size:.9rem;">No se detectaron variables CSS en los estilos.</p>';
+    return;
+  }
+  entries.forEach(([key, value]) => {
+    const row = document.createElement('div');
+    row.style.cssText = 'display:flex;justify-content:space-between;gap:12px;align-items:center;padding:8px 0;border-bottom:1px solid #e2e8f0;';
+    const clave = document.createElement('div');
+    clave.textContent = `--${key}`;
+    clave.style.fontSize = '.85rem';
+    const valor = document.createElement('code');
+    valor.textContent = value;
+    valor.style.color = '#334155';
+    row.appendChild(clave);
+    row.appendChild(valor);
+    container.appendChild(row);
+  });
+}
+
+function detectarNavStyle(cssTexto){
+  const sticky = /(?:header|nav|\.navbar|\.site-header)[^}]*position\s*:\s*(sticky|fixed)/i.test(cssTexto);
+  const transparente = /(?:header|nav|\.navbar|\.site-header)[^}]*background(?:-color)?\s*:\s*(transparent|rgba\(0,0,0,0\)|none)/i.test(cssTexto);
+  return { navbar_sticky: sticky, navbar_transparente: transparente };
 }
 
 function getDefaultLayout(){
@@ -1161,7 +1363,14 @@ document.getElementById('btn-analizar').addEventListener('click', async () => {
       if (fuentes.length > 1) document.getElementById('url-fb').value = fuentes[1];
     }
 
-    // 7. Renderizar swatches, fuentes y blueprint
+    // 7. Extraer menú y CSS para ayudar al diseño
+    _detectedMenuItems = extraerMenu(html);
+    _detectedCssVars = extraerCSSVars(cssTotal);
+    _detectedNav = detectarNavStyle(cssTotal);
+    renderMenuItems(_detectedMenuItems);
+    renderCSSVars(_detectedCssVars);
+
+    // 8. Renderizar swatches, fuentes y blueprint
     renderSwatches(coloresOrdenados, roles);
     renderFonts(fuentes);
     _blueprintDetectado = extractBlueprint(html, estilo);
@@ -1221,6 +1430,10 @@ document.getElementById('btn-crear-url').addEventListener('click', async () => {
     color_primario:  document.getElementById('url-cp').value,
     color_acento:    document.getElementById('url-ca').value,
     color_footer:    document.getElementById('url-cf').value,
+    color_navbar_bg: (_detectedNav.navbar_sticky || _detectedNav.navbar_transparente)
+                      ? (_detectedCssVars['navbar-bg'] || _detectedCssVars['navbar-color'] || document.getElementById('url-cf').value)
+                      : undefined,
+    color_texto:     _detectedCssVars['text'] || _detectedCssVars['color-text'] || _detectedCssVars['font-color'] || undefined,
     fuente_titulos:  document.getElementById('url-fh').value || 'system-ui, sans-serif',
     fuente_cuerpo:   document.getElementById('url-fb').value || 'system-ui, sans-serif',
     tipo:            document.getElementById('url-tipo').value,
@@ -1230,20 +1443,23 @@ document.getElementById('btn-crear-url').addEventListener('click', async () => {
       secciones: _blueprintDetectado?.secciones || ['hero', 'services', 'projects', 'team'],
       hero_tipo: document.getElementById('url-hero-tipo').value,
     },
-    componentes:     readComponentState(),
-    hero_tipo:       document.getElementById('url-hero-tipo').value,
-    estilo:          _estiloDetectado,
-    nav_style:       _navData?.style,
-    nav_items:       _navData?.items,
-    content_layout:  _contentLayout?.primary_layout,
-    font_scale:      _tipografia?.hero_font_size,
-    tagline_style:   _tipografia?.tagline_style,
-    has_promo_grid:  _contentLayout?.layouts?.some(l => l.type === 'promo-grid') || false,
+    componentes: readComponentState(),
+    hero_tipo: document.getElementById('url-hero-tipo').value,
+    estilo: _estiloDetectado,
+    nav_style: _navData?.style,
+    nav_items: _navData?.items,
+    content_layout: _contentLayout?.primary_layout,
+    font_scale: _tipografia?.hero_font_size,
+    tagline_style: _tipografia?.tagline_style,
+    has_promo_grid: _contentLayout?.layouts?.some(l => l.type === 'promo-grid') || false,
+    menu_items: _detectedMenuItems,
+    css_vars: _detectedCssVars,
+    navbar_sticky: _detectedNav.navbar_sticky ? '1' : '0',
+    navbar_transparente: _detectedNav.navbar_transparente ? '1' : '0',
   };
 
   const btn = document.getElementById('btn-crear-url');
   btn.disabled = true;
-  setSpinner('sp-crear-url','sp-crear-url', false);
   document.getElementById('sp-crear-url').style.display = 'inline-block';
 
   try {

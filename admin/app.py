@@ -1998,8 +1998,8 @@ def _blueprint_to_defaults(payload=None, layout=None, blueprint=None, componente
         'hero_texto_color':     '#ffffff' if (tema_oscuro or hero_tipo in ('dark','fullscreen','gradient')) else color_texto,
 
         # Navbar
-        'navbar_sticky':        '1' if payload.get('navbar_sticky',   True)  else '0',
-        'navbar_transparente':  '1' if payload.get('navbar_transparente', hero_tipo == 'fullscreen') else '0',
+        'navbar_sticky':        '1' if payload.get('navbar_sticky') in (True, '1', 'true', 'True') else '0',
+        'navbar_transparente':  '1' if payload.get('navbar_transparente') in (True, '1', 'true', 'True') or hero_tipo == 'fullscreen' else '0',
         'navbar_logo_pos':      payload.get('navbar_logo_pos', 'left'),
 
         # Nav items
@@ -2104,6 +2104,46 @@ def _blueprint_to_defaults(payload=None, layout=None, blueprint=None, componente
             sec_defaults[mapped] = '1'
 
     defaults.update(sec_defaults)
+
+    # ── Menú detectado ───────────────────────────────────────────────────────
+    menu_items = payload.get('menu_items')
+    if isinstance(menu_items, str):
+        try:
+            menu_items = json.loads(menu_items)
+        except Exception:
+            menu_items = None
+    if isinstance(menu_items, list) and menu_items:
+        defaults['menu_items'] = json.dumps(menu_items, ensure_ascii=False)
+
+    # ── CSS vars detectadas ───────────────────────────────────────────────────
+    css_vars = payload.get('css_vars')
+    if isinstance(css_vars, str):
+        try:
+            css_vars = json.loads(css_vars)
+        except Exception:
+            css_vars = {}
+    if isinstance(css_vars, dict) and css_vars:
+        defaults['css_vars'] = json.dumps(css_vars, ensure_ascii=False)
+        if not payload.get('color_primario'):
+            for candidate in ('color-primary','primary','brand-primary','primary-color','color_primary'):
+                if candidate in css_vars:
+                    defaults['color_primario'] = css_vars[candidate]
+                    break
+        if not payload.get('color_acento'):
+            for candidate in ('color-accent','accent','brand-accent','accent-color','color_accent'):
+                if candidate in css_vars:
+                    defaults['color_acento'] = css_vars[candidate]
+                    break
+        if not payload.get('color_footer'):
+            for candidate in ('color-secondary','secondary','brand-secondary','secondary-color','color_secondary'):
+                if candidate in css_vars:
+                    defaults['color_footer_bg'] = css_vars[candidate]
+                    break
+        if not payload.get('color_texto'):
+            for candidate in ('color-text','text-color','text','font-color','color_texto'):
+                if candidate in css_vars:
+                    defaults['color_texto'] = css_vars[candidate]
+                    break
 
     # ── Componentes opcionales ────────────────────────────────────────────────
     defaults['comp_whatsapp']   = '1' if (componentes.get('whatsapp') or componentes.get('whatsApp')

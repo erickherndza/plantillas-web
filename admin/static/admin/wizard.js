@@ -313,11 +313,23 @@
       hero_titulo:           document.getElementById('heroTitulo').value.trim(),
       hero_subtitulo:        document.getElementById('heroSubtitulo').value.trim(),
       hero_cta_texto:        document.getElementById('heroCtaTexto').value.trim(),
+      hero_cta2_texto:       document.getElementById('heroCta2Texto').value.trim(),
+      hero_cta2_href:        document.getElementById('heroCta2Href').value.trim(),
       menu_servicios:        document.getElementById('menuServicios').value.trim(),
       menu_proyectos:        document.getElementById('menuProyectos').value.trim(),
       menu_equipo:           document.getElementById('menuEquipo').value.trim(),
+      menu_contacto:         document.getElementById('menuContacto').value.trim(),
       nosotros_descripcion:  document.getElementById('nosotrosDesc').value.trim(),
       nosotros_mision:       document.getElementById('nosotrosMision').value.trim(),
+      nosotros_vision:       document.getElementById('nosotrosVision').value.trim(),
+      nosotros_valores:      document.getElementById('nosotrosValores').value.trim(),
+      servicios_descripcion: document.getElementById('serviciosDesc').value.trim(),
+      proyectos_descripcion: document.getElementById('proyectosDesc').value.trim(),
+      equipo_descripcion:    document.getElementById('equipoDesc').value.trim(),
+      contacto_telefono:     document.getElementById('contactoTelefono').value.trim(),
+      contacto_email:        document.getElementById('contactoEmail').value.trim(),
+      contacto_direccion:    document.getElementById('contactoDireccion').value.trim(),
+      footer_descripcion:    document.getElementById('footerDescripcion').value.trim(),
     };
 
     const payload = {
