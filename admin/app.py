@@ -2661,6 +2661,47 @@ _CATEGORIAS = {
 }
 
 
+# ══════════════════════════════════════════════════════════════════════════════
+# PROXY BACKEND para scraper — obtener HTML de URLs externas (evita CORS)
+# ══════════════════════════════════════════════════════════════════════════════
+
+@app.route('/admin/scraper/fetch-url', methods=['POST'])
+@admin_requerido
+def scraper_fetch_url():
+    """Descarga HTML de una URL desde el servidor (HTTPS, evita CORS del cliente)."""
+    import urllib.request
+    import urllib.error
+    
+    data = request.get_json(force=True) or {}
+    url = data.get('url', '').strip()
+    
+    if not url:
+        return jsonify(ok=False, error='URL requerida'), 400
+    
+    # Validar que sea HTTP/HTTPS
+    if not url.lower().startswith(('http://', 'https://')):
+        return jsonify(ok=False, error='URL debe comenzar con http:// o https://'), 400
+    
+    try:
+        # User-Agent real para evitar bloqueos 403
+        req = urllib.request.Request(
+            url,
+            headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'}
+        )
+        with urllib.request.urlopen(req, timeout=12) as response:
+            html = response.read().decode('utf-8', errors='ignore')
+            if len(html) < 100:
+                return jsonify(ok=False, error='HTML muy corto — verificar URL'), 400
+            return jsonify(ok=True, html=html, url=response.url)
+    
+    except urllib.error.HTTPError as e:
+        return jsonify(ok=False, error=f'HTTP {e.code}: {e.reason}'), 400
+    except urllib.error.URLError as e:
+        return jsonify(ok=False, error=f'No se pudo conectar: {str(e.reason)[:60]}'), 400
+    except Exception as e:
+        return jsonify(ok=False, error=f'Error: {str(e)[:60]}'), 500
+
+
 @app.route('/admin/scraper')
 @admin_requerido
 def admin_scraper():

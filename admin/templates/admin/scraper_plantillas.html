@@ -511,6 +511,34 @@ function esColorNoGris(hex){
 
 /* ── Fetch con fallback entre 3 proxies CORS ─────────────────────────── */
 async function fetchConFallback(url) {
+  // 1. Intentar proxy backend (HTTPS, funciona en PythonAnywhere)
+  try {
+    const proxyRes = await fetch('/admin/scraper/fetch-url', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url }),
+      signal: AbortSignal.timeout(15000)
+    });
+    
+    if (proxyRes.ok) {
+      const data = await proxyRes.json();
+      if (data.ok && data.html && data.html.length > 100) {
+        console.log('✓ HTML obtenido desde proxy backend');
+        return data.html;
+      }
+    }
+    
+    if (proxyRes.status === 401 || proxyRes.status === 403) {
+      throw new Error('No autorizado al proxy backend');
+    }
+    
+    const errData = await proxyRes.json().catch(() => ({}));
+    throw new Error(`Backend: ${errData.error || 'Error desconocido'}`);
+  } catch (err) {
+    console.warn('Proxy backend falló:', err.message);
+  }
+  
+  // 2. Fallback a proxies CORS públicos
   const proxies = [
     async (u) => {
       const r = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(u)}`, { signal: AbortSignal.timeout(12000) });
@@ -522,24 +550,22 @@ async function fetchConFallback(url) {
       if (!r.ok) throw new Error('corsproxy ' + r.status);
       return await r.text();
     },
-    async (u) => {
-      const r = await fetch(`https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(u)}`, { signal: AbortSignal.timeout(12000) });
-      if (!r.ok) throw new Error('codetabs ' + r.status);
-      return await r.text();
-    },
   ];
 
   let lastErr;
   for (let i = 0; i < proxies.length; i++) {
     try {
       const html = await proxies[i](url);
-      if (html && html.length > 100) return html;
+      if (html && html.length > 100) {
+        console.log(`✓ HTML obtenido desde proxy CORS ${i+1}`);
+        return html;
+      }
     } catch(e) {
       lastErr = e;
-      console.warn(`Proxy ${i+1} falló:`, e.message);
+      console.warn(`Proxy CORS ${i+1} falló:`, e.message);
     }
   }
-  throw new Error('Todos los proxies fallaron. ' + (lastErr?.message || ''));
+  throw new Error('Todos los métodos fallaron. ' + (lastErr?.message || ''));
 }
 
 /* ── Extraer URLs de CSS externos del HTML ───────────────────────────── */
