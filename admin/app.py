@@ -2815,16 +2815,42 @@ def _extraer_html_ia(texto):
     import re as _re
     m = _re.search(r'```html\s*([\s\S]+?)```', texto)
     if m:
-        return _reparar_html_ia(m.group(1).strip())
+        return _normalize_jinja_string_literals(_reparar_html_ia(m.group(1).strip()))
     m = _re.search(r'```\s*([\s\S]+?)```', texto)
     if m:
-        return _reparar_html_ia(m.group(1).strip())
+        return _normalize_jinja_string_literals(_reparar_html_ia(m.group(1).strip()))
     idx = texto.find('<!DOCTYPE')
     if idx == -1:
         idx = texto.find('<html')
     if idx != -1:
-        return _reparar_html_ia(texto[idx:].strip())
-    return _reparar_html_ia(texto.strip())
+        return _normalize_jinja_string_literals(_reparar_html_ia(texto[idx:].strip()))
+    return _normalize_jinja_string_literals(_reparar_html_ia(texto.strip()))
+
+
+def _normalize_jinja_string_literals(html):
+    """Convierte literales Jinja con comillas simples a comillas dobles para evitar errores con apóstrofes."""
+    import re as _re
+    def _replace(match):
+        fn = match.group('fn')
+        key = match.group('key').replace('"', '\\"')
+        value = match.group('value').replace('"', '\\"')
+        return f'{fn}"{key}", "{value}")'
+
+    pattern = _re.compile(
+        r'(?P<fn>\b[\w\.]+\.get\()\s*\'(?P<key>[^\']*)\'\s*,\s*\'(?P<value>.*?)\'\s*\)',
+        _re.S
+    )
+    return pattern.sub(_replace, html)
+
+
+def _validar_template_jinja(html):
+    """Verifica que el HTML generado sea sintácticamente válido para Jinja."""
+    try:
+        from jinja2 import Environment
+        Environment().parse(html)
+        return True, None
+    except Exception as e:
+        return False, str(e)
 
 
 def _build_ia_prompt(a):
@@ -2924,26 +2950,26 @@ ANÁLISIS VISUAL DEL SITIO A EMULAR (captura su estructura y personalidad, no su
 {'- Layout especial: grid de promoción/destacados' if a.get('has_promo_grid') else ''}
 
 VARIABLES JINJA2 — ÚSALAS EXACTAMENTE ASÍ EN EL HTML:
-{{{{ config.get('nombre_negocio', sitio.nombre) }}}}
-{{{{ config.get('hero_eyebrow', '') }}}}
-{{{{ config.get('hero_titulo', sitio.nombre) }}}}
-{{{{ config.get('hero_subtitulo', '') }}}}
-{{{{ config.get('hero_cta_texto', 'Contáctanos') }}}}
-{{{{ config.get('hero_cta_href', '#contacto') }}}}
-{{{{ config.get('hero_imagen', '') }}}}
-{{{{ config.get('logo_url', '') }}}}
-{{{{ config.get('color_primario', '{cp}') }}}}
-{{{{ config.get('color_acento', '{ca}') }}}}
-{{{{ config.get('color_footer_bg', '{cfb}') }}}}
-{{{{ config.get('color_texto', '#1e293b') }}}}
-{{{{ config.get('fuente_titulos', '{fh}') }}}}
-{{{{ config.get('fuente_cuerpo', '{fb}') }}}}
-{{{{ config.get('nosotros_titulo', 'Sobre nosotros') }}}}
-{{{{ config.get('nosotros_descripcion', '') }}}}
-{{{{ config.get('nosotros_imagen', '') }}}}
-{{{{ config.get('contacto_email', '') }}}}
-{{{{ config.get('contacto_telefono', '') }}}}
-{{{{ config.get('contacto_direccion', '') }}}}
+{{{{ config.get("nombre_negocio", sitio.nombre) }}}}
+{{{{ config.get("hero_eyebrow", "") }}}}
+{{{{ config.get("hero_titulo", sitio.nombre) }}}}
+{{{{ config.get("hero_subtitulo", "") }}}}
+{{{{ config.get("hero_cta_texto", "Contáctanos") }}}}
+{{{{ config.get("hero_cta_href", "#contacto") }}}}
+{{{{ config.get("hero_imagen", "") }}}}
+{{{{ config.get("logo_url", "") }}}}
+{{{{ config.get("color_primario", '{cp}') }}}}
+{{{{ config.get("color_acento", '{ca}') }}}}
+{{{{ config.get("color_footer_bg", '{cfb}') }}}}
+{{{{ config.get("color_texto", "#1e293b") }}}}
+{{{{ config.get("fuente_titulos", '{fh}') }}}}
+{{{{ config.get("fuente_cuerpo", '{fb}') }}}}
+{{{{ config.get("nosotros_titulo", "Sobre nosotros") }}}}
+{{{{ config.get("nosotros_descripcion", "") }}}}
+{{{{ config.get("nosotros_imagen", "") }}}}
+{{{{ config.get("contacto_email", "") }}}}
+{{{{ config.get("contacto_telefono", "") }}}}
+{{{{ config.get("contacto_direccion", "") }}}}
 {{{{ sitio.slug }}}}
 
 LOOPS DE SECCIONES DINÁMICAS (incluir si aplica al estilo):
@@ -3138,6 +3164,14 @@ def admin_scraper_generar_ia():
     # Validación básica
     if len(html_generado) < 800 or '<!DOCTYPE' not in html_generado.upper():
         return jsonify(ok=False, error='La IA no generó HTML válido. Intenta de nuevo o ajusta los parámetros.'), 500
+
+    # Validar y normalizar Jinja antes de guardar
+    valid, err = _validar_template_jinja(html_generado)
+    if not valid:
+        html_generado = _normalize_jinja_string_literals(html_generado)
+        valid, err = _validar_template_jinja(html_generado)
+        if not valid:
+            return jsonify(ok=False, error=f'HTML generado no es válido en Jinja: {err}'), 500
 
     # ── Guardar plantilla en DB ───────────────────────────────────────────────
     try:
