@@ -1212,30 +1212,10 @@ def crear_sitio():
                     from blueprint_generator import blueprint_to_config, blueprint_to_secciones
 
                     # ── Normalizar formato del scraper al formato del generator ──
-                    # El scraper envía {secciones:[str,...], layout:{...}, hero_tipo:'...'}
-                    # El generator espera {sections:[{id,layout,...}], detected_sections:[...]}
-                    if 'secciones' in _blueprint and 'sections' not in _blueprint:
-                        _secs_str  = _blueprint.get('secciones', [])
-                        _bp_layout = _blueprint.get('layout', {})
-                        _blueprint = {
-                            'sections': [
-                                {
-                                    'id':         s,
-                                    'layout':     _bp_layout.get(s, ''),
-                                    'card_count': 4 if s == 'services'  else 3,
-                                    'item_count': 6 if s == 'why_us'   else 4,
-                                    'has_stats':  'about'  in _secs_str,
-                                    'has_image':  True,
-                                    'has_social': 'footer' in _secs_str,
-                                }
-                                for s in _secs_str
-                            ],
-                            'detected_sections': _secs_str,
-                            'estilo': _defaults_bp.get('_estilo', 'clean'),
-                        }
-
+                    # El helper blueprint_to_config ya acepta blueprints simples y
+                    # genera los valores de config esperados.
                     _comp = {k: _defaults_bp.get(f'comp_{k}', False)
-                             for k in ['whatsapp','newsletter','social','topbar','citas']}
+                             for k in ['whatsapp', 'newsletter', 'social', 'topbar', 'citas']}
                     _comp['hero_type'] = _defaults_bp.get('hero_tipo', 'static')
 
                     _cfg = blueprint_to_config(
@@ -1243,6 +1223,11 @@ def crear_sitio():
                         tipo=_tipo_web, componentes=_comp
                     )
                     _secc = blueprint_to_secciones(_blueprint, tipo=_tipo_web)
+
+                    # Para sitios generados desde scraper/IA, renderizamos con la
+                    # plantilla universal basada en config + secciones, no con HTML
+                    # estático generado automáticamente.
+                    _cfg['usar_universal_template'] = '1'
 
                     set_config_sitio_bulk(sitio_id, _cfg)
                     for _sn, _si in _secc.items():
@@ -1497,10 +1482,32 @@ def _template_existe(ruta_template: str) -> bool:
     return os.path.exists(os.path.join(app.root_path, 'templates', ruta_template))
 
 
+def _render_sitio_template(template, sitio, pagina='inicio', **ctx):
+    """Renderiza un template de sitio y cae a la plantilla universal si falla."""
+    try:
+        return render_template(template, sitio=sitio, pagina_activa=pagina, **ctx)
+    except Exception as exc:
+        app.logger.error(
+            f'Error rendering template {template} for sitio {sitio.get("slug")}:'
+            f' {exc}', exc_info=True
+        )
+        fallback = 'sites/_universal/index.html'
+        if template != fallback and _template_existe(fallback):
+            try:
+                return render_template(fallback, sitio=sitio, pagina_activa=pagina, **ctx)
+            except Exception as exc2:
+                app.logger.error(
+                    f'Fallback universal template failed for sitio {sitio.get("slug")}:'
+                    f' {exc2}', exc_info=True
+                )
+        raise
+
+
 def _resolver_template_sitio(sitio, pagina='inicio'):
     """Resuelve qué template debe renderizar un sitio según su plantilla y la página."""
     clave = sitio['plantilla_clave']
     formato = sitio['formato'] if 'formato' in sitio.keys() else 'web5'
+    config = get_config_sitio(sitio['id']) if sitio.get('id') else {}
 
     # Mapa estilo → directorio de templates web5 especializados
     _ESTILO_WEB5_DIR = {
@@ -1526,6 +1533,8 @@ def _resolver_template_sitio(sitio, pagina='inicio'):
 
     # ── LANDING — one-page ──
     if formato == 'landing':
+        if config.get('usar_universal_template') in ('1', 'true', True, 'yes'):
+            return 'sites/_universal/index.html'
         if pagina == 'inicio':
             ruta = f'sites/{clave}/index.html'
             if _template_existe(ruta):
@@ -2189,6 +2198,19 @@ def _contexto_sitio(sitio):
     for _clave, _valor in _defaults.items():
         if _config.get(_clave) in (None, ''):
             _config[_clave] = _valor
+    if _config.get('_detected_sections') and not _defaults.get('_detected_sections'):
+        _defaults['_detected_sections'] = _config.get('_detected_sections')
+    if _config.get('_blueprint') and not _defaults.get('_blueprint'):
+        _defaults['_blueprint'] = _config.get('_blueprint')
+    if (_config.get('_layout') or _config.get('layout')) and not _defaults.get('layout'):
+        _layout_raw = _config.get('_layout') or _config.get('layout')
+        try:
+            import json as _json
+            _defaults['layout'] = (_json.loads(_layout_raw)
+                                   if isinstance(_layout_raw, str)
+                                   else _layout_raw)
+        except Exception:
+            _defaults['layout'] = _layout_raw
     return {
         'config':   _config,
         'defaults': _defaults,
@@ -2211,10 +2233,7 @@ def ver_sitio(slug):
         abort(404)
     ctx = _contexto_sitio(sitio)
     template = _resolver_template_sitio(sitio, 'inicio')
-    try:
-        return render_template(template, sitio=sitio, pagina_activa='inicio', **ctx)
-    except Exception:
-        return f'<pre style="color:red;padding:20px"><b>Error en template:</b> {template}\n\n{__import__("traceback").format_exc()}</pre>', 500
+    return _render_sitio_template(template, sitio, 'inicio', **ctx)
 
 
 @app.route('/s/<slug>/<pagina>/')
@@ -2249,7 +2268,7 @@ def ver_pagina(slug, pagina):
             pass
 
     template = _resolver_template_sitio(sitio, pagina)
-    return render_template(template, sitio=sitio, pagina_activa=pagina, **ctx)
+    return _render_sitio_template(template, sitio, pagina, **ctx)
 
 
 @app.route('/s/<slug>/enviar-contacto', methods=['POST'])

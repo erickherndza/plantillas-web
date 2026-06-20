@@ -97,6 +97,43 @@ MENU_LABELS = {
 }
 
 
+def _normalize_blueprint(blueprint):
+    if not isinstance(blueprint, dict):
+        return {}
+    bp = dict(blueprint)
+
+    if 'sections' not in bp:
+        secciones = bp.get('secciones')
+        if isinstance(secciones, list):
+            bp['sections'] = [
+                {'id': item} if isinstance(item, str) else item
+                for item in secciones
+                if isinstance(item, str) or (isinstance(item, dict) and item.get('id'))
+            ]
+
+    if 'detected_sections' not in bp:
+        if isinstance(bp.get('sections'), list):
+            bp['detected_sections'] = [
+                item.get('id') for item in bp['sections']
+                if isinstance(item, dict) and item.get('id')
+            ]
+        elif isinstance(bp.get('secciones'), list):
+            bp['detected_sections'] = [
+                item if isinstance(item, str) else item.get('id')
+                for item in bp['secciones']
+                if isinstance(item, str) or (isinstance(item, dict) and item.get('id'))
+            ]
+        else:
+            bp['detected_sections'] = []
+    elif isinstance(bp['detected_sections'], str):
+        try:
+            bp['detected_sections'] = json.loads(bp['detected_sections'])
+        except Exception:
+            bp['detected_sections'] = [bp['detected_sections']]
+
+    return bp
+
+
 def blueprint_to_config(
     blueprint:    dict,
     estilos:      dict,
@@ -105,10 +142,20 @@ def blueprint_to_config(
     tipo:         str  = 'landing',
     componentes:  dict = None,
 ) -> dict:
+    blueprint = _normalize_blueprint(blueprint)
     componentes = componentes or {}
     sections    = {s['id']: s for s in blueprint.get('sections', [])}
     estilo      = blueprint.get('estilo', 'clean')
     is_dark     = estilo in ('dark', 'gradient')
+
+    detected_sections = []
+    if isinstance(blueprint, dict):
+        detected_sections = blueprint.get('detected_sections') or [
+            s.get('id') for s in blueprint.get('sections', [])
+            if isinstance(s, dict) and s.get('id')
+        ]
+        if not isinstance(detected_sections, list):
+            detected_sections = []
 
     config = {
         'nombre_negocio':    nombre_sitio,
@@ -119,6 +166,9 @@ def blueprint_to_config(
         '_blueprint_estilo': estilo,
         '_tipo_web':         tipo,
         '_section_order':    json.dumps(blueprint.get('detected_sections', [])),
+        '_blueprint':        blueprint,
+        '_detected_sections': json.dumps(detected_sections, ensure_ascii=False),
+        '_layout':           blueprint.get('layout') if isinstance(blueprint.get('layout'), dict) else {},
     }
 
     config.update({
@@ -221,6 +271,7 @@ def _web5_extra_config(sections: dict, nombre_sitio: str, componentes: dict) -> 
 
 
 def blueprint_to_secciones(blueprint: dict, tipo: str = 'landing') -> dict:
+    blueprint = _normalize_blueprint(blueprint)
     sections = {s['id']: s for s in blueprint.get('sections', [])}
     result   = {}
 
@@ -298,6 +349,7 @@ def blueprint_to_secciones(blueprint: dict, tipo: str = 'landing') -> dict:
 
 
 def get_web5_page_context(pagina: str, blueprint: dict, config: dict, secciones: dict) -> dict:
+    blueprint = _normalize_blueprint(blueprint)
     sections = {s['id']: s for s in blueprint.get('sections', [])}
     ctx = {'pagina_activa': pagina, 'config': config}
 

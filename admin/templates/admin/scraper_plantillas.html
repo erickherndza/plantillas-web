@@ -1230,6 +1230,10 @@ function extractBlueprint(html, estilo){
   if (findClass('team-minimal', 'team-minimal')) layout.team = 'minimal';
   if (secciones.includes('features_strip')) layout.services = 'list';
 
+  const sections = secciones.length
+    ? secciones.map((id) => ({ id }))
+    : [{ id: 'hero' }, { id: 'services' }, { id: 'projects' }, { id: 'team' }];
+
   const heroHints = {
     dark: /dark|oscuro|night|black/i,
     gradient: /gradient|gradiente|sunset|purple/i,
@@ -1440,7 +1444,9 @@ document.getElementById('btn-crear-url').addEventListener('click', async () => {
     layout:          _blueprintDetectado?.layout || _layoutDetectado || getDefaultLayout(),
     blueprint: {
       layout: _blueprintDetectado?.layout || _layoutDetectado || getDefaultLayout(),
+      sections: _blueprintDetectado?.sections || (_blueprintDetectado?.secciones || ['hero', 'services', 'projects', 'team']).map((id) => ({ id })),
       secciones: _blueprintDetectado?.secciones || ['hero', 'services', 'projects', 'team'],
+      detected_sections: _blueprintDetectado?.detected_sections || _blueprintDetectado?.secciones || ['hero', 'services', 'projects', 'team'],
       hero_tipo: document.getElementById('url-hero-tipo').value,
     },
     componentes: readComponentState(),

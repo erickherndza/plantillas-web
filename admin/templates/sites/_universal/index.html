@@ -125,11 +125,13 @@
 {% set _detected_sections = [] %}
 {% if _defaults.get('_detected_sections') %}
   {% set _detected_sections = _defaults.get('_detected_sections') | from_json %}
+{% elif config.get('_detected_sections') %}
+  {% set _detected_sections = config.get('_detected_sections') | from_json %}
 {% endif %}
-{% set _topbar_enabled = _defaults.get('comp_topbar') in [1, '1', True, 'true', 'yes'] %}
-{% set _social_enabled = _defaults.get('comp_redes') in [1, '1', True, 'true', 'yes'] %}
-{% set _newsletter_enabled = _defaults.get('comp_newsletter') in [1, '1', True, 'true', 'yes'] %}
-{% set _whatsapp_enabled = _defaults.get('comp_whatsapp') in [1, '1', True, 'true', 'yes'] %}
+{% set _topbar_enabled = config.get('comp_topbar') in [1, '1', True, 'true', 'yes'] or _defaults.get('comp_topbar') in [1, '1', True, 'true', 'yes'] %}
+{% set _social_enabled = config.get('comp_redes') in [1, '1', True, 'true', 'yes'] or _defaults.get('comp_redes') in [1, '1', True, 'true', 'yes'] %}
+{% set _newsletter_enabled = config.get('comp_newsletter') in [1, '1', True, 'true', 'yes'] or _defaults.get('comp_newsletter') in [1, '1', True, 'true', 'yes'] %}
+{% set _whatsapp_enabled = config.get('comp_whatsapp') in [1, '1', True, 'true', 'yes'] or _defaults.get('comp_whatsapp') in [1, '1', True, 'true', 'yes'] %}
 {% set _show_topbar = _topbar_enabled or ('topbar' in _detected_sections) or ('header' in _detected_sections) %}
 {% set _show_social = _social_enabled %}
 {% set _show_newsletter = _newsletter_enabled or ('newsletter' in _detected_sections) %}

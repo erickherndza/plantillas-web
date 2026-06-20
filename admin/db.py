@@ -683,13 +683,22 @@ def get_config_sitio(sitio_id: int) -> dict:
     return {r['clave']: r['valor'] for r in rows}
 
 
-def set_config_sitio(sitio_id: int, clave: str, valor: str):
+def _serializar_config_valor(valor):
+    import json
+    if isinstance(valor, (dict, list)):
+        return json.dumps(valor, ensure_ascii=False)
+    if isinstance(valor, bool):
+        return '1' if valor else '0'
+    return str(valor)
+
+
+def set_config_sitio(sitio_id: int, clave: str, valor):
     """Guarda o actualiza un valor de configuración."""
     conn = get_db()
     conn.execute(
         "INSERT INTO configuracion_sitio (sitio_id, clave, valor) VALUES (?, ?, ?)"
         " ON CONFLICT(sitio_id, clave) DO UPDATE SET valor = excluded.valor",
-        (sitio_id, clave, valor)
+        (sitio_id, clave, _serializar_config_valor(valor))
     )
     conn.commit()
     conn.close()
@@ -702,7 +711,7 @@ def set_config_sitio_bulk(sitio_id: int, datos: dict):
         conn.execute(
             "INSERT INTO configuracion_sitio (sitio_id, clave, valor) VALUES (?, ?, ?)"
             " ON CONFLICT(sitio_id, clave) DO UPDATE SET valor = excluded.valor",
-            (sitio_id, clave, str(valor))
+            (sitio_id, clave, _serializar_config_valor(valor))
         )
     conn.commit()
     conn.close()
