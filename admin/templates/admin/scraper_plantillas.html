@@ -1438,10 +1438,11 @@ document.getElementById('btn-analizar').addEventListener('click', async () => {
       showAlert('sc-alert-url', 'No se detectaron colores de marca. Ajusta manualmente los colores abajo.', 'warning');
 
   } catch(err){
-    const msg = err.name === 'TimeoutError' || err.message?.includes('timed out')
+    const baseMsg = err.name === 'TimeoutError' || err.message?.includes('timed out')
       ? 'El sitio tardó demasiado. Prueba con otra URL o usa "Por Categoría".'
       : 'No se pudo acceder al sitio. Algunos sitios bloquean scrapers. Usa la pestaña "Por Categoría" como alternativa.';
-    showAlert('sc-alert-url', msg);
+    const detalle = err.message ? ` Detalle: ${err.message}` : '';
+    showAlert('sc-alert-url', baseMsg + detalle);
   } finally {
     setSpinner('sp-txt','sp-spin', false);
   }

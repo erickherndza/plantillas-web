@@ -2683,23 +2683,36 @@ def scraper_fetch_url():
         return jsonify(ok=False, error='URL debe comenzar con http:// o https://'), 400
     
     try:
-        # User-Agent real para evitar bloqueos 403
-        req = urllib.request.Request(
-            url,
-            headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'}
-        )
-        with urllib.request.urlopen(req, timeout=12) as response:
-            html = response.read().decode('utf-8', errors='ignore')
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36',
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+            'Accept-Language': 'en-US,en;q=0.9',
+            'Accept-Encoding': 'gzip, deflate',
+            'Connection': 'close',
+        }
+        req = urllib.request.Request(url, headers=headers)
+        with urllib.request.urlopen(req, timeout=15) as response:
+            raw = response.read()
+            try:
+                html = raw.decode('utf-8')
+            except UnicodeDecodeError:
+                html = raw.decode('latin-1', errors='ignore')
             if len(html) < 100:
                 return jsonify(ok=False, error='HTML muy corto — verificar URL'), 400
             return jsonify(ok=True, html=html, url=response.url)
-    
+
     except urllib.error.HTTPError as e:
-        return jsonify(ok=False, error=f'HTTP {e.code}: {e.reason}'), 400
+        error_text = f'HTTP {e.code}: {e.reason}'
+        app.logger.warning('Scraper backend HTTPError %s %s', url, error_text)
+        return jsonify(ok=False, error=error_text), 400
     except urllib.error.URLError as e:
-        return jsonify(ok=False, error=f'No se pudo conectar: {str(e.reason)[:60]}'), 400
+        error_text = f'No se pudo conectar: {str(e.reason)[:120]}'
+        app.logger.warning('Scraper backend URLError %s %s', url, error_text)
+        return jsonify(ok=False, error=error_text), 400
     except Exception as e:
-        return jsonify(ok=False, error=f'Error: {str(e)[:60]}'), 500
+        error_text = f'Error: {str(e)[:120]}'
+        app.logger.exception('Scraper backend error %s', url)
+        return jsonify(ok=False, error=error_text), 500
 
 
 @app.route('/admin/scraper')
